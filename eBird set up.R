@@ -1,3 +1,8 @@
+setwd("/home/suhel/Documents/eBird/IndiaData")
+load("All-eBird-India-data-2018-07-06.RData")
+
+## we should have a detailed description of what this code is supposed to achieve.
+
 library(tidyverse)
 library(lubridate)
 library(rgdal)
