@@ -169,3 +169,5 @@ all = all %>%
 
 allexpanded = allexpanded %>%
   filter(is.na(EFFORT.DISTANCE.KM) | EFFORT.DISTANCE.KM <= 20)   ## remove > 20 km travelling lists
+
+sumamry(allexpanded)
