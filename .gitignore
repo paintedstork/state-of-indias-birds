@@ -42,3 +42,6 @@ rsconnect/
 
 # zipped files
 /*.zip
+
+# RStudio project files
+/*.Rproj
