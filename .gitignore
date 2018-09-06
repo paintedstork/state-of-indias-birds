@@ -45,3 +45,11 @@ rsconnect/
 
 # RStudio project files
 /*.Rproj
+
+# all shapefile related files and folders
+/*.dbf
+/*.sbn
+/*.sbx
+/*.shp
+/*.shp.xml
+/*.shx
