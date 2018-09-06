@@ -46,10 +46,15 @@ rsconnect/
 # RStudio project files
 /*.Rproj
 
-# all shapefile related files and folders
+# all shapefile related files
 /*.dbf
 /*.sbn
 /*.sbx
 /*.shp
 /*.shp.xml
 /*.shx
+
+# specific folders in Ashwin's GitHub
+India/
+India Districts/
+India States/
