@@ -39,3 +39,6 @@ rsconnect/
 # raw data files
 .csv
 .txt
+
+# zipped files
+.zip
