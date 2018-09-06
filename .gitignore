@@ -2,8 +2,8 @@
 .Rhistory
 .Rapp.history
 
-# Session Data files
-.RData
+# Session data files
+/*.RData
 
 # Example code in package build process
 *-Ex.R
@@ -37,8 +37,8 @@ rsconnect/
 .Rproj.user
 
 # raw data files
-.csv
-.txt
+/*.csv
+/*.txt
 
 # zipped files
-.zip
+/*.zip
