@@ -3,7 +3,7 @@
 ## read and clean raw data and add important columns like group id, seaonality variables
 ## place raw txt file (India download) in working directory 
 
-readcleanrawdata = function(rawpath = "ebd_IN_relMay-2018.txt")
+readcleanrawdata = function(rawpath = "ebd_IN_relAug-2018.txt")
 {
   require(lubridate)
   require(tidyverse)
@@ -18,72 +18,52 @@ readcleanrawdata = function(rawpath = "ebd_IN_relMay-2018.txt")
   #all = allout %>%
   #  read_ebd()
   
-  data = read.delim(rawpath, sep = "\t", header = T, quote = "", stringsAsFactors = F, na.strings = c(""," ",NA))
-  data = data %>% select(-X)
+  preimp = c("COMMON.NAME","OBSERVATION.COUNT",
+             "LOCALITY.ID","LOCALITY.TYPE",
+             "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
+             "PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM",
+             "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","GROUP.IDENTIFIER","SAMPLING.EVENT.IDENTIFIER","APPROVED","CATEGORY")
   
-  ## filter approved observations, species, slice by single group ID, remove repetitions
+  nms = read.delim(rawpath, nrows = 1, sep = "\t", header = T, quote = "", stringsAsFactors = F, na.strings = c(""," ",NA))
+  nms = names(nms)
+  nms[!(nms %in% preimp)] = "NULL"
+  nms[nms %in% preimp] = NA
   
-  data = data %>% 
-    filter(APPROVED == 1, CATEGORY == "species") %>%
-    ungroup
-  
+  data = read.delim(rawpath, colClasses = nms, sep = "\t", header = T, quote = "", stringsAsFactors = F, na.strings = c(""," ",NA))
+
   ## choosing important variables
   
-  imp = c("GLOBAL.UNIQUE.IDENTIFIER","COMMON.NAME","SCIENTIFIC.NAME","OBSERVATION.COUNT",
-          "COUNTRY.CODE","STATE.CODE","COUNTY.CODE","LOCALITY.ID","LOCALITY.TYPE",
+  imp = c("COMMON.NAME","OBSERVATION.COUNT",
+          "LOCALITY.ID","LOCALITY.TYPE",
           "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
-          "SAMPLING.EVENT.IDENTIFIER","PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM",
-          "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","GROUP.IDENTIFIER")
-  
-  listlevelvars = c("gridg1","gridg2","gridg3","gridg4","gridg5","DISTRICT","ST_NM","GLOBAL.UNIQUE.IDENTIFIER","LAST.EDITED.DATE","COUNTRY","COUNTRY.CODE","STATE",
-                    "STATE.CODE","COUNTY","COUNTY.CODE","IBA.CODE","BCR.CODE","USFWS.CODE","ATLAS.BLOCK","LOCALITY",
-                    "LOCALITY.ID","LOCALITY.TYPE","LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED",
-                    "OBSERVER.ID","SAMPLING.EVENT.IDENTIFIER","PROTOCOL.TYPE","PROTOCOL.CODE","PROJECT.CODE",
-                    "DURATION.MINUTES","EFFORT.DISTANCE.KM","EFFORT.AREA.HA","NUMBER.OBSERVERS","ALL.SPECIES.REPORTED",
-                    "GROUP.IDENTIFIER","group.id","month","year","day","week","fort","LOCALITY.HOTSPOT","no.sp")
-  
-  specieslevelvars = c("TAXONOMIC.ORDER","COMMON.NAME","SCIENTIFIC.NAME","SUBSPECIES.COMMON.NAME",
-                       "SUBSPECIES.SCIENTIFIC.NAME","BREEDING.BIRD.ATLAS.CODE",
-                       "BREEDING.BIRD.ATLAS.CODE","BREEDING.BIRD.ATLAS.CATEGORY","CATEGORY","AGE.SEX")
-  
-  
-  
-  data = data %>%
-    dplyr::select(imp)
-  
-  data$group.id = data$GROUP.IDENTIFIER
-  data = data %>% mutate(group.id = replace(group.id, is.na(group.id), SAMPLING.EVENT.IDENTIFIER[is.na(group.id)]))
-  
-  ## setup eBird data ##
-  
-  ## remove repeats
-  
-  data = data %>%
-    group_by(group.id,COMMON.NAME) %>% slice(1) %>%
-    ungroup()
-  
-  
-  ## set date, add month, year and day columns using package LUBRIDATE
+          "PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM",
+          "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","group.id")
   
   days = c(31,28,31,30,31,30,31,31,30,31,30,31)
   cdays = c(0,31,59,90,120,151,181,212,243,273,304,334)
   
-  data$OBSERVATION.DATE = as.Date(data$OBSERVATION.DATE)
-  data$month = month(data$OBSERVATION.DATE)
-  data$year = year(data$OBSERVATION.DATE)
-  data$day = day(data$OBSERVATION.DATE) + cdays[data$month]
-  data$week = week(data$OBSERVATION.DATE)
-  data$fort = ceiling(data$day/14)
+  ## setup eBird data ##
   
+  ## filter approved observations, species, slice by single group ID, remove repetitions
+  ## remove repeats
+  ## set date, add month, year and day columns using package LUBRIDATE
   ## add number of species column (no.sp)
-  
+
   data = data %>%
+    filter(APPROVED == 1, CATEGORY == "species") %>%
+    mutate(group.id = ifelse(GROUP.IDENTIFIER == "NA", SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER),
+           OBSERVATION_DATE = as.Date(OBSERVATION_DATE), 
+           month = month(OBSERVATION_DATE), year = year(OBSERVATION_DATE),
+           day = day(OBSERVATION_DATE) + cdays[month], week = week(OBSERVATION_DATE),
+           fort = ceiling(day/14)) %>%
+    group_by(group.id,COMMON.NAME) %>% slice(1) %>% ungroup %>%
+    dplyr::select(imp) %>%
     group_by(group.id) %>% mutate(no.sp = n_distinct(COMMON.NAME)) %>%
     ungroup
   
-  temp = data %>%
-    group_by(COMMON.NAME) %>% slice(1) %>% ungroup() %>%
-    dplyr::select(intersect(imp,specieslevelvars))
+
+    temp = data %>%
+    group_by(COMMON.NAME) %>% slice(1) %>% ungroup()
   
   write.csv(temp,"indiaspecieslist.csv")
   
@@ -560,11 +540,11 @@ expandbyspecies = function(data, speclist)
   expanded = expanded %>% mutate(OBSERVATION.COUNT = replace(OBSERVATION.COUNT, is.na(OBSERVATION.COUNT), "0"))
   
   
-  imp = c("gridg1","gridg2","gridg3","gridg4","gridg5","DISTRICT","ST_NM","GLOBAL.UNIQUE.IDENTIFIER","COMMON.NAME","SCIENTIFIC.NAME","OBSERVATION.COUNT",
-          "COUNTRY.CODE","STATE.CODE","COUNTY.CODE","LOCALITY.ID","LOCALITY.TYPE",
+  imp = c("gridg1","gridg2","gridg3","gridg4","gridg5","DISTRICT","ST_NM","COMMON.NAME","OBSERVATION.COUNT",
+          "LOCALITY.ID","LOCALITY.TYPE",
           "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
-          "SAMPLING.EVENT.IDENTIFIER","PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM",
-          "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","GROUP.IDENTIFIER","group.id","month","year",
+          "PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM",
+          "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","group.id","month","year",
           "day","week","fort","LOCALITY.HOTSPOT","no.sp")
   
   listlevelvars = c("gridg1","gridg2","gridg3","gridg4","gridg5","DISTRICT","ST_NM","GLOBAL.UNIQUE.IDENTIFIER","LAST.EDITED.DATE","COUNTRY","COUNTRY.CODE","STATE",
@@ -800,4 +780,192 @@ freqcompare = function(data,species,tempres,spaceres)
   f$freq = c(f1,f2,f3,f4,f5,f6)
   
   return(f)
+}
+
+
+
+######################################################################################
+
+
+## prepare data imported from CLOUD for spatial analyses, add map variables, grids
+## place the 'maps' workspace in working directory
+## returns data
+
+datafromcloud = function(speclist, rawpath = "aug2018", mappath = "maps.RData")
+{
+  require(lubridate)
+  require(tidyverse)
+  require(bigrquery)
+  require(DBI)
+  require(stringr)
+  
+  
+  bq_projects() 
+  
+  con = dbConnect(
+    bigrquery::bigquery(),
+    project = "stateofindiasbirds",
+    dataset = "ebird",
+    billing = "stateofindiasbirds"
+  )
+  
+  ## choosing important variables
+  
+  days = c(31,28,31,30,31,30,31,31,30,31,30,31)
+  cdays = c(0,31,59,90,120,151,181,212,243,273,304,334)
+  
+  imp = c("COMMON_NAME","OBSERVATION_COUNT",
+          "LOCALITY_ID","LOCALITY_TYPE",
+          "LATITUDE","LONGITUDE","OBSERVATION_DATE","TIME_OBSERVATIONS_STARTED","OBSERVER_ID",
+          "PROTOCOL_TYPE","DURATION_MINUTES","EFFORT_DISTANCE_KM",
+          "NUMBER_OBSERVERS","ALL_SPECIES_REPORTED","group_id")
+  
+  listlevelvars = c("gridg1","gridg2","gridg3","gridg4","gridg5","DISTRICT","ST_NM","GLOBAL_UNIQUE_IDENTIFIER","LAST_EDITED_DATE","COUNTRY","COUNTRY_CODE","STATE",
+                    "STATE_CODE","COUNTY","COUNTY_CODE","IBA_CODE","BCR_CODE","USFWS_CODE","ATLAS_BLOCK","LOCALITY",
+                    "LOCALITY_ID","LOCALITY_TYPE","LATITUDE","LONGITUDE","OBSERVATION_DATE","TIME_OBSERVATIONS_STARTED",
+                    "OBSERVER_ID","SAMPLING_EVENT_IDENTIFIER","PROTOCOL_TYPE","PROTOCOL_CODE","PROJECT_CODE",
+                    "DURATION_MINUTES","EFFORT_DISTANCE_KM","EFFORT_AREA_HA","NUMBER_OBSERVERS","ALL_SPECIES_REPORTED",
+                    "GROUP_IDENTIFIER","group_id","month","year","day","week","fort","LOCALITY_HOTSPOT","no_sp")
+  
+  specieslevelvars = c("TAXONOMIC_ORDER","COMMON_NAME","SCIENTIFIC_NAME","SUBSPECIES_COMMON_NAME",
+                       "SUBSPECIES_SCIENTIFIC_NAME","BREEDING_BIRD_ATLAS_CODE",
+                       "BREEDING_BIRD_ATLAS_CODE","BREEDING_BIRD_ATLAS_CATEGORY","CATEGORY","AGE_SEX")
+  
+  ## filter approved observations, species, slice by single group ID, remove repetitions
+  
+  data1 = 
+    tbl(con, rawpath) %>% 
+    filter(APPROVED == 1, CATEGORY == "species") %>%
+    mutate(group_id = ifelse(GROUP_IDENTIFIER == "NA", SAMPLING_EVENT_IDENTIFIER, GROUP_IDENTIFIER)) %>%
+    dplyr::select(imp) %>%
+    distinct(group_id,COMMON_NAME) %>%
+    group_by(group_id) %>% mutate(no_sp = length(COMMON_NAME)) %>%
+    ungroup() %>%
+    filter(COMMON_NAME %in% speclist) %>%
+    collect()
+  
+  data2 = 
+    tbl(con, rawpath) %>% 
+    filter(APPROVED == 1, CATEGORY == "species") %>%
+    mutate(group_id = ifelse(GROUP_IDENTIFIER == "NA", SAMPLING_EVENT_IDENTIFIER, GROUP_IDENTIFIER)) %>%
+    dplyr::select(imp) %>%
+    filter(COMMON_NAME %in% speclist) %>%
+    collect()
+  
+  data = left_join(data1,data2)
+  
+  
+  ## setup eBird data ##
+  
+  data = data %>%
+    group_by(group_id,COMMON_NAME) %>% slice(1) %>% ungroup %>%
+    mutate(OBSERVATION_DATE = as.Date(OBSERVATION_DATE), 
+           month = month(OBSERVATION_DATE), year = year(OBSERVATION_DATE),
+           day = day(OBSERVATION_DATE) + cdays[month], week = week(OBSERVATION_DATE),
+           fort = ceiling(day/14))
+  
+  
+  nms = names(data)
+  nms = str_replace_all(nms,"_",".")
+  names(data) = nms
+  
+  require(data.table)
+  require(sp)
+  require(rgeos)
+  
+  ## add map details to eBird data
+  
+  load(mappath)
+  
+  # add columns with DISTRICT and ST_NM to main data 
+  
+  temp = data %>% group_by(group.id) %>% slice(1) # same group ID, same grid/district/state 
+  
+  rownames(temp) = temp$group.id # only to setup adding the group.id column for the future left_join
+  coordinates(temp) = ~LONGITUDE + LATITUDE # convert to SPDF?
+  #proj4string(temp) = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+  temp = over(temp,districtmap) # returns only ATTRIBUTES of districtmap (DISTRICT and ST_NM)
+  temp = data.frame(temp) # convert into data frame for left_join
+  temp$group.id = rownames(temp) # add column to join with the main data
+  data = left_join(temp,data)
+  
+  
+  # add columns with GRID ATTRIBUTES to main data
+  
+  temp = data %>% group_by(group.id) %>% slice(1)
+  
+  rownames(temp) = temp$group.id
+  coordinates(temp) = ~LONGITUDE + LATITUDE
+  temp = over(temp,gridmapg1)
+  temp = data.frame(temp)
+  temp$group.id = rownames(temp)
+  data = left_join(temp,data)
+  names(data)[1] = "gridg1"
+  data$gridg1 = as.factor(data$gridg1)
+  
+  temp = data %>% group_by(group.id) %>% slice(1)
+  
+  rownames(temp) = temp$group.id
+  coordinates(temp) = ~LONGITUDE + LATITUDE
+  temp = over(temp,gridmapg2)
+  temp = data.frame(temp)
+  temp$group.id = rownames(temp)
+  data = left_join(temp,data)
+  names(data)[1] = "gridg2"
+  data$gridg2 = as.factor(data$gridg2)
+  
+  temp = data %>% group_by(group.id) %>% slice(1)
+  
+  rownames(temp) = temp$group.id
+  coordinates(temp) = ~LONGITUDE + LATITUDE
+  temp = over(temp,gridmapg3)
+  temp = data.frame(temp)
+  temp$group.id = rownames(temp)
+  data = left_join(temp,data)
+  names(data)[1] = "gridg3"
+  data$gridg3 = as.factor(data$gridg3)
+  
+  temp = data %>% group_by(group.id) %>% slice(1)
+  
+  rownames(temp) = temp$group.id
+  coordinates(temp) = ~LONGITUDE + LATITUDE
+  temp = over(temp,gridmapg4)
+  temp = data.frame(temp)
+  temp$group.id = rownames(temp)
+  data = left_join(temp,data)
+  names(data)[1] = "gridg4"
+  data$gridg4 = as.factor(data$gridg4)
+  
+  temp = data %>% group_by(group.id) %>% slice(1)
+  
+  rownames(temp) = temp$group.id
+  coordinates(temp) = ~LONGITUDE + LATITUDE
+  temp = over(temp,gridmapg5)
+  temp = data.frame(temp)
+  temp$group.id = rownames(temp)
+  data = left_join(temp,data)
+  names(data)[1] = "gridg5"
+  data$gridg5 = as.factor(data$gridg5)
+  
+  ## 
+  
+  ## move personal locations to nearest hotspots
+  
+  allhotspots = data %>% filter(LOCALITY.TYPE == "H") %>%
+    group_by(LOCALITY.ID) %>% summarize(max(LATITUDE),max(LONGITUDE)) %>% # get lat long for each hotspot
+    ungroup
+  
+  names(allhotspots)[c(2,3)] = c("LATITUDE","LONGITUDE")
+  
+  # using DATA TABLES below
+  
+  setDT(data) # useful for extremely large data frames as each object will then be modified in place without creating 
+  # a copy, creates a 'reference' apparently; this will considerably reduce RAM usage 
+  hotspots = as.matrix(allhotspots[, 3:2])
+  
+  # again 'refernce' based, choosing nearest hotspots to each location
+  data[, LOCALITY.HOTSPOT := allhotspots[which.min(spDists(x = hotspots, y = cbind(LONGITUDE, LATITUDE))),]$LOCALITY.ID, by=.(LONGITUDE, LATITUDE)] 
+  data = as.data.frame(data) # back into dataframe
+  
+  return(data)
 }
