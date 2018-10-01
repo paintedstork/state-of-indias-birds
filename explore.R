@@ -6,9 +6,9 @@ theme_set(theme_tufte())
 source('~/GitHub/state-of-indias-birds/functions.R')
 
 
+# load workspace if working directly from system
 
-
-# load("dataforspatialanalyses.RData") for exploration without pulling from the cloud
+load("dataforspatialanalyses.RData") #for exploration without pulling from the cloud
 
 ## pull data from the cloud
 
