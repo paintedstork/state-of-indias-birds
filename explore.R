@@ -3,7 +3,12 @@ library(ggthemes)
 
 theme_set(theme_tufte())
 
-# load("dataforspatialanalyses.RData") before using the non-cloud functions
+source('~/GitHub/state-of-indias-birds/functions.R')
+
+
+
+
+# load("dataforspatialanalyses.RData") for exploration without pulling from the cloud
 
 ## pull data from the cloud
 
