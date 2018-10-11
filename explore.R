@@ -5,10 +5,36 @@ theme_set(theme_tufte())
 
 source('~/GitHub/state-of-indias-birds/functions.R')
 
+load("dataforspatialanalyses.RData")
 
-# load workspace if working directly from system
+#ggp = plotfreqmap(data, "Black-headed Ibis", "g4")
 
-load("dataforspatialanalyses.RData") #for exploration without pulling from the cloud
+WrVu = expandbyspecies(data,"White-rumped Vulture")
+RrPa = expandbyspecies(data,"Rose-ringed Parakeet")
+HoSp = expandbyspecies(data,"House Sparrow")
+EgVu = expandbyspecies(data,"Egyptian Vulture")
+InVu = expandbyspecies(data,"Indian Vulture")
+HoCr = expandbyspecies(data,"House Crow")
+LbCr = expandbyspecies(data,"Large-billed Crow")
+StEa = expandbyspecies(data,"Steppe Eagle")
+TaEa = expandbyspecies(data,"Tawny Eagle")
+BlKi = expandbyspecies(data,"Black Kite")
+CoMy = expandbyspecies(data,"Common Myna")
+JuMy = expandbyspecies(data,"JuMy")
+GrCo = expandbyspecies(data,"Great Cormorant")
+
+CoCu = expandbyspecies(data,"Common Cuckoo")
+AmFa = expandbyspecies(data,"Amur Falcon")
+
+f = freqcompare(data,"House Sparrow",tempres="none",spaceres="g4",trends=T,exd=NA)
+
+
+
+
+
+
+
+
 
 ## pull data from the cloud
 

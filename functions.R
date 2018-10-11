@@ -360,7 +360,7 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
   #  coord_map()
   
   plotindiamap = ggplot() +
-    geom_path(data = fortify(indiamap), aes(x=long, y=lat, group=group), colour = 'black')+  
+    geom_polygon(data = fortify(indiamap), aes(x=long, y=lat, group=group), colour = 'black', fill = "grey92")+  
     scale_x_continuous(expand = c(0,0)) +
     scale_y_continuous(expand = c(0,0)) +
     theme_bw()+
@@ -488,7 +488,10 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
   {
     plot = plotindiamap +
       geom_polygon(data = plotdf, aes(x = long, y = lat, group = group, fill = freq)) +
+      geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'grey92', fill = 'grey92')+
+      geom_path(data = border, aes(x = long, y = lat, group = group), col = 'black') +
       scale_fill_viridis() +
+      theme(legend.justification=c(1,1), legend.position=c(0.99,0.99)) +
       theme(legend.title = element_blank(), legend.text = element_text(size = 8))
   }
   else
@@ -496,9 +499,10 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
     load(maskpath)
     plot = plotindiamap +
       geom_polygon(data = plotdf, aes(x = long, y = lat, group = group, fill = freq)) +
-      geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'white', fill = 'white')+
+      geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'grey92', fill = 'grey92')+
       geom_path(data = border, aes(x = long, y = lat, group = group), col = 'black') +
       scale_fill_viridis() +
+      theme(legend.justification=c(1,1), legend.position=c(0.99,0.99)) +
       theme(legend.title = element_blank(), legend.text = element_text(size = 8))
   }
   
@@ -519,14 +523,29 @@ expandbyspecies = function(data, species)
 {
   require(tidyverse)
   
+  data = data %>%
+    mutate(timegroups = as.character(year)) %>%
+    mutate(timegroups = ifelse(year < 1990, "before 1990", timegroups)) %>%
+    mutate(timegroups = ifelse(year >= 1990 & year <= 1999, "1990-1999", timegroups)) %>%
+    mutate(timegroups = ifelse(year > 1999 & year <= 2005, "2000-2005", timegroups)) %>%
+    mutate(timegroups = ifelse(year > 2005 & year <= 2010, "2006-2010", timegroups)) %>%
+    mutate(timegroups = ifelse(year > 2010 & year <= 2013, "2011-2013", timegroups)) %>%
+    mutate(timegroups = ifelse(year == 2014, "2014", timegroups)) %>%
+    mutate(timegroups = ifelse(year == 2015, "2015", timegroups)) %>%
+    mutate(timegroups = ifelse(year == 2016, "2016", timegroups)) %>%
+    mutate(timegroups = ifelse(year == 2017, "2017", timegroups)) %>%
+    mutate(timegroups = ifelse(year == 2018, "2018", timegroups))
+  
+  data$timegroups = as.factor(data$timegroups)
+  
   ## considers only complete lists
   
-  checklistinfo = data %>%
-    distinct(gridg1,gridg2,gridg3,gridg4,gridg5,DISTRICT,ST_NM,
-             LOCALITY.ID,LOCALITY.TYPE,LATITUDE,LONGITUDE,OBSERVATION.DATE,TIME.OBSERVATIONS.STARTED,
-             OBSERVER.ID,PROTOCOL.TYPE,DURATION.MINUTES,EFFORT.DISTANCE.KM,NUMBER.OBSERVERS,ALL.SPECIES.REPORTED,
-             group.id,month,year,day,week,fort,LOCALITY.HOTSPOT,no.sp)
-  
+    checklistinfo = data %>%
+      distinct(gridg1,gridg2,gridg3,gridg4,gridg5,DISTRICT,ST_NM,
+               LOCALITY.ID,LOCALITY.TYPE,LATITUDE,LONGITUDE,OBSERVATION.DATE,TIME.OBSERVATIONS.STARTED,
+               OBSERVER.ID,PROTOCOL.TYPE,DURATION.MINUTES,EFFORT.DISTANCE.KM,NUMBER.OBSERVERS,ALL.SPECIES.REPORTED,
+               group.id,month,year,day,week,fort,LOCALITY.HOTSPOT,no.sp,timegroups)
+
   checklistinfo = checklistinfo %>%
     filter(ALL.SPECIES.REPORTED == 1) %>%
     group_by(group.id) %>% slice(1) %>% ungroup
@@ -566,10 +585,27 @@ expandbyspecies = function(data, species)
 ## spaceres can be 40 and 80 km ("g2","g4","none")
 ## returns 6 values
 
-freqcompare = function(data,species,tempres="none",spaceres="none")
+freqcompare = function(data,species,tempres="none",spaceres="none",year="none",bymonth="none",
+                       trends=F,exd=NA)
 {
   require(tidyverse)
   require(lme4)
+  
+  data1 = data
+  data = data %>%
+    mutate(timegroups = as.character(year)) %>%
+    mutate(timegroups = ifelse(year < 1990, "before 1990", timegroups)) %>%
+    mutate(timegroups = ifelse(year >= 1990 & year <= 1999, "1990-1999", timegroups)) %>%
+    mutate(timegroups = ifelse(year > 1999 & year <= 2005, "2000-2005", timegroups)) %>%
+    mutate(timegroups = ifelse(year > 2005 & year <= 2010, "2006-2010", timegroups)) %>%
+    mutate(timegroups = ifelse(year > 2010 & year <= 2013, "2011-2013", timegroups)) %>%
+    mutate(timegroups = ifelse(year == 2014, "2014", timegroups)) %>%
+    mutate(timegroups = ifelse(year == 2015, "2015", timegroups)) %>%
+    mutate(timegroups = ifelse(year == 2016, "2016", timegroups)) %>%
+    mutate(timegroups = ifelse(year == 2017, "2017", timegroups)) %>%
+    mutate(timegroups = ifelse(year == 2018, "2018", timegroups))
+  
+  data$timegroups = as.factor(data$timegroups)
   
   ## considers only complete lists
   
@@ -645,81 +681,133 @@ freqcompare = function(data,species,tempres="none",spaceres="none")
   
   ## overall for country
   
-  f1 = data %>% 
-    mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-    filter(COMMON.NAME == species) %>%
-    summarize(freq = n()/max(lists))
+  if (year == "none" & bymonth == "none" & !isTRUE(trends))
+  {
+    f1 = data %>% 
+      mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+      filter(COMMON.NAME == species) %>%
+      summarize(freq = n()/max(lists))
+  }
+  
+  if (isTRUE(trends))
+  {
+    f1 = data %>% 
+      group_by(timegroups) %>%
+      mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+      filter(COMMON.NAME == species) %>%
+      group_by(timegroups) %>% summarize(freq = n()/max(lists)) %>% ungroup()
+    
+    f1$timegroups = as.character(f1$timegroups)
+  }
   
   ## averaged across g5
   
-  temp = data %>% 
-    group_by(gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-    filter(COMMON.NAME == species) %>%
-    group_by(gridg5) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-    ungroup()
+  if (year == "none" & bymonth == "none" & !isTRUE(trends))
+  {
+    temp = data %>% 
+      group_by(gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+      filter(COMMON.NAME == species) %>%
+      group_by(gridg5) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+      ungroup()
+    
+    f2 = temp %>%
+      summarize(freq = mean(freq))
+  }
   
-  f2 = temp %>%
-    summarize(freq = mean(freq))
-  
-  ## averaged across g3 and g5
-  
-  temp = data %>% 
-    group_by(gridg5,gridg3) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-    filter(COMMON.NAME == species) %>%
-    group_by(gridg5,gridg3) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-    ungroup()
-  
-  temp = temp %>% 
-    group_by(gridg5) %>% summarize(freq = mean(freq)) %>%
-    ungroup()
-  
-  f3 = temp %>%
-    summarize(freq = mean(freq))
-  
-  ## averaged across g1, g3 and g5
-  
-  temp = data %>% 
-    group_by(gridg5,gridg3,gridg1) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-    filter(COMMON.NAME == species) %>%
-    group_by(gridg5,gridg3,gridg1) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-    ungroup()
-  
-  temp = temp %>% 
-    group_by(gridg5,gridg3) %>% summarize(freq = mean(freq)) %>%
-    ungroup()
-  
-  temp = temp %>% 
-    group_by(gridg5) %>% summarize(freq = mean(freq)) %>%
-    ungroup()
-  
-  f4 = temp %>%
-    summarize(freq = mean(freq))
-  
+  if (isTRUE(trends))
+  {
+    temp = data %>% 
+      group_by(timegroups,gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+      filter(COMMON.NAME == species) %>%
+      group_by(timegroups,gridg5) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+      ungroup()
+    
+    f2 = temp %>%
+      group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+    
+    f2$timegroups = as.character(f2$timegroups)
+  }
+    
+    
   ## expand data for models
   
-  ed = expandbyspecies(data,species)
+  if (is.na(exd))
+  {
+    ed = expandbyspecies(data1,species)
+  }
+  
+  if (!is.na(exd))
+  {
+    ed = exd
+  }
   
   ## model 1
   
-  m1 = glmer(OBSERVATION.COUNT ~ 
-               log(no.sp) + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+  if (year == "none" & bymonth == "none" & !isTRUE(trends))
+  {
+    m1 = glmer(OBSERVATION.COUNT ~ 
+                 log(no.sp) + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+    
+    f5 = predict(m1, data.frame(
+      no.sp = 20),
+      type="response", re.form = NA)
+  }
   
-  f5 = predict(m1, data.frame(
-    no.sp = 20),
-    type="response", re.form = NA)
+  if (isTRUE(trends))
+  {
+    m1 = glmer(OBSERVATION.COUNT ~ 
+                 log(no.sp) + timegroups + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+    
+    f5 = data.frame(unique(data$timegroups))
+    names(f5) = "timegroups"
+    f5$freq = predict(m1, data.frame(timegroups = f5$timegroups,
+      no.sp = 20),
+      type="response", re.form = NA)
+    f5$timegroups = as.character(f5$timegroups)
+  }
   
   ## model 2
   
-  m2 = glmer(OBSERVATION.COUNT ~ 
-               log(no.sp) + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+  if (year == "none" & bymonth == "none" & !isTRUE(trends))
+  {
+    m2 = glmer(OBSERVATION.COUNT ~ 
+                 log(no.sp) + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+    
+    f6 = predict(m2, data.frame(
+      no.sp = 20),
+      type="response", re.form = NA)
+  }
   
-  f6 = predict(m2, data.frame(
-    no.sp = 20),
-    type="response", re.form = NA)
+  if (isTRUE(trends))
+  {
+    m2 = glmer(OBSERVATION.COUNT ~ 
+                 log(no.sp) + timegroups + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+    f6 = data.frame(unique(data$timegroups))
+    names(f6) = "timegroups"
+    f6$freq = predict(m2, data.frame(timegroups = f5$timegroups,
+      no.sp = 20),
+      type="response", re.form = NA)
+    f6$timegroups = as.character(f6$timegroups)
+  }
   
-  f = data.frame(method = c("overall","g5","g5/g3","g5/g3/g1","modelhotspots","modelgrids"))
-  f$freq = c(f1,f2,f3,f4,f5,f6)
+  if (year == "none" & bymonth == "none" & !isTRUE(trends))
+  {
+    f = data.frame(method = c("overall","g5","modelhotspots","modelgrids"))
+    f$freq = c(f1,f2,f5,f6)
+  }
   
+  if (isTRUE(trends))
+  {
+    l = length(unique(data$timegroups))
+    f = data.frame(method = c(rep("overall",l),rep("g5",l),rep("modelhotspots",l),rep("modelgrids",l)))
+    f$timegroups = c(f1$timegroups,f2$timegroups,f5$timegroups,f6$timegroups)
+    f$freq = c(f1$freq,f2$freq,f5$freq,f6$freq)
+    f$timegroups = factor(f$timegroups, levels = c("before 1990","1990-1999","2000-2005","2006-2010",
+                                                   "2011-2013","2014","2015","2016","2017","2018"))
+    f = f[order(f$method,f$timegroups),]
+    f$species = species
+  }
+    
   return(f)
 }
 
