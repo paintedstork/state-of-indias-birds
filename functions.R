@@ -583,9 +583,9 @@ expandbyspecies = function(data, species)
 ## to output a dataframe that compares 'abundances' from summaries and models
 ## tempres can be "fortnight", "month", "none"
 ## spaceres can be 40 and 80 km ("g2","g4","none")
-## returns 6 values
+## returns 4 values or 4 x 10 values for trends
 
-freqcompare = function(data,species,tempres="none",spaceres="none",year="none",bymonth="none",
+freqtrends = function(data,species,tempres="none",spaceres="none",
                        trends=F,exd=NA)
 {
   require(tidyverse)
@@ -681,7 +681,7 @@ freqcompare = function(data,species,tempres="none",spaceres="none",year="none",b
   
   ## overall for country
   
-  if (year == "none" & bymonth == "none" & !isTRUE(trends))
+  if (!isTRUE(trends))
   {
     f1 = data %>% 
       mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
@@ -702,7 +702,7 @@ freqcompare = function(data,species,tempres="none",spaceres="none",year="none",b
   
   ## averaged across g5
   
-  if (year == "none" & bymonth == "none" & !isTRUE(trends))
+  if (!isTRUE(trends))
   {
     temp = data %>% 
       group_by(gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
@@ -743,7 +743,7 @@ freqcompare = function(data,species,tempres="none",spaceres="none",year="none",b
   
   ## model 1
   
-  if (year == "none" & bymonth == "none" & !isTRUE(trends))
+  if (!isTRUE(trends))
   {
     m1 = glmer(OBSERVATION.COUNT ~ 
                  log(no.sp) + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
@@ -768,7 +768,7 @@ freqcompare = function(data,species,tempres="none",spaceres="none",year="none",b
   
   ## model 2
   
-  if (year == "none" & bymonth == "none" & !isTRUE(trends))
+  if (!isTRUE(trends))
   {
     m2 = glmer(OBSERVATION.COUNT ~ 
                  log(no.sp) + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
@@ -790,7 +790,7 @@ freqcompare = function(data,species,tempres="none",spaceres="none",year="none",b
     f6$timegroups = as.character(f6$timegroups)
   }
   
-  if (year == "none" & bymonth == "none" & !isTRUE(trends))
+  if (!isTRUE(trends))
   {
     f = data.frame(method = c("overall","g5","modelhotspots","modelgrids"))
     f$freq = c(f1,f2,f5,f6)

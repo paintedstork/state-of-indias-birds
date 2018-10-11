@@ -26,7 +26,7 @@ GrCo = expandbyspecies(data,"Great Cormorant")
 CoCu = expandbyspecies(data,"Common Cuckoo")
 AmFa = expandbyspecies(data,"Amur Falcon")
 
-f = freqcompare(data,"House Sparrow",tempres="none",spaceres="g4",trends=T,exd=NA)
+f = freqtrends(data,"House Sparrow",tempres="none",spaceres="g4",trends=T,exd=NA)
 
 
 
