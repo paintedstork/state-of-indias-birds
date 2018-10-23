@@ -30,7 +30,7 @@ readcleanrawdata = function(rawpath = "ebd_IN_relAug-2018.txt")
   nms[nms %in% preimp] = NA
   
   data = read.delim(rawpath, colClasses = nms, sep = "\t", header = T, quote = "", stringsAsFactors = F, na.strings = c(""," ",NA))
-
+  
   ## choosing important variables
   
   imp = c("COMMON.NAME","OBSERVATION.COUNT",
@@ -48,7 +48,7 @@ readcleanrawdata = function(rawpath = "ebd_IN_relAug-2018.txt")
   ## remove repeats
   ## set date, add month, year and day columns using package LUBRIDATE
   ## add number of species column (no.sp)
-
+  
   data = data %>%
     filter(APPROVED == 1) %>%
     mutate(group.id = ifelse(is.na(GROUP.IDENTIFIER), SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER)) %>%
@@ -61,8 +61,8 @@ readcleanrawdata = function(rawpath = "ebd_IN_relAug-2018.txt")
     group_by(group.id) %>% mutate(no.sp = n_distinct(COMMON.NAME)) %>%
     ungroup
   
-
-    temp = data %>%
+  
+  temp = data %>%
     group_by(COMMON.NAME) %>% slice(1) %>% ungroup()
   
   write.csv(temp,"indiaspecieslist.csv")
@@ -328,6 +328,7 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
   require(tidyverse)
   require(ggfortify)
   require(viridis)
+  require(RColorBrewer)
   
   load(mappath)
   
@@ -360,7 +361,7 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
   #  coord_map()
   
   plotindiamap = ggplot() +
-    geom_polygon(data = fortify(indiamap), aes(x=long, y=lat, group=group), colour = 'black', fill = "grey92")+  
+    geom_polygon(data = fortify(statemap), aes(x=long, y=lat, group=group), colour = 'black', fill = "grey92")+  
     scale_x_continuous(expand = c(0,0)) +
     scale_y_continuous(expand = c(0,0)) +
     theme_bw()+
@@ -378,15 +379,18 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
           panel.background = element_blank())+
     coord_map()
   
+  #data = data %>%
+  #  filter(year >=2013)
+  
   
   if (resolution == "state")
   {
     temp = data %>% 
+      #group_by(ST_NM) %>%
+      #mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+      #filter(COMMON.NAME == species, lists > 5) %>%
       group_by(ST_NM) %>%
-      mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species) %>%
-      group_by(ST_NM) %>%
-      summarize(freq = n()/max(lists))
+      summarize(freq = n_distinct(COMMON.NAME))
     
     fortified = fortify(statemap, region = c("ST_NM"))
     fortified$id = as.factor(fortified$id)
@@ -398,10 +402,10 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
   {
     temp = data %>% 
       group_by(DISTRICT) %>%
-      mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species) %>%
+      #mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+      #filter(COMMON.NAME == species, lists > 5) %>%
       group_by(DISTRICT) %>%
-      summarize(freq = n()/max(lists))
+      summarize(freq = n_distinct(COMMON.NAME))
     
     fortified = fortify(districtmap, region = c("DISTRICT"))
     fortified$id = as.factor(fortified$id)
@@ -414,7 +418,7 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
     temp = data %>% 
       group_by(gridg1) %>%
       mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species) %>%
+      filter(COMMON.NAME == species, lists > 5) %>%
       group_by(gridg1) %>%
       summarize(freq = n()/max(lists))
     
@@ -444,7 +448,7 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
     temp = data %>% 
       group_by(gridg3) %>%
       mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species) %>%
+      filter(COMMON.NAME == species, lists > 5) %>%
       group_by(gridg3) %>%
       summarize(freq = n()/max(lists))
     
@@ -458,10 +462,10 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
   {
     temp = data %>% 
       group_by(gridg4) %>%
-      mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species) %>%
+      #mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+      #filter(COMMON.NAME == species, lists > 5) %>%
       group_by(gridg4) %>%
-      summarize(freq = n()/max(lists))
+      summarize(freq = max(specs))
     
     fortified = fortify(gridmapg4, region = c("id"))
     fortified$id = as.factor(fortified$id)
@@ -474,7 +478,7 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
     temp = data %>% 
       group_by(gridg5) %>%
       mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species) %>%
+      filter(COMMON.NAME == species, lists > 5) %>%
       group_by(gridg5) %>%
       summarize(freq = n()/max(lists))
     
@@ -488,22 +492,27 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
   {
     plot = plotindiamap +
       geom_polygon(data = plotdf, aes(x = long, y = lat, group = group, fill = freq)) +
-      geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'grey92', fill = 'grey92')+
-      geom_path(data = border, aes(x = long, y = lat, group = group), col = 'black') +
-      scale_fill_viridis() +
+      #geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'grey92', fill = 'grey92')+
+      geom_path(data = fortify(statemap), aes(x = long, y = lat, group = group), col = 'black', size = 1) +
+      #geom_point(data = data.frame(lat = 31.431, long = 78.251), aes(x = long, y = lat), size = 3, col = "blue") +
+      scale_fill_gradientn(colours = heat.colors(3), trans = 'reverse') +
       theme(legend.justification=c(1,1), legend.position=c(0.99,0.99)) +
-      theme(legend.title = element_blank(), legend.text = element_text(size = 8))
+      theme(legend.title = element_blank(), legend.text = element_text(size = 8)) +
+      guides(fill = guide_legend(reverse = TRUE)) 
   }
   else
   {
     load(maskpath)
     plot = plotindiamap +
       geom_polygon(data = plotdf, aes(x = long, y = lat, group = group, fill = freq)) +
-      geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'grey92', fill = 'grey92')+
-      geom_path(data = border, aes(x = long, y = lat, group = group), col = 'black') +
-      scale_fill_viridis() +
+      geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'white', fill = 'white')+
+      geom_path(data = fortify(statemap), aes(x = long, y = lat, group = group), col = 'black', size = 1) +
+      scale_fill_gradientn(colours = heat.colors(3), trans = 'reverse') +
       theme(legend.justification=c(1,1), legend.position=c(0.99,0.99)) +
-      theme(legend.title = element_blank(), legend.text = element_text(size = 8))
+      theme(legend.title = element_blank(), legend.text = element_text(size = 8)) +
+      guides(fill = guide_legend(reverse = TRUE)) +
+      ggtitle(species) +
+      theme(plot.title = element_text(hjust = 0.5, vjust = 0.1, size = 20))
   }
   
   
@@ -540,12 +549,12 @@ expandbyspecies = function(data, species)
   
   ## considers only complete lists
   
-    checklistinfo = data %>%
-      distinct(gridg1,gridg2,gridg3,gridg4,gridg5,DISTRICT,ST_NM,
-               LOCALITY.ID,LOCALITY.TYPE,LATITUDE,LONGITUDE,OBSERVATION.DATE,TIME.OBSERVATIONS.STARTED,
-               OBSERVER.ID,PROTOCOL.TYPE,DURATION.MINUTES,EFFORT.DISTANCE.KM,NUMBER.OBSERVERS,ALL.SPECIES.REPORTED,
-               group.id,month,year,day,week,fort,LOCALITY.HOTSPOT,no.sp,timegroups)
-
+  checklistinfo = data %>%
+    distinct(gridg1,gridg2,gridg3,gridg4,gridg5,DISTRICT,ST_NM,
+             LOCALITY.ID,LOCALITY.TYPE,LATITUDE,LONGITUDE,OBSERVATION.DATE,TIME.OBSERVATIONS.STARTED,
+             OBSERVER.ID,PROTOCOL.TYPE,DURATION.MINUTES,EFFORT.DISTANCE.KM,NUMBER.OBSERVERS,ALL.SPECIES.REPORTED,
+             group.id,month,year,day,week,fort,LOCALITY.HOTSPOT,no.sp,timegroups)
+  
   checklistinfo = checklistinfo %>%
     filter(ALL.SPECIES.REPORTED == 1) %>%
     group_by(group.id) %>% slice(1) %>% ungroup
@@ -584,14 +593,14 @@ expandbyspecies = function(data, species)
 ## tempres can be "fortnight", "month", "none"
 ## spaceres can be 40 and 80 km ("g2","g4","none")
 ## returns 4 values or 4 x 10 values for trends
+## the type/scale of analyses - "
 
 freqtrends = function(data,species,tempres="none",spaceres="none",
-                       trends=F,exd=NA)
+                      trends=F)
 {
   require(tidyverse)
   require(lme4)
   
-  data1 = data
   data = data %>%
     mutate(timegroups = as.character(year)) %>%
     mutate(timegroups = ifelse(year < 1990, "before 1990", timegroups)) %>%
@@ -668,17 +677,20 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
       distinct(gridg4)
   }
   
+  fl = 0
+  
   if (tempres == "none" & spaceres == "none")
   {
-    temp = data %>%
-      filter(COMMON.NAME == species) %>%
-      dplyr::select(gridg2,fort)
+    fl = 1
   }
   
   ## filter only those combinations
   
-  data = temp %>% left_join(data)
-  
+  if (fl == 0)
+  {
+    data = temp %>% left_join(data)
+  }
+
   ## overall for country
   
   if (!isTRUE(trends))
@@ -727,19 +739,20 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
     
     f2$timegroups = as.character(f2$timegroups)
   }
-    
-    
+  
+  data1 = data %>% select(-timegroups)
+  
   ## expand data for models
   
-  if (is.na(exd))
-  {
-    ed = expandbyspecies(data1,species)
-  }
+  #if (is.na(exd))
+  #{
+  ed = expandbyspecies(data1,species)
+  #}
   
-  if (!is.na(exd))
-  {
-    ed = exd
-  }
+  #if (!is.na(exd))
+  #{
+  #  ed = exd
+  #}
   
   ## model 1
   
@@ -761,55 +774,183 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
     f5 = data.frame(unique(data$timegroups))
     names(f5) = "timegroups"
     f5$freq = predict(m1, data.frame(timegroups = f5$timegroups,
-      no.sp = 20),
-      type="response", re.form = NA)
+                                     no.sp = 20),
+                      type="response", re.form = NA)
     f5$timegroups = as.character(f5$timegroups)
   }
   
   ## model 2
   
-  if (!isTRUE(trends))
-  {
-    m2 = glmer(OBSERVATION.COUNT ~ 
-                 log(no.sp) + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+  #gc()
+  
+  #if (!isTRUE(trends))
+  #{
+  #  m2 = glmer(OBSERVATION.COUNT ~ 
+  #               log(no.sp) + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
     
-    f6 = predict(m2, data.frame(
-      no.sp = 20),
-      type="response", re.form = NA)
-  }
+  #  f6 = predict(m2, data.frame(
+  #    no.sp = 20),
+  #    type="response", re.form = NA)
+  #}
   
-  if (isTRUE(trends))
-  {
-    m2 = glmer(OBSERVATION.COUNT ~ 
-                 log(no.sp) + timegroups + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
-    f6 = data.frame(unique(data$timegroups))
-    names(f6) = "timegroups"
-    f6$freq = predict(m2, data.frame(timegroups = f5$timegroups,
-      no.sp = 20),
-      type="response", re.form = NA)
-    f6$timegroups = as.character(f6$timegroups)
-  }
+  #if (isTRUE(trends))
+  #{
+  #  m2 = glmer(OBSERVATION.COUNT ~ 
+  #               log(no.sp) + timegroups + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+  #  f6 = data.frame(unique(data$timegroups))
+  #  names(f6) = "timegroups"
+  #  f6$freq = predict(m2, data.frame(timegroups = f5$timegroups,
+  #                                   no.sp = 20),
+  #                    type="response", re.form = NA)
+  #  f6$timegroups = as.character(f6$timegroups)
+  #}
   
   if (!isTRUE(trends))
   {
-    f = data.frame(method = c("overall","g5","modelhotspots","modelgrids"))
-    f$freq = c(f1,f2,f5,f6)
+    f = data.frame(method = c("overall","g5","modelhotspots"
+                              #,"modelgrids"
+                              ))
+    f$freq = c(f1,f2,f5
+               #,f6
+               )
   }
   
   if (isTRUE(trends))
   {
     l = length(unique(data$timegroups))
-    f = data.frame(method = c(rep("overall",l),rep("g5",l),rep("modelhotspots",l),rep("modelgrids",l)))
-    f$timegroups = c(f1$timegroups,f2$timegroups,f5$timegroups,f6$timegroups)
-    f$freq = c(f1$freq,f2$freq,f5$freq,f6$freq)
+    f = data.frame(method = c(rep("overall",l),rep("g5",l),rep("modelhotspots",l)
+                              #,rep("modelgrids",l)
+                              ))
+    f$timegroups = c(f1$timegroups,f2$timegroups,f5$timegroups
+                     #,f6$timegroups
+                     )
+    f$freq = c(f1$freq,f2$freq,f5$freq
+               #,f6$freq
+               )
     f$timegroups = factor(f$timegroups, levels = c("before 1990","1990-1999","2000-2005","2006-2010",
                                                    "2011-2013","2014","2015","2016","2017","2018"))
     f = f[order(f$method,f$timegroups),]
     f$species = species
   }
-    
+  
   return(f)
 }
+
+
+
+
+########################################################################################
+
+################## to plot either a comparison of species trends or methods #############
+## trends can be recent or historical
+## input a list of species or a single species
+## input a method
+## returns a ggplot object
+## MAXIMUM of 8 species
+
+
+
+plottrends = function(trends,type = "method",singlespecies = NA,selectspecies = NA,smethod = "model1",recent = F)
+{
+  modtrends = trends
+  
+  cols = c("#009E73", "#0072B2", "#D55E00", "#E69F00", "#56B4E9", "#CC79A7", "#999999", "#F0E442")
+  
+  bksm = c("overall","g5","model1","model2","model3","model4")
+  lbsm = c("country average","320 km grid average","model 1","model 2","model 3","model 4")
+  nm = length(unique(trends$method))
+  
+  if (isTRUE(recent))
+  {
+    tg = c("2014","2015","2016","2017","2018")
+  }else
+  {
+    tg = unique(trends$timegroups)
+  }
+  
+  
+  
+  ################# by species ########################
+  
+  if (type == "species")
+  {
+    modtrends = trends %>%
+      filter(method == smethod)
+    
+    cols1 = cols[1:ns]
+    bks1 = selectspecies
+    lbs1 = selectspecies
+    
+    recenttrends = modtrends %>%
+      filter(timegroups %in% tg) %>%
+      filter(species %in% selectspecies) %>%
+      group_by(species) %>% mutate(freq1 = freq[1]) %>% ungroup() %>%
+      group_by(species) %>% mutate(nmfreqbyspec = freq/freq1) %>% ungroup() %>%
+      mutate(nmfreq = freq/max(freq1))
+    
+    recenttrends$species = factor(recenttrends$species, levels = selectspecies)
+    
+    temp = recenttrends
+    
+    ggp = ggplot(temp, aes(x=timegroups, y=nmfreqbyspec, colour=species)) + 
+      geom_point(size = 3) +
+      geom_line(aes(group = species),size = 1.5) +
+      xlab("years") +
+      ylab("frequency of reporting")
+    
+    ggp1 = ggp +
+      theme(axis.title.x = element_text(size = 18), axis.text.x = element_text(size = 14),
+            axis.title.y = element_text(angle = 90, size = 18), axis.text.y = element_text(size = 16)) +
+      theme(legend.title = element_blank(), legend.text = element_text(size = 16)) +
+      scale_colour_manual(breaks = bks1, 
+                          labels = lbs1,
+                          values = cols1) +
+      scale_y_continuous(limits = c(round(min(temp$nmfreqbyspec),1)-0.1,round(max(temp$nmfreqbyspec),1)+0.1))
+  }
+  
+  
+  ################# by method ########################
+  
+  
+  if (type == "method")
+  {
+    cols1 = cols[1:nm]
+    bks1 = bksm[1:nm]
+    lbs1 = lbsm[1:nm]
+    
+    recenttrends = modtrends %>%
+      filter(timegroups %in% tg) %>%
+      group_by(method,species) %>% mutate(freq1 = freq[1]) %>% ungroup() %>%
+      group_by(method,species) %>% mutate(nmfreqbyspecmeth = freq/freq1) %>% ungroup() %>%
+      group_by(species) %>% mutate(freq2 = freq[1]) %>% ungroup() %>%
+      group_by(species) %>% mutate(nmfreqbyspec = freq/freq2) %>% ungroup() %>%
+      mutate(nmfreq = freq/max(freq1))
+    
+    recenttrends$method = factor(recenttrends$method, levels = bks1)
+    
+    temp = recenttrends[recenttrends$species %in% singlespecies,]
+    
+    ggp = ggplot(temp, aes(x=timegroups, y=nmfreqbyspecmeth, colour=method)) + 
+      geom_point(size = 3) +
+      geom_line(aes(group = method),size = 1.5) +
+      ggtitle(singlespecies) +
+      theme(plot.title = element_text(hjust = 0.5, vjust = 0.1, size = 18)) +
+      xlab("years") +
+      ylab("frequency of reporting")
+    
+    ggp1 = ggp +
+      theme(axis.title.x = element_text(size = 18), axis.text.x = element_text(size = 14),
+            axis.title.y = element_text(angle = 90, size = 18), axis.text.y = element_text(size = 16)) +
+      theme(legend.title = element_blank(), legend.text = element_text(size = 16)) +
+      scale_colour_manual(breaks = bks1, 
+                          labels = lbs1,
+                          values = cols1) +
+      scale_y_continuous(limits = c(round(min(temp$nmfreqbyspecmeth),1)-0.1,round(max(temp$nmfreqbyspecmeth),1)+0.1))
+  }
+  
+  return(ggp1)
+}
+
 
 
 

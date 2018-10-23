@@ -7,27 +7,42 @@ source('~/GitHub/state-of-indias-birds/functions.R')
 
 load("dataforspatialanalyses.RData")
 
-#ggp = plotfreqmap(data, "Black-headed Ibis", "g4")
+data1 = data %>% filter(month %in% c(10,11,12,1,2,3))
+plotfreqmap(data1, "Lesser Sand-Plover", "g4")
+plotfreqmap(data1, "Lesser Flamingo", "g4")
+plotfreqmap(data1, "Greater Flamingo", "g4")
+plotfreqmap(data1, "Indian Skimmer", "g4")
+plotfreqmap(data1, "Black-bellied Tern", "g4")
+plotfreqmap(data1, "Common Pochard", "g4")
+plotfreqmap(data1, "Ferruginous Duck", "g4")
+plotfreqmap(data1, "Black-tailed Godwit", "g4")
+plotfreqmap(data1, "Bar-tailed Godwit", "g4")
+plotfreqmap(data1, "Crab-Plover", "g4")
+plotfreqmap(data1, "Little Stint", "g4")
+plotfreqmap(data1, "Eurasian Curlew", "g4")
 
-WrVu = expandbyspecies(data,"White-rumped Vulture")
-RrPa = expandbyspecies(data,"Rose-ringed Parakeet")
-HoSp = expandbyspecies(data,"House Sparrow")
-EgVu = expandbyspecies(data,"Egyptian Vulture")
-InVu = expandbyspecies(data,"Indian Vulture")
-HoCr = expandbyspecies(data,"House Crow")
-LbCr = expandbyspecies(data,"Large-billed Crow")
-StEa = expandbyspecies(data,"Steppe Eagle")
-TaEa = expandbyspecies(data,"Tawny Eagle")
-BlKi = expandbyspecies(data,"Black Kite")
-CoMy = expandbyspecies(data,"Common Myna")
-JuMy = expandbyspecies(data,"JuMy")
-GrCo = expandbyspecies(data,"Great Cormorant")
+data1 = data %>% filter(month %in% c(4,5,6))
+plotfreqmap(data1, "Indian Skimmer", "g4")
+data1 = data %>% filter(month %in% c(4,5))
+plotfreqmap(data1, "Black-bellied Tern", "g4")
 
-CoCu = expandbyspecies(data,"Common Cuckoo")
-AmFa = expandbyspecies(data,"Amur Falcon")
 
-f = freqtrends(data,"House Sparrow",tempres="none",spaceres="g4",trends=T,exd=NA)
 
+########################### run frequency trends function #########################################
+
+WrVu = freqtrends(data,species="White-rumped Vulture",tempres="none",spaceres="g4",trends=T)
+gc()
+
+
+
+
+########################## plot trends function ###############################################
+
+list1 = c("White-rumped Vulture","Indian Vulture","Egyptian Vulture","Tawny Eagle","Common Myna","Black Kite","Red-vented Bulbul","Ashy Prinia")
+list2 = c("Indian Vulture","Egyptian Vulture","Steppe Eagle","Common Myna","Large-billed Crow","Red-whiskered Bulbul","Jungle Myna","Ashy Prinia")
+
+plottrends(trends = trends, recent = T, type = "species", selectspecies = list2, smethod = "g5")
+plottrends(trends = trends, recent = T, singlespecies = "Tawny Eagle")
 
 
 
