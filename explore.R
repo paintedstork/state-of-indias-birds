@@ -30,7 +30,7 @@ family = c("Great Hornbill","Rufous-necked Hornbill","Malabar Gray Hornbill","In
            "Brown Hornbill")
 datat = data[data$COMMON.NAME %in% family,]
 
-plotfreqmap(data, "Megalaimidae", "g4", level = "family", smooth = T, rich = F, h = 2, cutoff = 3, showempty = F)
+plotfreqmap(data, "Gyps", "g4", level = "genus", smooth = T, rich = T, h = 1.5, cutoff = 3, showempty = F)
 
 
 ########################### run frequency trends function #########################################

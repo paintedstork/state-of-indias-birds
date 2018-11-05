@@ -883,7 +883,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", rich = F,
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
         filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(ST_NM) %>%
-        summarize(freq = n()/max(lists))
+        summarize(freq = n_distinct(group.id)/max(lists))
       
       min = min(temp$freq)
       max = max(temp$freq)
@@ -935,7 +935,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", rich = F,
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
         filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(DISTRICT) %>%
-        summarize(freq = n()/max(lists))
+        summarize(freq = n_distinct(group.id)/max(lists))
       
       min = min(temp$freq)
       max = max(temp$freq)
@@ -987,7 +987,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", rich = F,
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
         filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(gridg1) %>%
-        summarize(freq = n()/max(lists))
+        summarize(freq = n_distinct(group.id)/max(lists))
       
       min = min(temp$freq)
       max = max(temp$freq)
@@ -1060,7 +1060,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", rich = F,
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
         filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(gridg2) %>%
-        summarize(freq = n()/max(lists))
+        summarize(freq = n_distinct(group.id)/max(lists))
       
       min = min(temp$freq)
       max = max(temp$freq)
@@ -1204,7 +1204,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", rich = F,
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
         filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(gridg4) %>%
-        summarize(freq = n()/max(lists))
+        summarize(freq = n_distinct(group.id)/max(lists))
       
       min = min(temp$freq)
       max = max(temp$freq)
@@ -1277,7 +1277,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", rich = F,
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
         filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(gridg5) %>%
-        summarize(freq = n()/max(lists))
+        summarize(freq = n_distinct(group.id)/max(lists))
       
       min = min(temp$freq)
       max = max(temp$freq)
@@ -1391,8 +1391,8 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", rich = F,
   {if(switch)scale_colour_manual(values = cols)} +
     theme(legend.justification=c(1,1), legend.position=c(0.99,0.99)) +
     theme(legend.title = element_blank(), legend.text = element_text(size = 8)) +
-    {if(!isTRUE(rich))ggtitle(taxonname)} +
-    {if(!isTRUE(rich))theme(plot.title = element_text(hjust = 0.5, vjust = 0.1, size = 20))} +
+    {if(!isTRUE(rich) | level != "species")ggtitle(taxonname)} +
+    {if(!isTRUE(rich) | level != "species")theme(plot.title = element_text(hjust = 0.5, vjust = 0.1, size = 20))} +
     guides(fill = guide_legend(reverse = TRUE))
   
   return(plot)
