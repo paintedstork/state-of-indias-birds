@@ -323,9 +323,48 @@ addmapvars = function(datapath = "data.RData", mappath = "maps.RData")
 ## species common name
 ## path can be true or false; this is for boundaries
 
-plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, cutoff = 5, showempty = T,
+plotfreqmap = function(data, taxonname, resolution, level = "species", rich = F, smooth = F, h = 2, cutoff = 5, showempty = T,
                        mappath = "maps.RData", maskpath = "mask.RData")
 {
+  ## errors for wrong parameter values
+  
+  if (!level %in% c("species","genus","family","order"))
+    return(paste("The taxonomic level",level,"doesn't exist. Select any one from species, genus, family and order (in quotes)"))
+
+  if (!resolution %in% c("state","district","g1","g2","g3","g4","g5"))
+    return(paste("The resolution",resolution,"doesn't exist. Select any one from state, district, g1, g2, g3, g4 and g5 (in quotes)"))
+  
+  if (!is.na(as.logical(rich)))
+  {
+    if (rich != as.logical(rich))
+      return("rich must be a logical operator")
+  }else{
+    return("rich must be a logical operator")
+  }
+
+  if (!is.na(as.logical(smooth)))
+  {
+    if (smooth != as.logical(smooth))
+      return("smooth must be a logical operator")
+  }else{
+    return("smooth must be a logical operator")
+  }
+  
+  if (!is.na(as.logical(showempty)))
+  {
+    if (showempty != as.logical(showempty))
+      return("showempty must be a logical operator")
+  }else{
+    return("showempty must be a logical operator")
+  }
+  
+  if (cutoff & (cutoff < 0 | cutoff != as.integer(cutoff)))
+    return("cutoff (minimum no. of lists) must be a non-negative integer")
+  
+  if (smooth & (h < 0 | h != as.numeric(h)))
+    return("h (smoothing bandwidth) must be positive")
+    
+  
   require(tidyverse)
   require(ggfortify)
   require(viridis)
@@ -353,19 +392,65 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
           panel.background = element_blank())+
     coord_map()
   
+  if (level == "species")
+  {
+    if (!taxonname %in% unique(data$COMMON.NAME))
+      return(paste(taxonname,"is not a valid",level,"name"))
+  }
+  
+  if (level != "species")
+  {
+    taxlevels = read.csv("speciestaxonomiclevels.csv")
+    taxlevels = taxlevels[,c("COMMON.NAME",level)]
+    
+    if (level == "genus")
+    {
+      if (!taxonname %in% unique(taxlevels$genus))
+        return(paste(taxonname,"is not a valid",level,"name"))
+    }
+    
+    if (level == "family")
+    {
+      if (!taxonname %in% unique(taxlevels$family))
+        return(paste(taxonname,"is not a valid",level,"name"))
+    }
+    
+    if (level == "order")
+    {
+      if (!taxonname %in% unique(taxlevels$order))
+        return(paste(taxonname,"is not a valid",level,"name"))
+    }
+    
+    data = left_join(data,taxlevels)
+    l = length(names(data))
+    names(data)[l] = "TAXON.NAME"
+    
+    if (rich)
+    {
+      data = data %>% filter(TAXON.NAME == taxonname)
+    }else{
+      data = data %>% distinct(gridg5,group.id,gridg4,gridg3,gridg2,gridg1,DISTRICT,ST_NM,LOCALITY.ID,
+                               LOCALITY.TYPE,LATITUDE,LONGITUDE,OBSERVATION.DATE,TIME.OBSERVATIONS.STARTED,
+                               OBSERVER.ID,PROTOCOL.TYPE,DURATION.MINUTES,EFFORT.DISTANCE.KM,NUMBER.OBSERVERS,
+                               ALL.SPECIES.REPORTED,month,year,day,week,fort,no.sp,LOCALITY.HOTSPOT,TAXON.NAME)
+    }
+  }else{
+    data$TAXON.NAME = data$COMMON.NAME
+  }
+  
   if (!isTRUE(rich))
   {
     data = data %>%
       filter(year >=2013, ALL.SPECIES.REPORTED == 1)
-    data1 = data %>% filter(COMMON.NAME == species)
+    data1 = data %>% filter(TAXON.NAME == taxonname)
   }
   
   if (isTRUE(rich))
   {
     if (resolution == "state")
     {
-
-      ct = datar %>%
+      
+      ct = data %>%
         group_by(DISTRICT) %>% summarize(rich = n_distinct(COMMON.NAME))
       min = min(ct$rich)
       max = max(ct$rich)
@@ -416,7 +501,7 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
     
     if (resolution == "district")
     {
-      ct = datar %>%
+      ct = data %>%
         group_by(DISTRICT) %>% summarize(rich = n_distinct(COMMON.NAME))
       min = min(ct$rich)
       max = max(ct$rich)
@@ -703,9 +788,7 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
       {
         emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg4"))) # SPDF to plot
         switch = T
-      }
-      else
-      {
+      }else{
         switch = F
       }
       
@@ -798,7 +881,7 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
       temp = data %>% 
         group_by(ST_NM) %>%
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(ST_NM) %>%
         summarize(freq = n()/max(lists))
       
@@ -828,7 +911,7 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
         empty = data.frame(unique(zlists),0)
         names(empty) = names(filled)
       }
-
+      
       fortified$id = as.factor(fortified$id)
       fort1$id = as.factor(fort1$id)
       
@@ -850,7 +933,7 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
       temp = data %>% 
         group_by(DISTRICT) %>%
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(DISTRICT) %>%
         summarize(freq = n()/max(lists))
       
@@ -902,7 +985,7 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
       temp = data %>% 
         group_by(gridg1) %>%
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(gridg1) %>%
         summarize(freq = n()/max(lists))
       
@@ -975,7 +1058,7 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
       temp = data %>% 
         group_by(gridg2) %>%
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(gridg2) %>%
         summarize(freq = n()/max(lists))
       
@@ -1048,7 +1131,7 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
       temp = data %>% 
         group_by(gridg3) %>%
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(gridg3) %>%
         summarize(freq = n()/max(lists))
       
@@ -1119,7 +1202,7 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
       temp = data %>% 
         group_by(gridg4) %>%
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(gridg4) %>%
         summarize(freq = n()/max(lists))
       
@@ -1192,7 +1275,7 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
       temp = data %>% 
         group_by(gridg5) %>%
         mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
         group_by(gridg5) %>%
         summarize(freq = n()/max(lists))
       
@@ -1262,7 +1345,7 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
   }
   
   if(resolution != "state" & resolution != "district"){load(maskpath)}
-
+  
   if(isTRUE(smooth) & resolution != "state" & resolution != "district")
   {
     stats = plotindiamap +
@@ -1271,9 +1354,9 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
       scale_fill_gradient2(low = muted("blue"),
                            high = "white", space = "Lab", na.value = "grey50", trans = 'reverse')
   }
-
-      
-  if(smooth){
+  
+  
+  if(smooth & resolution != "state" & resolution != "district"){
     minstat = min(ggplot_build(stats)$data[[2]]$level)
     maxstat = max(ggplot_build(stats)$data[[2]]$level)
   }else{
@@ -1281,7 +1364,7 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
     maxstat = max
   }
   
-    
+  
   for (i in c(5,4,3,2,1))
   {
     breaks = seq(minstat,maxstat,length.out=i)
@@ -1290,25 +1373,25 @@ plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, c
     if (length(unique(labels)) == i)
       break
   }
-      
+  
   cols = "grey30"
   cl = paste(" <",cutoff,"lists")
   names(cols) = cl
   
   plot = plotindiamap +
-    {if(smooth & resolution != "state" & resolution != "district" & !isTRUE(rich))stat_density2d(data = data1, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), h = h, n = 100, geom = "polygon")} +
-    {if(smooth & resolution != "state" & resolution != "district" & rich)stat_density2d(data = datar, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), h = h, n = 100, geom = "polygon")} +
-    {if(!isTRUE(smooth))geom_polygon(data = plotdf, aes(x = long, y = lat, group = group, fill = freq))} +
-    {if(switch & showempty)geom_polygon(data = emptydf, aes(x = long, y = lat, group = group, col = cl), fill = "grey30")} +
-    {if(resolution != "state" & resolution != "district")geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'white', fill = 'white')}+
+  {if(smooth & resolution != "state" & resolution != "district" & !isTRUE(rich))stat_density2d(data = data1, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), h = h, n = 100, geom = "polygon")} +
+  {if(smooth & resolution != "state" & resolution != "district" & rich)stat_density2d(data = datar, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), h = h, n = 100, geom = "polygon")} +
+  {if(!isTRUE(smooth) | resolution == "state" | resolution == "district")geom_polygon(data = plotdf, aes(x = long, y = lat, group = group, fill = freq))} +
+  {if(switch & showempty)geom_polygon(data = emptydf, aes(x = long, y = lat, group = group, col = cl), fill = "grey30")} +
+  {if(resolution != "state" & resolution != "district")geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'white', fill = 'white')}+
     geom_path(data = fortify(statemap), aes(x = long, y = lat, group = group), col = 'black', size = 1) +
     scale_fill_gradient2(low = muted("blue"),
                          high = "white", space = "Lab", na.value = "grey50", trans = 'reverse',
                          breaks = breaks, labels = labels) +
-    {if(switch)scale_colour_manual(values = cols)} +
+  {if(switch)scale_colour_manual(values = cols)} +
     theme(legend.justification=c(1,1), legend.position=c(0.99,0.99)) +
     theme(legend.title = element_blank(), legend.text = element_text(size = 8)) +
-    {if(!isTRUE(rich))ggtitle(species)} +
+    {if(!isTRUE(rich))ggtitle(taxonname)} +
     {if(!isTRUE(rich))theme(plot.title = element_text(hjust = 0.5, vjust = 0.1, size = 20))} +
     guides(fill = guide_legend(reverse = TRUE))
   
@@ -1414,7 +1497,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
     
     data$timegroups = as.factor(data$timegroups)
   }
-
+  
   ## considers only complete lists
   
   data = data %>%
@@ -1575,7 +1658,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
         f = temp %>%
           summarize(freq = mean(freq))
       }
-
+      
     }
     
     if (isTRUE(trends))
@@ -1884,7 +1967,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
       data1 = data %>% select(-timegroups)
     }
     
-
+    
     ## expand data for models
     
     #if (is.na(exd))
@@ -1920,9 +2003,9 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
         ed = ed %>%
           filter(year>(as.integer(format(Sys.Date(), "%Y"))-5)) %>%
           group_by(group.id) %>% filter(!any(is.na(OBSERVATION.NUMBER))) %>% ungroup()
-          
+        
         m1 = glmmTMB(OBSERVATION.NUMBER ~ 
-                     log(no.sp) + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                       log(no.sp) + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, ziformula=~1,
                      family=poisson)
         
         newdata = ed %>%
@@ -1930,7 +2013,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
         newdata$no.sp = 20
         
         fd = predict(m1, newdata = newdata,
-          type="response", allow.new.levels = T)
+                     type="response", allow.new.levels = T)
         newdata$f = fd
         
         fx = newdata %>%
@@ -1959,7 +2042,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
       {
         ed = ed %>%
           group_by(group.id) %>% filter(!any(is.na(OBSERVATION.NUMBER))) %>% ungroup()
-          
+        
         m1 = glmer(OBSERVATION.NUMBER ~ 
                      log(no.sp) + timegroups + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=poisson(link = 'log'), nAGQ = 0)
         
