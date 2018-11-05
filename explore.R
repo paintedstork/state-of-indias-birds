@@ -24,15 +24,19 @@ plotfreqmap(data1, "Eurasian Curlew", "g4")
 data1 = data %>% filter(month %in% c(4,5,6))
 plotfreqmap(data1, "Indian Skimmer", "g4")
 data1 = data %>% filter(month %in% c(4,5))
-plotfreqmap(data1, "Black-bellied Tern", "g4")
 
+family = c("Great Hornbill","Rufous-necked Hornbill","Malabar Gray Hornbill","Indian Gray Hornbill",
+           "Malabar Pied-Hornbill","Narcondam Hornbill","Oriental Pied-Hornbill","Wreathed Hornbill",
+           "Brown Hornbill")
+datat = data[data$COMMON.NAME %in% family,]
+
+plotfreqmap(data, "Jungle Babbler", "g3", smooth = T, rich = F, h = 2, cutoff = 3, showempty = F)
 
 
 ########################### run frequency trends function #########################################
 
-WrVu = freqtrends(data,species="White-rumped Vulture",tempres="none",spaceres="g4",trends=T)
-gc()
-
+WtIo = freqtrends(data,species="Indian Pond-Heron",tempres="none",spaceres="g4",trends=F,analysis="model",count=T)
+WtIo
 
 
 

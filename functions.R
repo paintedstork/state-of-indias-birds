@@ -323,45 +323,19 @@ addmapvars = function(datapath = "data.RData", mappath = "maps.RData")
 ## species common name
 ## path can be true or false; this is for boundaries
 
-plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpath = "mask.RData")
+plotfreqmap = function(data, species, resolution, rich = F, smooth = F, h = 2, cutoff = 5, showempty = T,
+                       mappath = "maps.RData", maskpath = "mask.RData")
 {
   require(tidyverse)
   require(ggfortify)
   require(viridis)
   require(RColorBrewer)
+  require(scales)
   
   load(mappath)
   
-  ## code for grid base map just in case
-  
-  #require(sp)
-  
-  #gridmapg5t = gIntersection(gridmapg5, indiamap, byid = TRUE, drop_lower_td = TRUE) # function to find intersection
-  # of SPDFS - attributes will be lost
-  
-  #fgridmapg5 = fortify(gridmapg5t)
-  
-  #plotgridmapg5 = ggplot() +
-  #  geom_path(data = fgridmapg5, aes(x=long, y=lat, group=group), colour = 'black')+  
-  #  scale_x_continuous(expand = c(0,0)) +
-  #  scale_y_continuous(expand = c(0,0)) +
-  #  theme_bw()+
-  #  theme(axis.line=element_blank(),
-  #        axis.text.x=element_blank(),
-  #        axis.text.y=element_blank(),
-  #        axis.ticks=element_blank(),
-  #        axis.title.x=element_blank(),
-  #        axis.title.y=element_blank(),
-  #        panel.grid.major = element_blank(),
-  #        panel.grid.minor = element_blank(),
-  #        plot.margin=unit(c(0,0,0,0), "cm"),
-  #        panel.border = element_blank(),
-  #        plot.title = element_text(hjust = 0.5),
-  #        panel.background = element_blank())+
-  #  coord_map()
-  
   plotindiamap = ggplot() +
-    geom_polygon(data = fortify(statemap), aes(x=long, y=lat, group=group), colour = 'black', fill = "grey92")+  
+    geom_polygon(data = fortify(statemap), aes(x=long, y=lat, group=group), colour = 'black', fill = "white")+  
     scale_x_continuous(expand = c(0,0)) +
     scale_y_continuous(expand = c(0,0)) +
     theme_bw()+
@@ -379,142 +353,964 @@ plotfreqmap = function(data, species, resolution, mappath = "maps.RData", maskpa
           panel.background = element_blank())+
     coord_map()
   
-  #data = data %>%
-  #  filter(year >=2013)
-  
-  
-  if (resolution == "state")
+  if (!isTRUE(rich))
   {
-    temp = data %>% 
-      #group_by(ST_NM) %>%
-      #mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      #filter(COMMON.NAME == species, lists > 5) %>%
-      group_by(ST_NM) %>%
-      summarize(freq = n_distinct(COMMON.NAME))
-    
-    fortified = fortify(statemap, region = c("ST_NM"))
-    fortified$id = as.factor(fortified$id)
-    
-    plotdf = na.omit(left_join(fortified,temp, by = c('id' = "ST_NM"))) # SPDF to plot
+    data = data %>%
+      filter(year >=2013, ALL.SPECIES.REPORTED == 1)
+    data1 = data %>% filter(COMMON.NAME == species)
   }
   
-  if (resolution == "district")
+  if (isTRUE(rich))
   {
-    temp = data %>% 
-      group_by(DISTRICT) %>%
-      #mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      #filter(COMMON.NAME == species, lists > 5) %>%
-      group_by(DISTRICT) %>%
-      summarize(freq = n_distinct(COMMON.NAME))
+    if (resolution == "state")
+    {
+
+      ct = datar %>%
+        group_by(DISTRICT) %>% summarize(rich = n_distinct(COMMON.NAME))
+      min = min(ct$rich)
+      max = max(ct$rich)
+      
+      temp = data %>% 
+        group_by(ST_NM) %>%
+        summarize(freq = n_distinct(COMMON.NAME))
+      
+      filled = data %>%
+        group_by(ST_NM) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(ST_NM,lists)
+      
+      fortified = fortify(statemap, region = c("ST_NM"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$ST_NM))
+      
+      if(length(zlists > 0))
+      {
+        empty = data.frame(unique(zlists),0)
+        names(empty) = names(filled)
+      }
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "ST_NM"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "ST_NM"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+    }
     
-    fortified = fortify(districtmap, region = c("DISTRICT"))
-    fortified$id = as.factor(fortified$id)
+    if (resolution == "district")
+    {
+      ct = datar %>%
+        group_by(DISTRICT) %>% summarize(rich = n_distinct(COMMON.NAME))
+      min = min(ct$rich)
+      max = max(ct$rich)
+      
+      temp = data %>% 
+        group_by(DISTRICT) %>%
+        summarize(freq = n_distinct(COMMON.NAME))
+      
+      filled = data %>%
+        group_by(DISTRICT) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(DISTRICT,lists)
+      
+      fortified = fortify(districtmap, region = c("DISTRICT"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$DISTRICT))
+      
+      if(length(zlists > 0))
+      {
+        empty = data.frame(unique(zlists),0)
+        names(empty) = names(filled)
+      }
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "DISTRICT"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "DISTRICT"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+    }
     
-    plotdf = na.omit(left_join(fortified,temp, by = c('id' = "DISTRICT"))) # SPDF to plot
+    if (resolution == "g1")
+    {
+      datar = data %>%
+        group_by(gridg1,COMMON.NAME) %>% slice(1) %>% ungroup()
+      
+      ct = datar %>%
+        group_by(gridg1) %>% summarize(rich = n_distinct(COMMON.NAME))
+      min = min(ct$rich)
+      max = max(ct$rich)
+      
+      temp = data %>% 
+        group_by(gridg1) %>%
+        summarize(freq = n_distinct(COMMON.NAME))
+      
+      filled = data %>%
+        group_by(gridg1) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(gridg1,lists)
+      
+      fortified = fortify(gridmapg1, region = c("id"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$gridg1))
+      empty = data.frame(unique(zlists),0)
+      names(empty) = names(filled)
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg1"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg1"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+      
+      mmplotdf = plotdf %>%
+        group_by(id) %>% summarize(minlong = min(long), maxlong = max(long), minlat = min(lat),maxlat = max(lat)) %>% ungroup()
+      
+      datar = left_join(datar,mmplotdf,by = c("gridg1" = 'id'))
+      
+      datar = datar %>%
+        group_by(gridg1) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
+                                                            max(maxlong)),runif(n(),
+                                                                                max(minlat),
+                                                                                max(maxlat)))[,1],
+                                    LATITUDE = cbind(runif(n(),max(minlong),
+                                                           max(maxlong)),runif(n(),
+                                                                               max(minlat),
+                                                                               max(maxlat)))[,2])
+    }
+    
+    if (resolution == "g2")
+    {
+      datar = data %>%
+        group_by(gridg2,COMMON.NAME) %>% slice(1) %>% ungroup()
+      
+      ct = datar %>%
+        group_by(gridg2) %>% summarize(rich = n_distinct(COMMON.NAME))
+      min = min(ct$rich)
+      max = max(ct$rich)
+      
+      temp = data %>% 
+        group_by(gridg2) %>%
+        summarize(freq = n_distinct(COMMON.NAME))
+      
+      filled = data %>%
+        group_by(gridg2) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(gridg2,lists)
+      
+      fortified = fortify(gridmapg2, region = c("id"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$gridg2))
+      empty = data.frame(unique(zlists),0)
+      names(empty) = names(filled)
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg2"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg2"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+      
+      mmplotdf = plotdf %>%
+        group_by(id) %>% summarize(minlong = min(long), maxlong = max(long), minlat = min(lat),maxlat = max(lat)) %>% ungroup()
+      
+      datar = left_join(datar,mmplotdf,by = c("gridg2" = 'id'))
+      
+      datar = datar %>%
+        group_by(gridg2) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
+                                                            max(maxlong)),runif(n(),
+                                                                                max(minlat),
+                                                                                max(maxlat)))[,1],
+                                    LATITUDE = cbind(runif(n(),max(minlong),
+                                                           max(maxlong)),runif(n(),
+                                                                               max(minlat),
+                                                                               max(maxlat)))[,2])
+    }
+    
+    if (resolution == "g3")
+    {
+      datar = data %>%
+        group_by(gridg3,COMMON.NAME) %>% slice(1) %>% ungroup()
+      
+      ct = datar %>%
+        group_by(gridg3) %>% summarize(rich = n_distinct(COMMON.NAME))
+      min = min(ct$rich)
+      max = max(ct$rich)
+      
+      temp = data %>% 
+        group_by(gridg3) %>%
+        summarize(freq = n_distinct(COMMON.NAME))
+      
+      filled = data %>%
+        group_by(gridg3) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(gridg3,lists)
+      
+      fortified = fortify(gridmapg3, region = c("id"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$gridg3))
+      empty = data.frame(unique(zlists),0)
+      names(empty) = names(filled)
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg3"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg3"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+      
+      mmplotdf = plotdf %>%
+        group_by(id) %>% summarize(minlong = min(long), maxlong = max(long), minlat = min(lat),maxlat = max(lat)) %>% ungroup()
+      
+      datar = left_join(datar,mmplotdf,by = c("gridg3" = 'id'))
+      
+      datar = datar %>%
+        group_by(gridg3) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
+                                                            max(maxlong)),runif(n(),
+                                                                                max(minlat),
+                                                                                max(maxlat)))[,1],
+                                    LATITUDE = cbind(runif(n(),max(minlong),
+                                                           max(maxlong)),runif(n(),
+                                                                               max(minlat),
+                                                                               max(maxlat)))[,2])
+    }
+    
+    if (resolution == "g4")
+    {
+      datar = data %>%
+        group_by(gridg4,COMMON.NAME) %>% slice(1) %>% ungroup()
+      
+      ct = datar %>%
+        group_by(gridg4) %>% summarize(rich = n_distinct(COMMON.NAME))
+      min = min(ct$rich)
+      max = max(ct$rich)
+      
+      temp = data %>% 
+        group_by(gridg4) %>%
+        summarize(freq = n_distinct(COMMON.NAME))
+      
+      filled = data %>%
+        group_by(gridg4) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(gridg4,lists)
+      
+      fortified = fortify(gridmapg4, region = c("id"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$gridg4))
+      empty = data.frame(unique(zlists),0)
+      names(empty) = names(filled)
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg4"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg4"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+      
+      mmplotdf = plotdf %>%
+        group_by(id) %>% summarize(minlong = min(long), maxlong = max(long), minlat = min(lat),maxlat = max(lat)) %>% ungroup()
+      
+      datar = left_join(datar,mmplotdf,by = c("gridg4" = 'id'))
+      
+      datar = datar %>%
+        group_by(gridg4) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
+                                                            max(maxlong)),runif(n(),
+                                                                                max(minlat),
+                                                                                max(maxlat)))[,1],
+                                    LATITUDE = cbind(runif(n(),max(minlong),
+                                                           max(maxlong)),runif(n(),
+                                                                               max(minlat),
+                                                                               max(maxlat)))[,2])
+    }
+    
+    if (resolution == "g5")
+    {
+      datar = data %>%
+        group_by(gridg5,COMMON.NAME) %>% slice(1) %>% ungroup()
+      
+      ct = datar %>%
+        group_by(gridg5) %>% summarize(rich = n_distinct(COMMON.NAME))
+      min = min(ct$rich)
+      max = max(ct$rich)
+      
+      temp = data %>% 
+        group_by(gridg5) %>%
+        summarize(freq = n_distinct(COMMON.NAME))
+      
+      filled = data %>%
+        group_by(gridg5) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(gridg5,lists)
+      
+      fortified = fortify(gridmapg5, region = c("id"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$gridg5))
+      empty = data.frame(unique(zlists),0)
+      names(empty) = names(filled)
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg5"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg5"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+      
+      mmplotdf = plotdf %>%
+        group_by(id) %>% summarize(minlong = min(long), maxlong = max(long), minlat = min(lat),maxlat = max(lat)) %>% ungroup()
+      
+      datar = left_join(datar,mmplotdf,by = c("gridg5" = 'id'))
+      
+      datar = datar %>%
+        group_by(gridg5) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
+                                                            max(maxlong)),runif(n(),
+                                                                                max(minlat),
+                                                                                max(maxlat)))[,1],
+                                    LATITUDE = cbind(runif(n(),max(minlong),
+                                                           max(maxlong)),runif(n(),
+                                                                               max(minlat),
+                                                                               max(maxlat)))[,2])
+    }
   }
   
-  if (resolution == "g1")
+  if (!isTRUE(rich))
   {
-    temp = data %>% 
-      group_by(gridg1) %>%
-      mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species, lists > 5) %>%
-      group_by(gridg1) %>%
-      summarize(freq = n()/max(lists))
+    if (resolution == "state")
+    {
+      temp = data %>% 
+        group_by(ST_NM) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        group_by(ST_NM) %>%
+        summarize(freq = n()/max(lists))
+      
+      min = min(temp$freq)
+      max = max(temp$freq)
+      
+      filled = data %>%
+        group_by(ST_NM) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(ST_NM,lists)
+      
+      fortified = fortify(statemap, region = c("ST_NM"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$ST_NM))
+      
+      if(length(zlists > 0))
+      {
+        empty = data.frame(unique(zlists),0)
+        names(empty) = names(filled)
+      }
+
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "ST_NM"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "ST_NM"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+    }
     
-    fortified = fortify(gridmapg1, region = c("id"))
-    fortified$id = as.factor(fortified$id)
+    if (resolution == "district")
+    {
+      temp = data %>% 
+        group_by(DISTRICT) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        group_by(DISTRICT) %>%
+        summarize(freq = n()/max(lists))
+      
+      min = min(temp$freq)
+      max = max(temp$freq)
+      
+      filled = data %>%
+        group_by(DISTRICT) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(DISTRICT,lists)
+      
+      fortified = fortify(districtmap, region = c("DISTRICT"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$DISTRICT))
+      
+      if(length(zlists > 0))
+      {
+        empty = data.frame(unique(zlists),0)
+        names(empty) = names(filled)
+      }
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "DISTRICT"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "DISTRICT"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+    }
     
-    plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg1"))) # SPDF to plot
+    if (resolution == "g1")
+    {
+      temp = data %>% 
+        group_by(gridg1) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        group_by(gridg1) %>%
+        summarize(freq = n()/max(lists))
+      
+      min = min(temp$freq)
+      max = max(temp$freq)
+      
+      filled = data %>%
+        group_by(gridg1) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(gridg1,lists)
+      
+      fortified = fortify(gridmapg1, region = c("id"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$gridg1))
+      empty = data.frame(unique(zlists),0)
+      names(empty) = names(filled)
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg1"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg1"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+      
+      data1 = data1 %>%
+        group_by(gridg1) %>% slice(1) %>% ungroup()
+      
+      mmplotdf = plotdf %>%
+        group_by(id) %>% summarize(minlong = min(long), maxlong = max(long), minlat = min(lat), maxlat = max(lat), freq = max(freq)) %>% ungroup()
+      
+      data1 = left_join(data1,mmplotdf,by = c("gridg1" = 'id'))
+      roundUp = function(x) 10^ceiling(log10(x))
+      data1$freq = round(data1$freq*roundUp(1/median(na.omit(data1$freq)))*10)
+      data1 = data1 %>% filter(freq > 0)
+      
+      
+      data1 = data1[rep(row.names(data1), data1$freq),]
+      
+      
+      data1 = data1 %>%
+        group_by(gridg1) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
+                                                            max(maxlong)),runif(n(),
+                                                                                max(minlat),
+                                                                                max(maxlat)))[,1],
+                                    LATITUDE = cbind(runif(n(),max(minlong),
+                                                           max(maxlong)),runif(n(),
+                                                                               max(minlat),
+                                                                               max(maxlat)))[,2])
+    }
+    
+    if (resolution == "g2")
+    {
+      temp = data %>% 
+        group_by(gridg2) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        group_by(gridg2) %>%
+        summarize(freq = n()/max(lists))
+      
+      min = min(temp$freq)
+      max = max(temp$freq)
+      
+      filled = data %>%
+        group_by(gridg2) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(gridg2,lists)
+      
+      fortified = fortify(gridmapg2, region = c("id"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$gridg2))
+      empty = data.frame(unique(zlists),0)
+      names(empty) = names(filled)
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg2"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg2"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+      
+      data1 = data1 %>%
+        group_by(gridg2) %>% slice(1) %>% ungroup()
+      
+      mmplotdf = plotdf %>%
+        group_by(id) %>% summarize(minlong = min(long), maxlong = max(long), minlat = min(lat), maxlat = max(lat), freq = max(freq)) %>% ungroup()
+      
+      data1 = left_join(data1,mmplotdf,by = c("gridg2" = 'id'))
+      roundUp = function(x) 10^ceiling(log10(x))
+      data1$freq = round(data1$freq*roundUp(1/median(na.omit(data1$freq)))*10)
+      data1 = data1 %>% filter(freq > 0)
+      
+      
+      data1 = data1[rep(row.names(data1), data1$freq),]
+      
+      
+      data1 = data1 %>%
+        group_by(gridg2) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
+                                                            max(maxlong)),runif(n(),
+                                                                                max(minlat),
+                                                                                max(maxlat)))[,1],
+                                    LATITUDE = cbind(runif(n(),max(minlong),
+                                                           max(maxlong)),runif(n(),
+                                                                               max(minlat),
+                                                                               max(maxlat)))[,2])
+    }
+    
+    if (resolution == "g3")
+    {
+      temp = data %>% 
+        group_by(gridg3) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        group_by(gridg3) %>%
+        summarize(freq = n()/max(lists))
+      
+      min = min(temp$freq)
+      max = max(temp$freq)
+      
+      filled = data %>%
+        group_by(gridg3) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(gridg3,lists)
+      
+      fortified = fortify(gridmapg3, region = c("id"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$gridg3))
+      empty = data.frame(unique(zlists),0)
+      names(empty) = names(filled)
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg3"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg3"))) # SPDF to plot
+        switch = T
+      }else{
+        switch = F
+      }
+      
+      data1 = data1 %>%
+        group_by(gridg3) %>% slice(1) %>% ungroup()
+      
+      mmplotdf = plotdf %>%
+        group_by(id) %>% summarize(minlong = min(long), maxlong = max(long), minlat = min(lat), maxlat = max(lat), freq = max(freq)) %>% ungroup()
+      
+      data1 = left_join(data1,mmplotdf,by = c("gridg3" = 'id'))
+      roundUp = function(x) 10^ceiling(log10(x))
+      data1$freq = round(data1$freq*roundUp(1/median(na.omit(data1$freq)))*10)
+      data1 = data1 %>% filter(freq > 0)
+      
+      
+      data1 = data1[rep(row.names(data1), data1$freq),]
+      
+      
+      data1 = data1 %>%
+        group_by(gridg3) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
+                                                            max(maxlong)),runif(n(),
+                                                                                max(minlat),
+                                                                                max(maxlat)))[,1],
+                                    LATITUDE = cbind(runif(n(),max(minlong),
+                                                           max(maxlong)),runif(n(),
+                                                                               max(minlat),
+                                                                               max(maxlat)))[,2])
+    }
+    
+    if (resolution == "g4")
+    {
+      temp = data %>% 
+        group_by(gridg4) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        group_by(gridg4) %>%
+        summarize(freq = n()/max(lists))
+      
+      min = min(temp$freq)
+      max = max(temp$freq)
+      
+      filled = data %>%
+        group_by(gridg4) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(gridg4,lists)
+      
+      fortified = fortify(gridmapg4, region = c("id"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$gridg4))
+      empty = data.frame(unique(zlists),0)
+      names(empty) = names(filled)
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg4"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg4"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+      
+      data1 = data1 %>%
+        group_by(gridg4) %>% slice(1) %>% ungroup()
+      
+      mmplotdf = plotdf %>%
+        group_by(id) %>% summarize(minlong = min(long), maxlong = max(long), minlat = min(lat), maxlat = max(lat), freq = max(freq)) %>% ungroup()
+      
+      data1 = left_join(data1,mmplotdf,by = c("gridg4" = 'id'))
+      roundUp = function(x) 10^ceiling(log10(x))
+      data1$freq = round(data1$freq*roundUp(1/median(na.omit(data1$freq)))*10)
+      data1 = data1 %>% filter(freq > 0)
+      
+      
+      data1 = data1[rep(row.names(data1), data1$freq),]
+      
+      
+      data1 = data1 %>%
+        group_by(gridg4) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
+                                                            max(maxlong)),runif(n(),
+                                                                                max(minlat),
+                                                                                max(maxlat)))[,1],
+                                    LATITUDE = cbind(runif(n(),max(minlong),
+                                                           max(maxlong)),runif(n(),
+                                                                               max(minlat),
+                                                                               max(maxlat)))[,2])
+    }
+    
+    if (resolution == "g5")
+    {
+      temp = data %>% 
+        group_by(gridg5) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species, lists >= cutoff) %>%
+        group_by(gridg5) %>%
+        summarize(freq = n()/max(lists))
+      
+      min = min(temp$freq)
+      max = max(temp$freq)
+      
+      filled = data %>%
+        group_by(gridg5) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(lists >= cutoff) %>%
+        distinct(gridg5,lists)
+      
+      fortified = fortify(gridmapg5, region = c("id"))
+      fortind = fortify(indiamap)
+      mnlo = min(fortind$long)
+      mnla = min(fortind$lat)
+      mxlo = max(fortind$long)
+      mxla = max(fortind$lat)
+      
+      fort1 = fortified %>%
+        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
+      
+      zlists = setdiff(unique(fort1$id),unique(filled$gridg5))
+      empty = data.frame(unique(zlists),0)
+      names(empty) = names(filled)
+      
+      fortified$id = as.factor(fortified$id)
+      fort1$id = as.factor(fort1$id)
+      
+      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg5"))) # SPDF to plot
+      
+      if(length(zlists > 0))
+      {
+        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg5"))) # SPDF to plot
+        switch = T
+      }
+      else
+      {
+        switch = F
+      }
+      
+      data1 = data1 %>%
+        group_by(gridg5) %>% slice(1) %>% ungroup()
+      
+      mmplotdf = plotdf %>%
+        group_by(id) %>% summarize(minlong = min(long), maxlong = max(long), minlat = min(lat), maxlat = max(lat), freq = max(freq)) %>% ungroup()
+      
+      data1 = left_join(data1,mmplotdf,by = c("gridg5" = 'id'))
+      roundUp = function(x) 10^ceiling(log10(x))
+      data1$freq = round(data1$freq*roundUp(1/median(na.omit(data1$freq)))*10)
+      data1 = data1 %>% filter(freq > 0)
+      
+      
+      data1 = data1[rep(row.names(data1), data1$freq),]
+      
+      
+      data1 = data1 %>%
+        group_by(gridg5) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
+                                                            max(maxlong)),runif(n(),
+                                                                                max(minlat),
+                                                                                max(maxlat)))[,1],
+                                    LATITUDE = cbind(runif(n(),max(minlong),
+                                                           max(maxlong)),runif(n(),
+                                                                               max(minlat),
+                                                                               max(maxlat)))[,2])
+    }
   }
   
-  if (resolution == "g2")
+  if(resolution != "state" & resolution != "district"){load(maskpath)}
+
+  if(isTRUE(smooth) & resolution != "state" & resolution != "district")
   {
-    temp = data %>% 
-      group_by(gridg2) %>%
-      mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species) %>%
-      group_by(gridg2) %>%
-      summarize(freq = n()/max(lists))
-    
-    fortified = fortify(gridmapg2, region = c("id"))
-    fortified$id = as.factor(fortified$id)
-    
-    plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg2"))) # SPDF to plot
+    stats = plotindiamap +
+    {if(!isTRUE(rich))stat_density2d(data = data1, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), h = h, n = 100, geom = "polygon")} +
+    {if(rich)stat_density2d(data = datar, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), h = h, n = 100, geom = "polygon")} +
+      scale_fill_gradient2(low = muted("blue"),
+                           high = "white", space = "Lab", na.value = "grey50", trans = 'reverse')
+  }
+
+      
+  if(smooth){
+    minstat = min(ggplot_build(stats)$data[[2]]$level)
+    maxstat = max(ggplot_build(stats)$data[[2]]$level)
+  }else{
+    minstat = min
+    maxstat = max
   }
   
-  if (resolution == "g3")
+    
+  for (i in c(5,4,3,2,1))
   {
-    temp = data %>% 
-      group_by(gridg3) %>%
-      mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species, lists > 5) %>%
-      group_by(gridg3) %>%
-      summarize(freq = n()/max(lists))
-    
-    fortified = fortify(gridmapg3, region = c("id"))
-    fortified$id = as.factor(fortified$id)
-    
-    plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg3"))) # SPDF to plot
+    breaks = seq(minstat,maxstat,length.out=i)
+    labels = round(seq(min,max,length.out=i),2)
+    if(rich){labels = round(seq(min,max,length.out=i))}
+    if (length(unique(labels)) == i)
+      break
   }
+      
+  cols = "grey30"
+  cl = paste(" <",cutoff,"lists")
+  names(cols) = cl
   
-  if (resolution == "g4")
-  {
-    temp = data %>% 
-      group_by(gridg4) %>%
-      #mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      #filter(COMMON.NAME == species, lists > 5) %>%
-      group_by(gridg4) %>%
-      summarize(freq = max(specs))
-    
-    fortified = fortify(gridmapg4, region = c("id"))
-    fortified$id = as.factor(fortified$id)
-    
-    plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg4"))) # SPDF to plot
-  }
-  
-  if (resolution == "g5")
-  {
-    temp = data %>% 
-      group_by(gridg5) %>%
-      mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species, lists > 5) %>%
-      group_by(gridg5) %>%
-      summarize(freq = n()/max(lists))
-    
-    fortified = fortify(gridmapg5, region = c("id"))
-    fortified$id = as.factor(fortified$id)
-    
-    plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg5"))) # SPDF to plot
-  }
-  
-  if (resolution == "state" | resolution == "district")
-  {
-    plot = plotindiamap +
-      geom_polygon(data = plotdf, aes(x = long, y = lat, group = group, fill = freq)) +
-      #geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'grey92', fill = 'grey92')+
-      geom_path(data = fortify(statemap), aes(x = long, y = lat, group = group), col = 'black', size = 1) +
-      #geom_point(data = data.frame(lat = 31.431, long = 78.251), aes(x = long, y = lat), size = 3, col = "blue") +
-      scale_fill_gradientn(colours = heat.colors(3), trans = 'reverse') +
-      theme(legend.justification=c(1,1), legend.position=c(0.99,0.99)) +
-      theme(legend.title = element_blank(), legend.text = element_text(size = 8)) +
-      guides(fill = guide_legend(reverse = TRUE)) 
-  }
-  else
-  {
-    load(maskpath)
-    plot = plotindiamap +
-      geom_polygon(data = plotdf, aes(x = long, y = lat, group = group, fill = freq)) +
-      geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'white', fill = 'white')+
-      geom_path(data = fortify(statemap), aes(x = long, y = lat, group = group), col = 'black', size = 1) +
-      scale_fill_gradientn(colours = heat.colors(3), trans = 'reverse') +
-      theme(legend.justification=c(1,1), legend.position=c(0.99,0.99)) +
-      theme(legend.title = element_blank(), legend.text = element_text(size = 8)) +
-      guides(fill = guide_legend(reverse = TRUE)) +
-      ggtitle(species) +
-      theme(plot.title = element_text(hjust = 0.5, vjust = 0.1, size = 20))
-  }
-  
+  plot = plotindiamap +
+    {if(smooth & resolution != "state" & resolution != "district" & !isTRUE(rich))stat_density2d(data = data1, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), h = h, n = 100, geom = "polygon")} +
+    {if(smooth & resolution != "state" & resolution != "district" & rich)stat_density2d(data = datar, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), h = h, n = 100, geom = "polygon")} +
+    {if(!isTRUE(smooth))geom_polygon(data = plotdf, aes(x = long, y = lat, group = group, fill = freq))} +
+    {if(switch & showempty)geom_polygon(data = emptydf, aes(x = long, y = lat, group = group, col = cl), fill = "grey30")} +
+    {if(resolution != "state" & resolution != "district")geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'white', fill = 'white')}+
+    geom_path(data = fortify(statemap), aes(x = long, y = lat, group = group), col = 'black', size = 1) +
+    scale_fill_gradient2(low = muted("blue"),
+                         high = "white", space = "Lab", na.value = "grey50", trans = 'reverse',
+                         breaks = breaks, labels = labels) +
+    {if(switch)scale_colour_manual(values = cols)} +
+    theme(legend.justification=c(1,1), legend.position=c(0.99,0.99)) +
+    theme(legend.title = element_blank(), legend.text = element_text(size = 8)) +
+    {if(!isTRUE(rich))ggtitle(species)} +
+    {if(!isTRUE(rich))theme(plot.title = element_text(hjust = 0.5, vjust = 0.1, size = 20))} +
+    guides(fill = guide_legend(reverse = TRUE))
   
   return(plot)
 }
@@ -593,29 +1389,32 @@ expandbyspecies = function(data, species)
 ## tempres can be "fortnight", "month", "none"
 ## spaceres can be 40 and 80 km ("g2","g4","none")
 ## returns 4 values or 4 x 10 values for trends
-## the type/scale of analyses - "
+## the type/scale of analyses - "all","g1","g2","g3","g4","g5","model"
 
 freqtrends = function(data,species,tempres="none",spaceres="none",
-                      trends=F)
+                      trends=F,analysis="model",count=F)
 {
   require(tidyverse)
   require(lme4)
   
-  data = data %>%
-    mutate(timegroups = as.character(year)) %>%
-    mutate(timegroups = ifelse(year < 1990, "before 1990", timegroups)) %>%
-    mutate(timegroups = ifelse(year >= 1990 & year <= 1999, "1990-1999", timegroups)) %>%
-    mutate(timegroups = ifelse(year > 1999 & year <= 2005, "2000-2005", timegroups)) %>%
-    mutate(timegroups = ifelse(year > 2005 & year <= 2010, "2006-2010", timegroups)) %>%
-    mutate(timegroups = ifelse(year > 2010 & year <= 2013, "2011-2013", timegroups)) %>%
-    mutate(timegroups = ifelse(year == 2014, "2014", timegroups)) %>%
-    mutate(timegroups = ifelse(year == 2015, "2015", timegroups)) %>%
-    mutate(timegroups = ifelse(year == 2016, "2016", timegroups)) %>%
-    mutate(timegroups = ifelse(year == 2017, "2017", timegroups)) %>%
-    mutate(timegroups = ifelse(year == 2018, "2018", timegroups))
-  
-  data$timegroups = as.factor(data$timegroups)
-  
+  if (isTRUE(trends))
+  {
+    data = data %>%
+      mutate(timegroups = as.character(year)) %>%
+      mutate(timegroups = ifelse(year < 1990, "before 1990", timegroups)) %>%
+      mutate(timegroups = ifelse(year >= 1990 & year <= 1999, "1990-1999", timegroups)) %>%
+      mutate(timegroups = ifelse(year > 1999 & year <= 2005, "2000-2005", timegroups)) %>%
+      mutate(timegroups = ifelse(year > 2005 & year <= 2010, "2006-2010", timegroups)) %>%
+      mutate(timegroups = ifelse(year > 2010 & year <= 2013, "2011-2013", timegroups)) %>%
+      mutate(timegroups = ifelse(year == 2014, "2014", timegroups)) %>%
+      mutate(timegroups = ifelse(year == 2015, "2015", timegroups)) %>%
+      mutate(timegroups = ifelse(year == 2016, "2016", timegroups)) %>%
+      mutate(timegroups = ifelse(year == 2017, "2017", timegroups)) %>%
+      mutate(timegroups = ifelse(year == 2018, "2018", timegroups))
+    
+    data$timegroups = as.factor(data$timegroups)
+  }
+
   ## considers only complete lists
   
   data = data %>%
@@ -690,150 +1489,551 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
   {
     data = temp %>% left_join(data)
   }
-
+  
+  data2 = data %>%
+    filter(year>(as.integer(format(Sys.Date(), "%Y"))-5))
+  
   ## overall for country
   
-  if (!isTRUE(trends))
+  if (analysis == "all")
   {
-    f1 = data %>% 
-      mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species) %>%
-      summarize(freq = n()/max(lists))
+    if (!isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        f = data2 %>% 
+          mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          summarize(freq = n()/max(lists))
+      }
+      if (isTRUE(count))
+      {
+        f = data2 %>%
+          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+          mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          summarize(freq = sum(OBSERVATION.COUNT)/max(lists))
+      }
+    }
+    
+    if (isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        f = data %>% 
+          group_by(timegroups) %>%
+          mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(timegroups) %>% summarize(freq = n()/max(lists)) %>% ungroup()
+        
+        f$timegroups = as.character(f$timegroups)
+      }
+      if (isTRUE(count))
+      {
+        f = data %>%
+          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+          group_by(timegroups) %>%
+          mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(timegroups) %>%   summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>% ungroup()
+        
+        f$timegroups = as.character(f$timegroups)
+      }
+    }
   }
   
-  if (isTRUE(trends))
+  
+  ## averaged across g1
+  
+  if (analysis == "g1")
   {
-    f1 = data %>% 
-      group_by(timegroups) %>%
-      mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species) %>%
-      group_by(timegroups) %>% summarize(freq = n()/max(lists)) %>% ungroup()
+    if (!isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        temp = data2 %>% 
+          group_by(gridg1) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(gridg1) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          summarize(freq = mean(freq))
+      }
+      if (isTRUE(count))
+      {
+        temp = data2 %>% 
+          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+          group_by(gridg1) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(gridg1) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          summarize(freq = mean(freq))
+      }
+
+    }
     
-    f1$timegroups = as.character(f1$timegroups)
+    if (isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        temp = data %>% 
+          group_by(timegroups,gridg1) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(timegroups,gridg1) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+        
+        f$timegroups = as.character(f$timegroups)
+      }
+      if (isTRUE(count))
+      {
+        temp = data %>% 
+          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+          group_by(timegroups,gridg1) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(timegroups,gridg1) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+        
+        f$timegroups = as.character(f$timegroups)
+      }
+    }
+  }
+  
+  ## averaged across g2
+  
+  if (analysis == "g2")
+  {
+    if (!isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        temp = data2 %>% 
+          group_by(gridg2) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(gridg2) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          summarize(freq = mean(freq))
+      }
+      if (isTRUE(count))
+      {
+        temp = data2 %>% 
+          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+          group_by(gridg2) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(gridg2) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          summarize(freq = mean(freq))
+      }
+      
+    }
+    
+    if (isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        temp = data %>% 
+          group_by(timegroups,gridg2) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(timegroups,gridg2) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+        
+        f$timegroups = as.character(f$timegroups)
+      }
+      if (isTRUE(count))
+      {
+        temp = data %>% 
+          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+          group_by(timegroups,gridg2) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(timegroups,gridg2) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+        
+        f$timegroups = as.character(f$timegroups)
+      }
+    }
+  }
+  
+  ## averaged across g3
+  
+  if (analysis == "g3")
+  {
+    if (!isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        temp = data2 %>% 
+          group_by(gridg3) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(gridg3) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          summarize(freq = mean(freq))
+      }
+      if (isTRUE(count))
+      {
+        temp = data2 %>% 
+          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+          group_by(gridg3) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(gridg3) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          summarize(freq = mean(freq))
+      }
+    }
+    
+    if (isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        temp = data %>% 
+          group_by(timegroups,gridg3) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(timegroups,gridg3) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+        
+        f$timegroups = as.character(f$timegroups)
+      }
+      if (isTRUE(count))
+      {
+        temp = data %>% 
+          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+          group_by(timegroups,gridg3) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(timegroups,gridg3) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+        
+        f$timegroups = as.character(f$timegroups)
+      }
+    }
+  }
+  
+  ## averaged across g4
+  
+  if (analysis == "g4")
+  {
+    if (!isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        temp = data2 %>% 
+          group_by(gridg4) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(gridg4) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          summarize(freq = mean(freq))
+      }
+      if (isTRUE(count))
+      {
+        temp = data2 %>% 
+          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+          group_by(gridg4) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(gridg4) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          summarize(freq = mean(freq))
+      }
+    }
+    
+    if (isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        temp = data %>% 
+          group_by(timegroups,gridg4) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(timegroups,gridg4) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+        
+        f$timegroups = as.character(f$timegroups)
+      }
+      if (isTRUE(count))
+      {
+        temp = data %>% 
+          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+          group_by(timegroups,gridg4) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(timegroups,gridg4) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+        
+        f$timegroups = as.character(f$timegroups)
+      }
+    }
   }
   
   ## averaged across g5
   
+  if (analysis == "g5")
+  {
+    if (!isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        temp = data2 %>% 
+          group_by(gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(gridg5) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          summarize(freq = mean(freq))
+      }
+      if (isTRUE(count))
+      {
+        temp = data2 %>% 
+          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+          group_by(gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(gridg5) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          summarize(freq = mean(freq))
+      }
+    }
+    
+    if (isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        temp = data %>% 
+          group_by(timegroups,gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(timegroups,gridg5) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+        
+        f$timegroups = as.character(f$timegroups)
+      }
+      if (isTRUE(count))
+      {
+        temp = data %>% 
+          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+          group_by(timegroups,gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+          filter(COMMON.NAME == species) %>%
+          group_by(timegroups,gridg5) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
+          ungroup()
+        
+        f = temp %>%
+          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+        
+        f$timegroups = as.character(f$timegroups)
+      }
+    }
+  }
+  
+  if (analysis == "model")
+  {
+    if (!isTRUE(trends))
+    {
+      data1 = data
+    }
+    
+    if (isTRUE(trends))
+    {
+      data1 = data %>% select(-timegroups)
+    }
+    
+
+    ## expand data for models
+    
+    #if (is.na(exd))
+    #{
+    ed = expandbyspecies(data1,species)
+    #}
+    
+    #if (!is.na(exd))
+    #{
+    #  ed = exd
+    #}
+    
+    ## model 1
+    
+    if (!isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        ed = ed %>%
+          filter(year>(as.integer(format(Sys.Date(), "%Y"))-5))
+        
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+        
+        f = predict(m1, data.frame(
+          no.sp = 20),
+          type="response", re.form = NA)
+      }
+      if (isTRUE(count))
+      {
+        require(glmmTMB)
+        
+        ed = ed %>%
+          filter(year>(as.integer(format(Sys.Date(), "%Y"))-5)) %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.NUMBER))) %>% ungroup()
+          
+        m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                     log(no.sp) + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                     family=poisson)
+        
+        newdata = ed %>%
+          distinct(ST_NM,LOCALITY.HOTSPOT,OBSERVER.ID)
+        newdata$no.sp = 20
+        
+        fd = predict(m1, newdata = newdata,
+          type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          group_by(ST_NM) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          summarize(f = mean(f))
+        
+        f = fx$f
+      }
+    }
+    
+    if (isTRUE(trends))
+    {
+      if (!isTRUE(count))
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + timegroups + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+        
+        f = data.frame(unique(data$timegroups))
+        names(f) = "timegroups"
+        f$freq = predict(m1, data.frame(timegroups = f$timegroups,
+                                        no.sp = 20),
+                         type="response", re.form = NA)
+        f$timegroups = as.character(f$timegroups)
+      }
+      if (isTRUE(count))
+      {
+        ed = ed %>%
+          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.NUMBER))) %>% ungroup()
+          
+        m1 = glmer(OBSERVATION.NUMBER ~ 
+                     log(no.sp) + timegroups + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=poisson(link = 'log'), nAGQ = 0)
+        
+        f = data.frame(unique(data$timegroups))
+        names(f) = "timegroups"
+        f$freq = predict(m1, data.frame(timegroups = f$timegroups,
+                                        no.sp = 20),
+                         type="response", re.form = NA)
+        f$timegroups = as.character(f$timegroups)
+      }
+    }
+    
+    ## model 2
+    
+    #gc()
+    
+    #if (!isTRUE(trends))
+    #{
+    #  m2 = glmer(OBSERVATION.COUNT ~ 
+    #               log(no.sp) + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+    
+    #  f6 = predict(m2, data.frame(
+    #    no.sp = 20),
+    #    type="response", re.form = NA)
+    #}
+    
+    #if (isTRUE(trends))
+    #{
+    #  m2 = glmer(OBSERVATION.COUNT ~ 
+    #               log(no.sp) + timegroups + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+    #  f6 = data.frame(unique(data$timegroups))
+    #  names(f6) = "timegroups"
+    #  f6$freq = predict(m2, data.frame(timegroups = f5$timegroups,
+    #                                   no.sp = 20),
+    #                    type="response", re.form = NA)
+    #  f6$timegroups = as.character(f6$timegroups)
+    #}
+  }
+  
+  
+  
   if (!isTRUE(trends))
   {
-    temp = data %>% 
-      group_by(gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species) %>%
-      group_by(gridg5) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-      ungroup()
+    f1 = data.frame(method = analysis)
     
-    f2 = temp %>%
-      summarize(freq = mean(freq))
-  }
-  
-  if (isTRUE(trends))
-  {
-    temp = data %>% 
-      group_by(timegroups,gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-      filter(COMMON.NAME == species) %>%
-      group_by(timegroups,gridg5) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-      ungroup()
+    if (analysis != "model")
+    {
+      f1$freq = f$freq
+    }
     
-    f2 = temp %>%
-      group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+    if (analysis == "model")
+    {
+      f1$freq = f
+    }
     
-    f2$timegroups = as.character(f2$timegroups)
-  }
-  
-  data1 = data %>% select(-timegroups)
-  
-  ## expand data for models
-  
-  #if (is.na(exd))
-  #{
-  ed = expandbyspecies(data1,species)
-  #}
-  
-  #if (!is.na(exd))
-  #{
-  #  ed = exd
-  #}
-  
-  ## model 1
-  
-  if (!isTRUE(trends))
-  {
-    m1 = glmer(OBSERVATION.COUNT ~ 
-                 log(no.sp) + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
-    
-    f5 = predict(m1, data.frame(
-      no.sp = 20),
-      type="response", re.form = NA)
-  }
-  
-  if (isTRUE(trends))
-  {
-    m1 = glmer(OBSERVATION.COUNT ~ 
-                 log(no.sp) + timegroups + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
-    
-    f5 = data.frame(unique(data$timegroups))
-    names(f5) = "timegroups"
-    f5$freq = predict(m1, data.frame(timegroups = f5$timegroups,
-                                     no.sp = 20),
-                      type="response", re.form = NA)
-    f5$timegroups = as.character(f5$timegroups)
-  }
-  
-  ## model 2
-  
-  #gc()
-  
-  #if (!isTRUE(trends))
-  #{
-  #  m2 = glmer(OBSERVATION.COUNT ~ 
-  #               log(no.sp) + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
-    
-  #  f6 = predict(m2, data.frame(
-  #    no.sp = 20),
-  #    type="response", re.form = NA)
-  #}
-  
-  #if (isTRUE(trends))
-  #{
-  #  m2 = glmer(OBSERVATION.COUNT ~ 
-  #               log(no.sp) + timegroups + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
-  #  f6 = data.frame(unique(data$timegroups))
-  #  names(f6) = "timegroups"
-  #  f6$freq = predict(m2, data.frame(timegroups = f5$timegroups,
-  #                                   no.sp = 20),
-  #                    type="response", re.form = NA)
-  #  f6$timegroups = as.character(f6$timegroups)
-  #}
-  
-  if (!isTRUE(trends))
-  {
-    f = data.frame(method = c("overall","g5","modelhotspots"
-                              #,"modelgrids"
-                              ))
-    f$freq = c(f1,f2,f5
-               #,f6
-               )
   }
   
   if (isTRUE(trends))
   {
     l = length(unique(data$timegroups))
-    f = data.frame(method = c(rep("overall",l),rep("g5",l),rep("modelhotspots",l)
-                              #,rep("modelgrids",l)
-                              ))
-    f$timegroups = c(f1$timegroups,f2$timegroups,f5$timegroups
-                     #,f6$timegroups
-                     )
-    f$freq = c(f1$freq,f2$freq,f5$freq
-               #,f6$freq
-               )
-    f$timegroups = factor(f$timegroups, levels = c("before 1990","1990-1999","2000-2005","2006-2010",
-                                                   "2011-2013","2014","2015","2016","2017","2018"))
-    f = f[order(f$method,f$timegroups),]
-    f$species = species
+    f1 = data.frame(method = rep(analysis,l)
+                    #,rep("modelgrids",l)
+    )
+    f1$timegroups = f$timegroups
+    
+    f1$freq = f$freq
+    
+    f1$timegroups = factor(f1$timegroups, levels = c("before 1990","1990-1999","2000-2005","2006-2010",
+                                                     "2011-2013","2014","2015","2016","2017","2018"))
+    f1 = f1[order(f1$method,f1$timegroups),]
+    f1$species = species
   }
   
-  return(f)
+  return(f1)
 }
 
 
