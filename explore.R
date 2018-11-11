@@ -36,8 +36,8 @@ plotfreqmap(data, "Indian Paradise-Flycatcher", "g4", level = "species", season 
 
 ########################### run frequency trends function #########################################
 
-freqtrends(data, "Indian Paradise-Flycatcher", politicalunit="state", unitname="Kerala", analysis="count1",
-           tempres="month", spaceres="g4", trends=T, minobs=100, baseyear=2010, zinf=0)
+freqtrends(data, "Indian Pitta", politicalunit="state", unitname="Kerala", analysis="pa2",
+           tempres="fortnight", spaceres="g4", trends=F, minobs=100, baseyear=2010, zinf=0)
 
 
 

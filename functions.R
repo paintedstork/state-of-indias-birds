@@ -1520,7 +1520,7 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
   
   if (politicalunit == "district")
   {
-    if (is.na(unitname) | !unitname %in% unique(data$district))
+    if (is.na(unitname) | !unitname %in% unique(data$DISTRICT))
       return(paste(unitname,"is not a valid",politicalunit,"name"))
   }
   
@@ -1567,6 +1567,9 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
   
   if (!species %in% unique(data$COMMON.NAME))
     return(paste(species,"is not a valid species name for the region selected"))
+  
+  if (is.na(zinf) | (zinf != 0 & zinf != 1))
+    return(paste("zero inflation value zinf must be either 0 or 1"))
   
   if (isTRUE(trends))
   {
