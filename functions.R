@@ -323,16 +323,20 @@ addmapvars = function(datapath = "data.RData", mappath = "maps.RData")
 ## species common name
 ## path can be true or false; this is for boundaries
 
-plotfreqmap = function(data, taxonname, resolution, level = "species", rich = F, smooth = F, h = 2, cutoff = 5, showempty = T,
+plotfreqmap = function(data, taxonname, resolution, level = "species", season = "year round", rich = F,
+                       smooth = F, h = 2, cutoff = 5, baseyear = 2010, showempty = T, 
                        mappath = "maps.RData", maskpath = "mask.RData")
 {
   ## errors for wrong parameter values
   
   if (!level %in% c("species","genus","family","order"))
-    return(paste("The taxonomic level",level,"doesn't exist. Select any one from species, genus, family and order (in quotes)"))
+    return(paste("the taxonomic level",level,"doesn't exist, select any one from species, genus, family and order (in quotes)"))
 
   if (!resolution %in% c("state","district","g1","g2","g3","g4","g5"))
-    return(paste("The resolution",resolution,"doesn't exist. Select any one from state, district, g1, g2, g3, g4 and g5 (in quotes)"))
+    return(paste("the resolution",resolution,"doesn't exist, select any one from state, district, g1, g2, g3, g4 and g5 (in quotes)"))
+  
+  if (!season %in% c("year round","summer","winter","passage"))
+    return(paste("the season",season,"doesn't exist, select any one from year round, summer, winter and passage (in quotes)"))
   
   if (!is.na(as.logical(rich)))
   {
@@ -360,6 +364,9 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", rich = F,
   
   if (cutoff & (cutoff < 0 | cutoff != as.integer(cutoff)))
     return("cutoff (minimum no. of lists) must be a non-negative integer")
+  
+  if (baseyear & (baseyear < 0 | baseyear > as.integer(format(Sys.Date(), "%Y")) | baseyear != as.integer(baseyear)))
+    return("baseyear (minimum year to consider) must be a non-negative integer before the current year")
   
   if (smooth & (h < 0 | h != as.numeric(h)))
     return("h (smoothing bandwidth) must be positive")
@@ -438,10 +445,28 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", rich = F,
     data$TAXON.NAME = data$COMMON.NAME
   }
   
+  if (season == "summer")
+  {
+    data = data %>% 
+      filter(day >= 135 & day <= 225)
+  }
+  
+  if (season == "winter")
+  {
+    data = data %>% 
+      filter(day < 60 | day > 300)
+  }
+  
+  if (season == "passage")
+  {
+    data = data %>% 
+      filter((day >= 120 & day < 135) | (day > 240 & day <= 300))
+  }
+  
   if (!isTRUE(rich))
   {
     data = data %>%
-      filter(year >=2013, ALL.SPECIES.REPORTED == 1)
+      filter(year >= baseyear, ALL.SPECIES.REPORTED == 1)
     data1 = data %>% filter(TAXON.NAME == taxonname)
   }
   
@@ -1468,17 +1493,80 @@ expandbyspecies = function(data, species)
 #######################################################################################
 
 
-## to output a dataframe that compares 'abundances' from summaries and models
+## to output a frequency based on the type of summary
 ## tempres can be "fortnight", "month", "none"
 ## spaceres can be 40 and 80 km ("g2","g4","none")
-## returns 4 values or 4 x 10 values for trends
-## the type/scale of analyses - "all","g1","g2","g3","g4","g5","model"
+## returns a single value or 10 values for trends
+## the type/scale of analyses - "trivial pa","gridded pa","trivial count","gridded count","pa1","pa2",
+## "pa3","count1","count2","count3"
+## only last 5 years for non-trend analyses
 
-freqtrends = function(data,species,tempres="none",spaceres="none",
-                      trends=F,analysis="model",count=F)
+freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis="trivial average",
+                      tempres="none",spaceres="none",trends=F,minobs=100,baseyear=2010,zinf=0)
 {
   require(tidyverse)
   require(lme4)
+  
+  ## errors for wrong parameter values
+  
+  if (!politicalunit %in% c("country","state","district"))
+    return(paste("the filtering level",politicalunit,"doesn't exist. Select any one from country, state and district (in quotes)"))
+  
+  if (politicalunit == "state")
+  {
+    if (is.na(unitname) | !unitname %in% unique(data$ST_NM))
+      return(paste(unitname,"is not a valid",politicalunit,"name"))
+  }
+  
+  if (politicalunit == "district")
+  {
+    if (is.na(unitname) | !unitname %in% unique(data$district))
+      return(paste(unitname,"is not a valid",politicalunit,"name"))
+  }
+  
+  if (!analysis %in% c("trivial pa","gridded pa","trivial count","gridded count","pa1","pa2","pa3","count1","count2","count3"))
+    return(paste("the analysis type",analysis,"doesn't exist, select any one from trivial pa, gridded pa, trivial count, gridded count, pa1, pa2, pa3, count1, count2 and count3 (in quotes)"))
+  
+  
+  if (!tempres %in% c("fortnight","month","none"))
+    return(paste("the temporal resolution",tempres,"doesn't exist, select any one from fortnight, month and none (in quotes)"))
+  
+  if (!spaceres %in% c("g2","g4","none"))
+    return(paste("the spatial resolution",spaceres,"doesn't exist, select any one from g2, g4 and none (in quotes)"))
+  
+  if (!is.na(as.logical(trends)))
+  {
+    if (trends != as.logical(trends))
+      return("trends must be a logical operator")
+  }else{
+    return("trends must be a logical operator")
+  }
+  
+  if (minobs & (minobs <= 0 | minobs != as.integer(minobs)))
+    return("minobs (minimum no. of lists) must be a positive integer")
+  
+  if (baseyear & (baseyear < 0 | baseyear > as.integer(format(Sys.Date(), "%Y")) | baseyear != as.integer(baseyear)))
+    return("baseyear (minimum year to consider) must be a non-negative integer before the current year")
+  
+  ## considers only complete lists
+  
+  data = data %>%
+    filter(ALL.SPECIES.REPORTED == 1)
+  
+  if (politicalunit == "state")
+  {
+    data = data %>%
+      filter(ST_NM == unitname)
+  }
+  
+  if (politicalunit == "district")
+  {
+    data = data %>%
+      filter(DISTRICT == unitname)
+  }
+  
+  if (!species %in% unique(data$COMMON.NAME))
+    return(paste(species,"is not a valid species name for the region selected"))
   
   if (isTRUE(trends))
   {
@@ -1498,13 +1586,10 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
     data$timegroups = as.factor(data$timegroups)
   }
   
-  ## considers only complete lists
-  
-  data = data %>%
-    filter(ALL.SPECIES.REPORTED == 1)
-  
+
   if (tempres == "fortnight" & spaceres == "g2")
   {
+    data$gridg = data$gridg2
     temp = data %>%
       filter(COMMON.NAME == species) %>%
       distinct(gridg2,fort)
@@ -1512,6 +1597,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
   
   if (tempres == "fortnight" & spaceres == "g4")
   {
+    data$gridg = data$gridg4
     temp = data %>%
       filter(COMMON.NAME == species) %>%
       distinct(gridg4,fort)
@@ -1519,6 +1605,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
   
   if (tempres == "fortnight" & spaceres == "none")
   {
+    data$gridg = data$gridg4
     temp = data %>%
       filter(COMMON.NAME == species) %>%
       distinct(fort)
@@ -1526,6 +1613,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
   
   if (tempres == "month" & spaceres == "g2")
   {
+    data$gridg = data$gridg2
     temp = data %>%
       filter(COMMON.NAME == species) %>%
       distinct(gridg2,month)
@@ -1533,6 +1621,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
   
   if (tempres == "month" & spaceres == "g4")
   {
+    data$gridg = data$gridg4
     temp = data %>%
       filter(COMMON.NAME == species) %>%
       distinct(gridg4,month)
@@ -1540,6 +1629,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
   
   if (tempres == "month" & spaceres == "none")
   {
+    data$gridg = data$gridg4
     temp = data %>%
       filter(COMMON.NAME == species) %>%
       distinct(month)
@@ -1547,6 +1637,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
   
   if (tempres == "none" & spaceres == "g2")
   {
+    data$gridg = data$gridg2
     temp = data %>%
       filter(COMMON.NAME == species) %>%
       distinct(gridg2)
@@ -1554,6 +1645,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
   
   if (tempres == "none" & spaceres == "g4")
   {
+    data$gridg = data$gridg4
     temp = data %>%
       filter(COMMON.NAME == species) %>%
       distinct(gridg4)
@@ -1564,6 +1656,7 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
   if (tempres == "none" & spaceres == "none")
   {
     fl = 1
+    data$gridg = data$gridg4
   }
   
   ## filter only those combinations
@@ -1573,443 +1666,158 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
     data = temp %>% left_join(data)
   }
   
+  if (length(data[data$COMMON.NAME == species,]$OBSERVATION.COUNT) < minobs)
+    return(paste(species,"has been reported in less than",minobs,"lists, please choose another species"))
+  
+  ## filter out data for non-trend analyses - only last 5 years
+  
   data2 = data %>%
-    filter(year>(as.integer(format(Sys.Date(), "%Y"))-5))
+    filter(year >= baseyear)
   
-  ## overall for country
-  
-  if (analysis == "all")
+
+  if (!isTRUE(trends))
   {
-    if (!isTRUE(trends))
+    if (analysis == "trivial pa")
     {
-      if (!isTRUE(count))
-      {
-        f = data2 %>% 
-          mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          summarize(freq = n()/max(lists))
-      }
-      if (isTRUE(count))
-      {
-        f = data2 %>%
-          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
-          mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          summarize(freq = sum(OBSERVATION.COUNT)/max(lists))
-      }
+      f = data2 %>% 
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species) %>%
+        summarize(freq = n()/max(lists))
     }
     
-    if (isTRUE(trends))
+    if (analysis == "trivial count")
     {
-      if (!isTRUE(count))
-      {
-        f = data %>% 
-          group_by(timegroups) %>%
-          mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(timegroups) %>% summarize(freq = n()/max(lists)) %>% ungroup()
-        
-        f$timegroups = as.character(f$timegroups)
-      }
-      if (isTRUE(count))
-      {
-        f = data %>%
-          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
-          group_by(timegroups) %>%
-          mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(timegroups) %>%   summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>% ungroup()
-        
-        f$timegroups = as.character(f$timegroups)
-      }
+      f = data2 %>%
+        mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+        group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species) %>%
+        summarize(freq = sum(OBSERVATION.COUNT)/max(lists))
     }
-  }
-  
-  
-  ## averaged across g1
-  
-  if (analysis == "g1")
-  {
-    if (!isTRUE(trends))
+    
+    if (analysis == "gridded pa")
     {
-      if (!isTRUE(count))
-      {
-        temp = data2 %>% 
-          group_by(gridg1) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(gridg1) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          summarize(freq = mean(freq))
-      }
-      if (isTRUE(count))
-      {
-        temp = data2 %>% 
-          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
-          group_by(gridg1) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(gridg1) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          summarize(freq = mean(freq))
-      }
+      temp = data2 %>% 
+        group_by(gridg) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species) %>%
+        group_by(gridg) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+        ungroup()
       
+      f = temp %>%
+        summarize(freq = mean(freq))
     }
     
-    if (isTRUE(trends))
+    if (analysis == "gridded count")
     {
-      if (!isTRUE(count))
-      {
-        temp = data %>% 
-          group_by(timegroups,gridg1) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(timegroups,gridg1) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
-        
-        f$timegroups = as.character(f$timegroups)
-      }
-      if (isTRUE(count))
-      {
-        temp = data %>% 
-          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
-          group_by(timegroups,gridg1) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(timegroups,gridg1) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
-        
-        f$timegroups = as.character(f$timegroups)
-      }
-    }
-  }
-  
-  ## averaged across g2
-  
-  if (analysis == "g2")
-  {
-    if (!isTRUE(trends))
-    {
-      if (!isTRUE(count))
-      {
-        temp = data2 %>% 
-          group_by(gridg2) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(gridg2) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          summarize(freq = mean(freq))
-      }
-      if (isTRUE(count))
-      {
-        temp = data2 %>% 
-          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
-          group_by(gridg2) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(gridg2) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          summarize(freq = mean(freq))
-      }
+      temp = data2 %>% 
+        mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+        group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+        group_by(gridg1) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species) %>%
+        group_by(gridg1) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
+        ungroup()
       
+      f = temp %>%
+        summarize(freq = mean(freq))
     }
     
-    if (isTRUE(trends))
-    {
-      if (!isTRUE(count))
-      {
-        temp = data %>% 
-          group_by(timegroups,gridg2) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(timegroups,gridg2) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
-        
-        f$timegroups = as.character(f$timegroups)
-      }
-      if (isTRUE(count))
-      {
-        temp = data %>% 
-          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
-          group_by(timegroups,gridg2) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(timegroups,gridg2) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
-        
-        f$timegroups = as.character(f$timegroups)
-      }
-    }
-  }
-  
-  ## averaged across g3
-  
-  if (analysis == "g3")
-  {
-    if (!isTRUE(trends))
-    {
-      if (!isTRUE(count))
-      {
-        temp = data2 %>% 
-          group_by(gridg3) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(gridg3) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          summarize(freq = mean(freq))
-      }
-      if (isTRUE(count))
-      {
-        temp = data2 %>% 
-          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
-          group_by(gridg3) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(gridg3) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          summarize(freq = mean(freq))
-      }
-    }
-    
-    if (isTRUE(trends))
-    {
-      if (!isTRUE(count))
-      {
-        temp = data %>% 
-          group_by(timegroups,gridg3) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(timegroups,gridg3) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
-        
-        f$timegroups = as.character(f$timegroups)
-      }
-      if (isTRUE(count))
-      {
-        temp = data %>% 
-          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
-          group_by(timegroups,gridg3) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(timegroups,gridg3) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
-        
-        f$timegroups = as.character(f$timegroups)
-      }
-    }
-  }
-  
-  ## averaged across g4
-  
-  if (analysis == "g4")
-  {
-    if (!isTRUE(trends))
-    {
-      if (!isTRUE(count))
-      {
-        temp = data2 %>% 
-          group_by(gridg4) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(gridg4) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          summarize(freq = mean(freq))
-      }
-      if (isTRUE(count))
-      {
-        temp = data2 %>% 
-          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
-          group_by(gridg4) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(gridg4) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          summarize(freq = mean(freq))
-      }
-    }
-    
-    if (isTRUE(trends))
-    {
-      if (!isTRUE(count))
-      {
-        temp = data %>% 
-          group_by(timegroups,gridg4) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(timegroups,gridg4) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
-        
-        f$timegroups = as.character(f$timegroups)
-      }
-      if (isTRUE(count))
-      {
-        temp = data %>% 
-          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
-          group_by(timegroups,gridg4) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(timegroups,gridg4) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
-        
-        f$timegroups = as.character(f$timegroups)
-      }
-    }
-  }
-  
-  ## averaged across g5
-  
-  if (analysis == "g5")
-  {
-    if (!isTRUE(trends))
-    {
-      if (!isTRUE(count))
-      {
-        temp = data2 %>% 
-          group_by(gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(gridg5) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          summarize(freq = mean(freq))
-      }
-      if (isTRUE(count))
-      {
-        temp = data2 %>% 
-          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
-          group_by(gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(gridg5) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          summarize(freq = mean(freq))
-      }
-    }
-    
-    if (isTRUE(trends))
-    {
-      if (!isTRUE(count))
-      {
-        temp = data %>% 
-          group_by(timegroups,gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(timegroups,gridg5) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
-        
-        f$timegroups = as.character(f$timegroups)
-      }
-      if (isTRUE(count))
-      {
-        temp = data %>% 
-          mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
-          group_by(timegroups,gridg5) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-          filter(COMMON.NAME == species) %>%
-          group_by(timegroups,gridg5) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
-          ungroup()
-        
-        f = temp %>%
-          group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
-        
-        f$timegroups = as.character(f$timegroups)
-      }
-    }
-  }
-  
-  if (analysis == "model")
-  {
-    if (!isTRUE(trends))
+    if (analysis == "pa1")
     {
       data1 = data
-    }
-    
-    if (isTRUE(trends))
-    {
-      data1 = data %>% select(-timegroups)
-    }
-    
-    
-    ## expand data for models
-    
-    #if (is.na(exd))
-    #{
-    ed = expandbyspecies(data1,species)
-    #}
-    
-    #if (!is.na(exd))
-    #{
-    #  ed = exd
-    #}
-    
-    ## model 1
-    
-    if (!isTRUE(trends))
-    {
-      if (!isTRUE(count))
+      ed = expandbyspecies(data1,species)
+      
+      ed = ed %>%
+        filter(year >= baseyear)
+      
+      if (politicalunit == "country")
       {
-        ed = ed %>%
-          filter(year>(as.integer(format(Sys.Date(), "%Y"))-5))
-        
         m1 = glmer(OBSERVATION.COUNT ~ 
-                     log(no.sp) + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
-        
-        f = predict(m1, data.frame(
-          no.sp = 20),
-          type="response", re.form = NA)
+                     log(no.sp) + (1|ST_NM/DISTRICT/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
       }
-      if (isTRUE(count))
+      
+      if (politicalunit == "state")
       {
-        require(glmmTMB)
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + (1|DISTRICT/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      if (politicalunit == "district")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + (1|LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      f = predict(m1, data.frame(
+        no.sp = 20),
+        type="response", re.form = NA)
+    }
+      
+    if (analysis == "pa2")
+    {
+      data1 = data
+      ed = expandbyspecies(data1,species)
+      
+      ed = ed %>%
+        filter(year >= baseyear)
+      
+      if (spaceres == "none")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + (1|gridg5/gridg4/gridg2) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      if (spaceres == "g4")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + (1|gridg4/gridg2) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      if (spaceres == "g2")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + (1|gridg2) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      f = predict(m1, data.frame(
+        no.sp = 20),
+        type="response", re.form = NA)
+    }  
+    
+    if (analysis == "count1")
+    {
+      data1 = data
+      ed = expandbyspecies(data1,species)
+      
+      require(glmmTMB)
+      
+      ed = ed %>%
+        filter(year >= baseyear) %>%
+        group_by(group.id) %>% filter(!any(is.na(OBSERVATION.NUMBER))) %>% ungroup()
+      
+      if (politicalunit == "country")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + (1|ST_NM/DISTRICT/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, ziformula=~0,
+                       family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + (1|ST_NM/DISTRICT/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                       family=poisson)
+        }
         
-        ed = ed %>%
-          filter(year>(as.integer(format(Sys.Date(), "%Y"))-5)) %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.NUMBER))) %>% ungroup()
-        
-        m1 = glmmTMB(OBSERVATION.NUMBER ~ 
-                       log(no.sp) + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, ziformula=~1,
-                     family=poisson)
         
         newdata = ed %>%
-          distinct(ST_NM,LOCALITY.HOTSPOT,OBSERVER.ID)
+          distinct(ST_NM,DISTRICT,LOCALITY.HOTSPOT,OBSERVER.ID)
         newdata$no.sp = 20
         
         fd = predict(m1, newdata = newdata,
@@ -2017,87 +1825,555 @@ freqtrends = function(data,species,tempres="none",spaceres="none",
         newdata$f = fd
         
         fx = newdata %>%
+          group_by(ST_NM,DISTRICT) %>% summarize(f = mean(f)) %>% ungroup() %>%
           group_by(ST_NM) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          summarize(f = mean(f))
+        
+        f = fx$f
+      }
+      
+      if (politicalunit == "state")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + (1|DISTRICT/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, ziformula=~0,
+                       family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + (1|DISTRICT/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                       family=poisson)
+        }
+        
+        newdata = ed %>%
+          distinct(DISTRICT,LOCALITY.HOTSPOT,OBSERVER.ID)
+        newdata$no.sp = 20
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          group_by(DISTRICT) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          summarize(f = mean(f))
+        
+        f = fx$f
+      }
+      
+      if (politicalunit == "district")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + (1|LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, ziformula=~0,
+                       family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + (1|LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                       family=poisson)
+        }
+        
+        
+        newdata = ed %>%
+          distinct(LOCALITY.HOTSPOT,OBSERVER.ID)
+        newdata$no.sp = 20
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
           summarize(f = mean(f))
         
         f = fx$f
       }
     }
     
-    if (isTRUE(trends))
+    if (analysis == "count2")
     {
-      if (!isTRUE(count))
+      data1 = data
+      ed = expandbyspecies(data1,species)
+      
+      require(glmmTMB)
+      
+      ed = ed %>%
+        filter(year >= baseyear) %>%
+        group_by(group.id) %>% filter(!any(is.na(OBSERVATION.NUMBER))) %>% ungroup()
+      
+      if (spaceres == "none")
       {
-        m1 = glmer(OBSERVATION.COUNT ~ 
-                     log(no.sp) + timegroups + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + (1|gridg5/gridg4/gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~0,
+                       family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + (1|gridg5/gridg4/gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                       family=poisson)
+        }
         
-        f = data.frame(unique(data$timegroups))
-        names(f) = "timegroups"
-        f$freq = predict(m1, data.frame(timegroups = f$timegroups,
-                                        no.sp = 20),
-                         type="response", re.form = NA)
-        f$timegroups = as.character(f$timegroups)
+        newdata = ed %>%
+          distinct(gridg5,gridg4,gridg2,OBSERVER.ID)
+        newdata$no.sp = 20
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          group_by(gridg5,gridg4,gridg2) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          group_by(gridg5,gridg4) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          group_by(gridg5) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          summarize(f = mean(f))
+        
+        f = fx$f
       }
-      if (isTRUE(count))
+      
+      if (spaceres == "g4")
       {
-        ed = ed %>%
-          group_by(group.id) %>% filter(!any(is.na(OBSERVATION.NUMBER))) %>% ungroup()
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + (1|gridg4/gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~0,
+                       family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + (1|gridg4/gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                       family=poisson)
+        }
         
-        m1 = glmer(OBSERVATION.NUMBER ~ 
-                     log(no.sp) + timegroups + (1|ST_NM/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, family=poisson(link = 'log'), nAGQ = 0)
         
-        f = data.frame(unique(data$timegroups))
-        names(f) = "timegroups"
-        f$freq = predict(m1, data.frame(timegroups = f$timegroups,
-                                        no.sp = 20),
-                         type="response", re.form = NA)
-        f$timegroups = as.character(f$timegroups)
+        newdata = ed %>%
+          distinct(gridg4,gridg2,OBSERVER.ID)
+        newdata$no.sp = 20
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          group_by(gridg4,gridg2) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          group_by(gridg4) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          summarize(f = mean(f))
+        
+        f = fx$f
+      }
+      
+      if (spaceres == "g2")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + (1|gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~0,
+                       family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + (1|gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                       family=poisson)
+        }
+        
+        newdata = ed %>%
+          distinct(gridg2,OBSERVER.ID)
+        newdata$no.sp = 20
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          group_by(gridg2) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          summarize(f = mean(f))
+        
+        f = fx$f
       }
     }
     
-    ## model 2
+    if (analysis == "pa3")
+    {
+      
+    }
     
-    #gc()
-    
-    #if (!isTRUE(trends))
-    #{
-    #  m2 = glmer(OBSERVATION.COUNT ~ 
-    #               log(no.sp) + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
-    
-    #  f6 = predict(m2, data.frame(
-    #    no.sp = 20),
-    #    type="response", re.form = NA)
-    #}
-    
-    #if (isTRUE(trends))
-    #{
-    #  m2 = glmer(OBSERVATION.COUNT ~ 
-    #               log(no.sp) + timegroups + (1|gridg5/gridg3/gridg1) + (1|OBSERVER.ID), data = ed, family=binomial(link = 'cloglog'), nAGQ = 0)
-    #  f6 = data.frame(unique(data$timegroups))
-    #  names(f6) = "timegroups"
-    #  f6$freq = predict(m2, data.frame(timegroups = f5$timegroups,
-    #                                   no.sp = 20),
-    #                    type="response", re.form = NA)
-    #  f6$timegroups = as.character(f6$timegroups)
-    #}
+    if (analysis == "count3")
+    {
+      
+    }
   }
   
+  
+    
+  ## trends
+  
+  
+  
+  if (isTRUE(trends))
+  {
+    if (analysis == "trivial pa")
+    {
+      f = data %>% 
+        group_by(timegroups) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species) %>%
+        group_by(timegroups) %>% summarize(freq = n()/max(lists)) %>% ungroup()
+      
+      f$timegroups = as.character(f$timegroups)
+    }
+    
+    if (analysis == "trivial count")
+    {
+      f = data %>%
+        mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+        group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+        group_by(timegroups) %>%
+        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species) %>%
+        group_by(timegroups) %>%   summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>% ungroup()
+      
+      f$timegroups = as.character(f$timegroups)
+    }
+    
+    if (analysis == "gridded pa")
+    {
+      temp = data %>% 
+        group_by(timegroups,gridg) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species) %>%
+        group_by(timegroups,gridg) %>% summarize(freq = n_distinct(group.id)/max(lists)) %>%
+        ungroup()
+      
+      f = temp %>%
+        group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+      
+      f$timegroups = as.character(f$timegroups)
+    }
+    
+    if (analysis == "gridded count")
+    {
+      temp = data %>% 
+        mutate(OBSERVATION.COUNT = as.numeric(OBSERVATION.COUNT)) %>%
+        group_by(group.id) %>% filter(!any(is.na(OBSERVATION.COUNT))) %>% ungroup() %>%
+        group_by(timegroups,gridg) %>% mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
+        filter(COMMON.NAME == species) %>%
+        group_by(timegroups,gridg) %>% summarize(freq = sum(OBSERVATION.COUNT)/max(lists)) %>%
+        ungroup()
+      
+      f = temp %>%
+        group_by(timegroups) %>% summarize(freq = mean(freq)) %>% ungroup()
+      
+      f$timegroups = as.character(f$timegroups)
+    }
+    
+    if (analysis == "pa1")
+    {
+      data1 = data %>% select(-timegroups)
+      ed = expandbyspecies(data1,species)
+      
+      if (politicalunit == "country")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + timegroups + (1|ST_NM/DISTRICT/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      if (politicalunit == "state")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + timegroups + (1|DISTRICT/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      if (politicalunit == "district")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + timegroups + (1|LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      f = data.frame(unique(data$timegroups))
+      names(f) = "timegroups"
+      f$freq = predict(m1, data.frame(timegroups = f$timegroups,
+                                      no.sp = 20),
+                       type="response", re.form = NA)
+      f$timegroups = as.character(f$timegroups)
+    }
+    
+    if (analysis == "pa2")
+    {
+      data1 = data %>% select(-timegroups)
+      ed = expandbyspecies(data1,species)
+      
+      if (spaceres == "none")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + timegroups + (1|gridg5/gridg4/gridg2) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      if (spaceres == "g4")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + timegroups + (1|gridg4/gridg2) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      if (spaceres == "g2")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     log(no.sp) + timegroups + (1|gridg2) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      f = data.frame(unique(data$timegroups))
+      names(f) = "timegroups"
+      f$freq = predict(m1, data.frame(timegroups = f$timegroups,
+                                      no.sp = 20),
+                       type="response", re.form = NA)
+      f$timegroups = as.character(f$timegroups)
+    }  
+    
+    if (analysis == "count1")
+    {
+      data1 = data %>% select(-timegroups)
+      ed = expandbyspecies(data1,species)
+      
+      require(glmmTMB)
+      
+      ed = ed %>%
+        group_by(group.id) %>% filter(!any(is.na(OBSERVATION.NUMBER))) %>% ungroup()
+      
+      if (politicalunit == "country")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + timegroups + (1|ST_NM/DISTRICT/LOCALITY.HOTSPOT) + (1|OBSERVER.ID),
+                       data = ed, ziformula=~0,
+                       family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + timegroups + (1|ST_NM/DISTRICT/LOCALITY.HOTSPOT) + (1|OBSERVER.ID),
+                       data = ed, ziformula=~1,
+                       family=poisson)
+        }
+        
+        
+        newdata = ed %>%
+          distinct(timegroups,ST_NM,DISTRICT,LOCALITY.HOTSPOT,OBSERVER.ID)
+        newdata$no.sp = 20
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          group_by(timegroups,ST_NM,DISTRICT) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          group_by(timegroups,ST_NM) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          group_by(timegroups) %>% summarize(freq = mean(f))
+        
+        f = fx
+      }
+      
+      if (politicalunit == "state")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + timegroups + (1|DISTRICT/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed,
+                       ziformula=~0, family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + timegroups + (1|DISTRICT/LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed,
+                       ziformula=~1, family=poisson)
+        }
+        
+        newdata = ed %>%
+          distinct(timegroups,DISTRICT,LOCALITY.HOTSPOT,OBSERVER.ID)
+        newdata$no.sp = 20
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          group_by(timegroups,DISTRICT) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          group_by(timegroups) %>% summarize(freq = mean(f))
+        
+        f = fx
+      }
+      
+      if (politicalunit == "district")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + timegroups + (1|LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, 
+                       ziformula=~0, family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + timegroups + (1|LOCALITY.HOTSPOT) + (1|OBSERVER.ID), data = ed, 
+                       ziformula=~1, family=poisson)
+        }
+        
+        newdata = ed %>%
+          distinct(timegroups,LOCALITY.HOTSPOT,OBSERVER.ID)
+        newdata$no.sp = 20
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          group_by(timegroups) %>% summarize(freq = mean(f))
+        
+        f = fx
+      }
+    }
+    
+    if (analysis == "count2")
+    {
+      data1 = data %>% select(-timegroups)
+      ed = expandbyspecies(data1,species)
+      
+      require(glmmTMB)
+      
+      ed = ed %>%
+        group_by(group.id) %>% filter(!any(is.na(OBSERVATION.NUMBER))) %>% ungroup()
+      
+      if (spaceres == "none")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + timegroups + (1|gridg5/gridg4/gridg2) + (1|OBSERVER.ID), 
+                       data = ed, ziformula=~0,family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + timegroups + (1|gridg5/gridg4/gridg2) + (1|OBSERVER.ID), 
+                       data = ed, ziformula=~1,family=poisson)
+        }
+        
+        newdata = ed %>%
+          distinct(timegroups,gridg5,gridg4,gridg2,OBSERVER.ID)
+        newdata$no.sp = 20
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          group_by(timegroups,gridg5,gridg4,gridg2) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          group_by(timegroups,gridg5,gridg4) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          group_by(timegroups,gridg5) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          group_by(timegroups) %>% summarize(freq = mean(f))
+        
+        f = fx
+      }
+      
+      if (spaceres == "g4")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + timegroups + (1|gridg4/gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~0,
+                       family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + timegroups + (1|gridg4/gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                       family=poisson)
+        }
+        
+        newdata = ed %>%
+          distinct(timegroups,gridg4,gridg2,OBSERVER.ID)
+        newdata$no.sp = 20
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          group_by(timegroups,gridg4,gridg2) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          group_by(timegroups,gridg4) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          group_by(timegroups) %>% summarize(freq = mean(f))
+        
+        f = fx
+      }
+      
+      if (spaceres == "g2")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + timegroups + (1|gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~0,
+                       family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         log(no.sp) + timegroups + (1|gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                       family=poisson)
+        }
+        
+        newdata = ed %>%
+          distinct(timegroups,gridg2,OBSERVER.ID)
+        newdata$no.sp = 20
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          group_by(timegroups,gridg2) %>% summarize(f = mean(f)) %>% ungroup() %>%
+          group_by(timegroups) %>% summarize(freq = mean(f))
+        
+        f = fx
+      }
+    }
+    
+    if (analysis == "pa3")
+    {
+      
+    }
+    
+    if (analysis == "count3")
+    {
+      
+    }
+  }
+
   
   
   if (!isTRUE(trends))
   {
     f1 = data.frame(method = analysis)
     
-    if (analysis != "model")
+    if (analysis != "pa1" & analysis != "pa2" & analysis != "pa3" &
+        analysis != "count1" & analysis != "count2" & analysis != "count3")
     {
       f1$freq = f$freq
-    }
-    
-    if (analysis == "model")
-    {
+    }else{
       f1$freq = f
     }
     
+    f1$species = species
   }
   
   if (isTRUE(trends))
