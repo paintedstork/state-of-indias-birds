@@ -1524,7 +1524,7 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
       return(paste(unitname,"is not a valid",politicalunit,"name"))
   }
   
-  if (!analysis %in% c("trivial pa","gridded pa","trivial count","gridded count","pa1","pa2","pa3","count1","count2","count3"))
+  if (!analysis %in% c("trivial pa","gridded pa","trivial count","gridded count","pa1","pa2","pa3","pa4","count1","count2","count3"))
     return(paste("the analysis type",analysis,"doesn't exist, select any one from trivial pa, gridded pa, trivial count, gridded count, pa1, pa2, pa3, count1, count2 and count3 (in quotes)"))
   
   
@@ -1828,8 +1828,6 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
         newdata$f = fd
         
         fx = newdata %>%
-          group_by(ST_NM,DISTRICT) %>% summarize(f = mean(f)) %>% ungroup() %>%
-          group_by(ST_NM) %>% summarize(f = mean(f)) %>% ungroup() %>%
           summarize(f = mean(f))
         
         f = fx$f
@@ -1859,7 +1857,6 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
         newdata$f = fd
         
         fx = newdata %>%
-          group_by(DISTRICT) %>% summarize(f = mean(f)) %>% ungroup() %>%
           summarize(f = mean(f))
         
         f = fx$f
@@ -1931,9 +1928,6 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
         newdata$f = fd
         
         fx = newdata %>%
-          group_by(gridg5,gridg4,gridg2) %>% summarize(f = mean(f)) %>% ungroup() %>%
-          group_by(gridg5,gridg4) %>% summarize(f = mean(f)) %>% ungroup() %>%
-          group_by(gridg5) %>% summarize(f = mean(f)) %>% ungroup() %>%
           summarize(f = mean(f))
         
         f = fx$f
@@ -1964,8 +1958,6 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
         newdata$f = fd
         
         fx = newdata %>%
-          group_by(gridg4,gridg2) %>% summarize(f = mean(f)) %>% ungroup() %>%
-          group_by(gridg4) %>% summarize(f = mean(f)) %>% ungroup() %>%
           summarize(f = mean(f))
         
         f = fx$f
@@ -1995,7 +1987,6 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
         newdata$f = fd
         
         fx = newdata %>%
-          group_by(gridg2) %>% summarize(f = mean(f)) %>% ungroup() %>%
           summarize(f = mean(f))
         
         f = fx$f
@@ -2004,12 +1995,206 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
     
     if (analysis == "pa3")
     {
+      data1 = data
+      ed = expandbyspecies(data1,species)
       
+      ed = ed %>%
+        filter(year >= baseyear)
+      
+      if (spaceres == "none")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     month + month*log(no.sp) + (1|gridg5/gridg4/gridg2) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      if (spaceres == "g4")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     month + month*log(no.sp) + (1|gridg4/gridg2) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      if (spaceres == "g2")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     month + month*log(no.sp) + (1|gridg2) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      fd = predict(m1, data.frame(
+        no.sp = 20,month = unique(data$month)),
+        type="response", re.form = NA)
+      
+      f = mean(fd)
+    }
+    
+    if (analysis == "pa4")
+    {
+      data1 = data %>%
+        group_by(gridg2) %>% mutate(lists = n_distinct(group.id)) %>%
+        filter(lists >= 20)
+        
+      ed = expandbyspecies(data1,species)
+      
+      require(glmmTMB)
+      
+      ed = ed %>%
+        filter(year >= baseyear) %>%
+        group_by(group.id) %>% filter(!any(is.na(OBSERVATION.NUMBER))) %>% ungroup()
+      
+      m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                     month + month*log(no.sp) + (1|gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~0,
+                   family=poisson)
+      
+      newdata = ed %>%
+        distinct(gridg2,OBSERVER.ID)
+      newdata = do.call("rbind", replicate(length(unique(ed$month)),newdata,simplify=F))
+      newdata$no.sp = 20
+      newdata$month = rep(unique(ed$month), each = length(newdata$no.sp)/length(unique(ed$month)))
+      
+      fd = predict(m1, newdata = newdata,
+                   type="response", allow.new.levels = T)
+      newdata$f = fd
+      
+      fx = newdata %>%
+        group_by(gridg2,month) %>% summarize(abund = mean(f))
+      
+      ed = left_join(ed,fx)
+      
+      if (spaceres == "none")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     month + month*log(no.sp) + abund + (1|gridg5/gridg4/gridg2) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      if (spaceres == "g4")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     month + month*log(no.sp) + abund + (1|gridg4/gridg2) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      if (spaceres == "g2")
+      {
+        m1 = glmer(OBSERVATION.COUNT ~ 
+                     month + month*log(no.sp) + abund + (1|gridg2) + (1|OBSERVER.ID), data = ed, 
+                   family=binomial(link = 'cloglog'), nAGQ = 0)
+      }
+      
+      fd = predict(m1, data.frame(
+        no.sp = 20,abund = 1,month = unique(data$month)),
+        type="response", re.form = NA)
+      
+      f = mean(fd)
     }
     
     if (analysis == "count3")
     {
+      data1 = data
+      ed = expandbyspecies(data1,species)
       
+      require(glmmTMB)
+      
+      ed = ed %>%
+        filter(year >= baseyear) %>%
+        group_by(group.id) %>% filter(!any(is.na(OBSERVATION.NUMBER))) %>% ungroup()
+      
+      if (spaceres == "none")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         month + month*log(no.sp) + (1|gridg5/gridg4/gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~0,
+                       family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         month + month*log(no.sp) + (1|gridg5/gridg4/gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                       family=poisson)
+        }
+        
+        newdata = ed %>%
+          distinct(gridg5,gridg4,gridg2,OBSERVER.ID)
+        newdata = do.call("rbind", replicate(length(unique(ed$month)),newdata,simplify=F))
+        newdata$no.sp = 20
+        newdata$month = rep(unique(ed$month), each = length(newdata$no.sp)/length(unique(ed$month)))
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          summarize(f = mean(f))
+        
+        f = fx$f
+      }
+      
+      if (spaceres == "g4")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         month + month*log(no.sp) + (1|gridg4/gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~0,
+                       family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         month + month*log(no.sp) + (1|gridg4/gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                       family=poisson)
+        }
+        
+        
+        newdata = ed %>%
+          distinct(gridg4,gridg2,OBSERVER.ID)
+        newdata = do.call("rbind", replicate(length(unique(ed$month)),newdata,simplify=F))
+        newdata$no.sp = 20
+        newdata$month = rep(unique(ed$month), each = length(newdata$no.sp)/length(unique(ed$month)))
+        
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          summarize(f = mean(f))
+        
+        f = fx$f
+      }
+      
+      if (spaceres == "g2")
+      {
+        if (zinf == 0)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         month + month*log(no.sp) + (1|gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~0,
+                       family=poisson)
+        }
+        if (zinf == 1)
+        {
+          m1 = glmmTMB(OBSERVATION.NUMBER ~ 
+                         month + month*log(no.sp) + (1|gridg2) + (1|OBSERVER.ID), data = ed, ziformula=~1,
+                       family=poisson)
+        }
+        
+        newdata = ed %>%
+          distinct(gridg2,OBSERVER.ID)
+        newdata = do.call("rbind", replicate(length(unique(ed$month)),newdata,simplify=F))
+        newdata$no.sp = 20
+        newdata$month = rep(unique(ed$month), each = length(newdata$no.sp)/length(unique(ed$month)))
+        
+        fd = predict(m1, newdata = newdata,
+                     type="response", allow.new.levels = T)
+        newdata$f = fd
+        
+        fx = newdata %>%
+          summarize(f = mean(f))
+        
+        f = fx$f
+      }
     }
   }
   
@@ -2180,8 +2365,6 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
         newdata$f = fd
         
         fx = newdata %>%
-          group_by(timegroups,ST_NM,DISTRICT) %>% summarize(f = mean(f)) %>% ungroup() %>%
-          group_by(timegroups,ST_NM) %>% summarize(f = mean(f)) %>% ungroup() %>%
           group_by(timegroups) %>% summarize(freq = mean(f))
         
         f = fx
@@ -2211,7 +2394,6 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
         newdata$f = fd
         
         fx = newdata %>%
-          group_by(timegroups,DISTRICT) %>% summarize(f = mean(f)) %>% ungroup() %>%
           group_by(timegroups) %>% summarize(freq = mean(f))
         
         f = fx
@@ -2281,9 +2463,6 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
         newdata$f = fd
         
         fx = newdata %>%
-          group_by(timegroups,gridg5,gridg4,gridg2) %>% summarize(f = mean(f)) %>% ungroup() %>%
-          group_by(timegroups,gridg5,gridg4) %>% summarize(f = mean(f)) %>% ungroup() %>%
-          group_by(timegroups,gridg5) %>% summarize(f = mean(f)) %>% ungroup() %>%
           group_by(timegroups) %>% summarize(freq = mean(f))
         
         f = fx
@@ -2313,8 +2492,6 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
         newdata$f = fd
         
         fx = newdata %>%
-          group_by(timegroups,gridg4,gridg2) %>% summarize(f = mean(f)) %>% ungroup() %>%
-          group_by(timegroups,gridg4) %>% summarize(f = mean(f)) %>% ungroup() %>%
           group_by(timegroups) %>% summarize(freq = mean(f))
         
         f = fx
@@ -2344,7 +2521,6 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
         newdata$f = fd
         
         fx = newdata %>%
-          group_by(timegroups,gridg2) %>% summarize(f = mean(f)) %>% ungroup() %>%
           group_by(timegroups) %>% summarize(freq = mean(f))
         
         f = fx
