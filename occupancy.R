@@ -1,5 +1,5 @@
 ## occupancy analyses for bird abundance/range
-
+###Requires tidyverse, reshape2, data.table and unmarked####
 occufreq = function(data,species)
 {
   require(tidyverse)
