@@ -1501,7 +1501,7 @@ expandbyspecies = function(data, species)
 ## "pa3","count1","count2","count3"
 ## only last 5 years for non-trend analyses
 
-freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis="trivial average",
+freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis="trivial pa",
                       tempres="none",spaceres="none",trends=F,minobs=100,baseyear=2010,zinf=0)
 {
   require(tidyverse)
