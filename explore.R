@@ -1,6 +1,10 @@
 library(tidyverse)
 library(ggthemes)
 
+readcleanrawdata("ebd_IN_relDec-2018.txt")
+createmaps()
+addmapvars()
+
 theme_set(theme_tufte())
 
 source('~/GitHub/state-of-indias-birds/functions.R')
@@ -30,30 +34,118 @@ family = c("Great Hornbill","Rufous-necked Hornbill","Malabar Gray Hornbill","In
            "Brown Hornbill")
 datat = data[data$COMMON.NAME %in% family,]
 
-plotfreqmap(data, "White-cheeked Barbet", "g4", level = "species", season = "year round", smooth = T, 
-            rich = F, h = 1.5, cutoff = 5, baseyear = 1980, showempty = F)
+plotfreqmap(data, "Gray-headed Swamphen", "district", level = "species", season = "year round", smooth = F, 
+            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 1998, 
+            showempty = F, states = "Kerala")
+
+plotfreqmap(data, "Gray-headed Swamphen", "district", level = "species", season = "year round", smooth = F, 
+            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 2002, 
+            showempty = F, states = "Kerala")
+
+plotfreqmap(data, "Gray-headed Swamphen", "district", level = "species", season = "year round", smooth = F, 
+            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 2006, 
+            showempty = F, states = "Kerala")
+
+plotfreqmap(data, "Gray-headed Swamphen", "district", level = "species", season = "year round", smooth = F, 
+            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 2008, 
+            showempty = F, states = "Kerala")
+
+plotfreqmap(data, "Gray-headed Swamphen", "district", level = "species", season = "year round", smooth = F, 
+            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 2010, 
+            showempty = F, states = "Kerala")
+
+plotfreqmap(data, "Gray-headed Swamphen", "district", level = "species", season = "year round", smooth = F, 
+            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 2012, 
+            showempty = F, states = "Kerala")
+
+plotfreqmap(data, "Gray-headed Swamphen", "district", level = "species", season = "year round", smooth = F, 
+            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 2014, 
+            showempty = F, states = "Kerala")
+
+plotfreqmap(data, "Gray-headed Swamphen", "district", level = "species", season = "year round", smooth = F, 
+            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 2015, 
+            showempty = F, states = "Kerala")
+
+plotfreqmap(data, "Gray-headed Swamphen", "district", level = "species", season = "year round", smooth = F, 
+            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 2016, 
+            showempty = F, states = "Kerala")
+
+plotfreqmap(data, "Gray-headed Swamphen", "district", level = "species", season = "year round", smooth = F, 
+            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 2017, 
+            showempty = F, states = "Kerala")
+
+plotfreqmap(data, "Gray-headed Swamphen", "district", level = "species", season = "year round", smooth = F, 
+            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 2018, 
+            showempty = F, states = "Kerala")
+
+#, states = c("Karnataka","Tamil Nadu","Kerala","Andhra Pradesh","Telangana")
 
 
 ########################### run frequency trends function #########################################
 
-freqtrends(data, "Asian Koel", politicalunit="state", unitname="Uttarakhand", analysis="pa4",
-           tempres="month", spaceres="g4", trends=F, minobs=100, baseyear=2010, zinf=0)
+start = Sys.time()
+trends = freqtrends(data, species = "Ashy Prinia", politicalunit="state", unitname="Karnataka",
+                    analysis="pa2", tempres="month", spaceres="g4", trends=T, minobs=100, 
+                    baseyear=2013, zinf=0)
+end = Sys.time()
+end-start
+
+trends = freqtrends(data, species = "Tickell's Blue Flycatcher", politicalunit="country", unitname="Karnataka",
+           analysis="pa3", tempres="month", spaceres="g4", trends=T, minobs=100, 
+           baseyear=2010, zinf=0)
 
 
 
 
 ########################## plot trends function ###############################################
 
-list1 = c("White-rumped Vulture","Indian Vulture","Egyptian Vulture","Tawny Eagle","Common Myna","Black Kite","Red-vented Bulbul","Ashy Prinia")
-list2 = c("Indian Vulture","Egyptian Vulture","Steppe Eagle","Common Myna","Large-billed Crow","Red-whiskered Bulbul","Jungle Myna","Ashy Prinia")
+list1 = c("Indian Robin","Cinereous Tit","House Sparrow","Baya Weaver",
+          "Ashy Prinia","Crimson-backed Sunbird","White-cheeked Barbet","Asian Palm-Swift")
+list2 = c("Indian Peafowl","Red-whiskered Bulbul","Blyth's Reed Warbler",
+          "Indian Paradise-Flycatcher","White-browed Bulbul","Red-vented Bulbul","Yellow-browed Bulbul")
+list3 = c("Black Kite","Greater Spotted Eagle","Lesser Whistling-Duck","Indian Spot-billed Duck",
+          "Bronze-winged Jacana","Painted Stork","Woolly-necked Stork")
+list4 = c("Curlew Sandpiper","Little Ringed Plover","Red-wattled Lapwing","Temminck's Stint",
+          "Black-tailed Godwit","Glossy Ibis","River Tern","Lesser Black-backed Gull")
 
-plottrends(trends = trends, recent = T, type = "species", selectspecies = list2, smethod = "g5")
-plottrends(trends = trends, recent = T, singlespecies = "Tawny Eagle")
+list = c(list1,list2,list3,list4)
+
+lista = c("Red-headed Vulture","Indian Vulture","White-rumped Vulture","Red-necked Falcon","Tawny Eagle")
 
 
+for (i in 1:5)
+{
+  start = Sys.time()
+  trends1 = freqtrends(data, species = "House Sparrow", politicalunit="country", unitname="Karnataka",
+                       analysis="pa2", tempres="month", spaceres="g4", trends=T, minobs=100, 
+                       baseyear=2013, zinf=0)
+  end = Sys.time()
+  print(end-start)
+  if (i == 1)
+    trends = trends1
+  if (i > 1)
+    trends = rbind(trends,trends1)
+}
+
+for (i in 11:15)
+{
+  start = Sys.time()
+  abund1 = freqtrends(data, species = list[i], politicalunit="state", unitname="Kerala",
+                      analysis="pa4", tempres="month", spaceres="g4", trends=F, minobs=100, 
+                      baseyear=2013, zinf=0)
+  end = Sys.time()
+  print(end-start)
+  if (i == 11)
+    abund = abund1
+  if (i > 11)
+    abund = rbind(abund,abund1)
+}
 
 
+plottrends(trends = trends, recent = T, type = "species", selectspecies = c("House Sparrow","White-cheeked Barbet",lista), smethod = "pa2")
 
+corr1 = calculateslope(trends2)
+write.csv(temp, "slopes.csv")
 
 
 
