@@ -3,7 +3,7 @@
 ## read and clean raw data and add important columns like group id, seaonality variables
 ## place raw txt file (India download) in working directory 
 
-readcleanrawdata = function(rawpath = "ebd_IN_relAug-2018.txt")
+readcleanrawdata = function(rawpath = "ebd_IN_relDec-2018.txt", KL = F, klpath = "kllists.csv")
 {
   require(lubridate)
   require(tidyverse)
@@ -18,7 +18,7 @@ readcleanrawdata = function(rawpath = "ebd_IN_relAug-2018.txt")
   #all = allout %>%
   #  read_ebd()
   
-  preimp = c("COMMON.NAME","OBSERVATION.COUNT",
+  preimp = c("CATEGORY","COMMON.NAME","OBSERVATION.COUNT",
              "LOCALITY.ID","LOCALITY.TYPE",
              "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
              "PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM",
@@ -33,14 +33,26 @@ readcleanrawdata = function(rawpath = "ebd_IN_relAug-2018.txt")
   
   ## choosing important variables
   
-  imp = c("COMMON.NAME","OBSERVATION.COUNT",
+  imp = c("CATEGORY","COMMON.NAME","OBSERVATION.COUNT",
+          #"LOCALITY.ID","LOCALITY.TYPE",
+          "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
+          "PROTOCOL.TYPE",
+          "DURATION.MINUTES","EFFORT.DISTANCE.KM",
+          "ALL.SPECIES.REPORTED","group.id")
+  
+  imp1 = c("CATEGORY","COMMON.NAME","OBSERVATION.COUNT",
           "LOCALITY.ID","LOCALITY.TYPE",
           "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
-          "PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM",
-          "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","group.id")
+          "PROTOCOL.TYPE",
+          "DURATION.MINUTES","EFFORT.DISTANCE.KM",
+          "ALL.SPECIES.REPORTED","group.id")
   
   days = c(31,28,31,30,31,30,31,31,30,31,30,31)
   cdays = c(0,31,59,90,120,151,181,212,243,273,304,334)
+  
+  data = data %>%
+    filter(APPROVED == 1) %>%
+    mutate(group.id = ifelse(is.na(GROUP.IDENTIFIER), SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER))
   
   ## setup eBird data ##
   
@@ -49,28 +61,74 @@ readcleanrawdata = function(rawpath = "ebd_IN_relAug-2018.txt")
   ## set date, add month, year and day columns using package LUBRIDATE
   ## add number of species column (no.sp)
   
+  if (isTRUE(KL))
+  {
+    imp = imp1
+    
+    kllists = read.csv(klpath)
+    data1 = data %>%
+      filter(SAMPLING.EVENT.IDENTIFIER %in% kllists$SAMPLING.EVENT.IDENTIFIER)
+    
+    data1 = data1 %>%
+      group_by(group.id,COMMON.NAME) %>% slice(1) %>% ungroup %>%
+      dplyr::select(imp) %>%
+      mutate(OBSERVATION.DATE = as.Date(OBSERVATION.DATE), 
+             month = month(OBSERVATION.DATE),
+             day = day(OBSERVATION.DATE) + cdays[month], 
+             #week = week(OBSERVATION.DATE),
+             #fort = ceiling(day/14),
+             cyear = year(OBSERVATION.DATE)) %>%
+      dplyr::select(-c("OBSERVATION.DATE")) %>%
+      mutate(year = ifelse(day <= 151, cyear-1, cyear)) %>%
+      group_by(group.id) %>% mutate(no.sp = n_distinct(COMMON.NAME)) %>%
+      ungroup
+    
+    data = data %>%
+      filter(!group.id %in% unique(data1$group.id))
+    
+  }
+  
+  
   data = data %>%
-    filter(APPROVED == 1) %>%
-    mutate(group.id = ifelse(is.na(GROUP.IDENTIFIER), SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER)) %>%
     group_by(group.id,COMMON.NAME) %>% slice(1) %>% ungroup %>%
     dplyr::select(imp) %>%
     mutate(OBSERVATION.DATE = as.Date(OBSERVATION.DATE), 
-           month = month(OBSERVATION.DATE), year = year(OBSERVATION.DATE),
-           day = day(OBSERVATION.DATE) + cdays[month], week = week(OBSERVATION.DATE),
-           fort = ceiling(day/14)) %>%
+           month = month(OBSERVATION.DATE),
+           day = day(OBSERVATION.DATE) + cdays[month], 
+           #week = week(OBSERVATION.DATE),
+           #fort = ceiling(day/14),
+           cyear = year(OBSERVATION.DATE)) %>%
+    dplyr::select(-c("OBSERVATION.DATE")) %>%
+    mutate(year = ifelse(day <= 151, cyear-1, cyear)) %>%
     group_by(group.id) %>% mutate(no.sp = n_distinct(COMMON.NAME)) %>%
     ungroup
   
+  rm(createmaps, addmapvars, calculateslope, createmask, errordiv,
+     expandbyspecies, freqtrends, plotfreqmap, plottrends,
+     readcleanrawdata, erroradd, pos = ".GlobalEnv")
   
-  temp = data %>%
-    group_by(COMMON.NAME) %>% slice(1) %>% ungroup()
+  if(!isTRUE(KL))
+  {
+    assign("data",data,.GlobalEnv)
+    
+    temp = data %>%
+      group_by(COMMON.NAME) %>% slice(1) %>% ungroup()
+    
+    write.csv(temp,"indiaspecieslist.csv")
+    
+    save.image("data.RData")
+    
+  }
   
-  write.csv(temp,"indiaspecieslist.csv")
+  if(KL)
+  {
+    assign("KLatlas",data1,.GlobalEnv)
+    assign("KLnonatlas",data,.GlobalEnv)
+    save.image("KL.RData")  
+    
+  }
   
-  assign("data",data,.GlobalEnv)
-  rm(readcleanrawdata, pos = ".GlobalEnv")
-  
-  save.image("data.RData")
+
 }
 
 
@@ -108,6 +166,8 @@ createmaps = function(g1=20,g2=50,g3=80,g4=100,g5=320,path1="India",name1="India
   cd = ceiling(diff(t(bb))/cs)  # number of cells per direction
   grd = GridTopology(cellcentre.offset=cc, cellsize=cs, cells.dim=cd) # create required grids
   sp_grd = SpatialGridDataFrame(grd, data=data.frame(id=1:prod(cd))) # create spatial grid data frame
+  #nb4g1 = gridIndex2nb(sp_grd, maxdist = sqrt(1), fullMat = TRUE)
+  #nb8g1 = gridIndex2nb(sp_grd, maxdist = sqrt(2), fullMat = TRUE)
   sp_grd_poly = as(sp_grd, "SpatialPolygonsDataFrame") # SGDF to SPDF
   assign("gridmapg1",sp_grd_poly,.GlobalEnv)
   
@@ -117,7 +177,11 @@ createmaps = function(g1=20,g2=50,g3=80,g4=100,g5=320,path1="India",name1="India
   cd = ceiling(diff(t(bb))/cs)  # number of cells per direction
   grd = GridTopology(cellcentre.offset=cc, cellsize=cs, cells.dim=cd)
   sp_grd = SpatialGridDataFrame(grd, data=data.frame(id=1:prod(cd)))
+  nb4g2 = gridIndex2nb(sp_grd, maxdist = sqrt(1), fullMat = TRUE)
+  nb8g2 = gridIndex2nb(sp_grd, maxdist = sqrt(2), fullMat = TRUE)
   sp_grd_poly = as(sp_grd, "SpatialPolygonsDataFrame")
+  assign("nb4g2",nb4g2,.GlobalEnv)
+  assign("nb8g2",nb8g2,.GlobalEnv)
   assign("gridmapg2",sp_grd_poly,.GlobalEnv)
   
   bb = bbox(indiamap)
@@ -126,7 +190,11 @@ createmaps = function(g1=20,g2=50,g3=80,g4=100,g5=320,path1="India",name1="India
   cd = ceiling(diff(t(bb))/cs)  # number of cells per direction
   grd = GridTopology(cellcentre.offset=cc, cellsize=cs, cells.dim=cd)
   sp_grd = SpatialGridDataFrame(grd, data=data.frame(id=1:prod(cd)))
+  nb4g3 = gridIndex2nb(sp_grd, maxdist = sqrt(1), fullMat = TRUE)
+  nb8g3 = gridIndex2nb(sp_grd, maxdist = sqrt(2), fullMat = TRUE)
   sp_grd_poly = as(sp_grd, "SpatialPolygonsDataFrame")
+  assign("nb4g3",nb4g3,.GlobalEnv)
+  assign("nb8g3",nb8g3,.GlobalEnv)
   assign("gridmapg3",sp_grd_poly,.GlobalEnv)
   
   bb = bbox(indiamap)
@@ -135,7 +203,11 @@ createmaps = function(g1=20,g2=50,g3=80,g4=100,g5=320,path1="India",name1="India
   cd = ceiling(diff(t(bb))/cs)  # number of cells per direction
   grd = GridTopology(cellcentre.offset=cc, cellsize=cs, cells.dim=cd)
   sp_grd = SpatialGridDataFrame(grd, data=data.frame(id=1:prod(cd)))
+  nb4g4 = gridIndex2nb(sp_grd, maxdist = sqrt(1), fullMat = TRUE)
+  nb8g4 = gridIndex2nb(sp_grd, maxdist = sqrt(2), fullMat = TRUE)
   sp_grd_poly = as(sp_grd, "SpatialPolygonsDataFrame")
+  assign("nb4g4",nb4g4,.GlobalEnv)
+  assign("nb8g4",nb8g4,.GlobalEnv)
   assign("gridmapg4",sp_grd_poly,.GlobalEnv)
   
   bb = bbox(indiamap)
@@ -144,16 +216,23 @@ createmaps = function(g1=20,g2=50,g3=80,g4=100,g5=320,path1="India",name1="India
   cd = ceiling(diff(t(bb))/cs)  # number of cells per direction
   grd = GridTopology(cellcentre.offset=cc, cellsize=cs, cells.dim=cd)
   sp_grd = SpatialGridDataFrame(grd, data=data.frame(id=1:prod(cd)))
+  nb4g5 = gridIndex2nb(sp_grd, maxdist = sqrt(1), fullMat = TRUE)
+  nb8g5 = gridIndex2nb(sp_grd, maxdist = sqrt(2), fullMat = TRUE)
   sp_grd_poly = as(sp_grd, "SpatialPolygonsDataFrame")
+  assign("nb4g5",nb4g5,.GlobalEnv)
+  assign("nb8g5",nb8g5,.GlobalEnv)
   assign("gridmapg5",sp_grd_poly,.GlobalEnv)
   
   
   #indiamap = spTransform(indiamap,CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
   # not required here, CRS is NA
   
+
   assign("gridlevels",c(g1,g2,g3,g4,g5),.GlobalEnv)
   
-  rm(createmaps, pos = ".GlobalEnv")
+  rm(createmaps, addmapvars, calculateslope, createmask, errordiv,
+     expandbyspecies, freqtrends, plotfreqmap, plottrends,
+     readcleanrawdata, pos = ".GlobalEnv")
   
   save.image("maps.RData")
 }
@@ -202,7 +281,7 @@ createmask = function(grid=27,path1="India",name1="India_2011")
 ## prepare data for spatial analyses, add map variables, grids
 ## place the 'maps' workspace in working directory
 
-addmapvars = function(datapath = "data.RData", mappath = "maps.RData")
+addmapvars = function(datapath = "data.RData", mappath = "maps.RData", KL = F)
 {
   require(tidyverse)
   require(data.table)
@@ -214,6 +293,102 @@ addmapvars = function(datapath = "data.RData", mappath = "maps.RData")
   ## add map details to eBird data
   
   load(mappath)
+  
+  if(KL)
+  {
+    data = KLnonatlas
+    data1 = KLatlas
+    
+    # add columns with DISTRICT and ST_NM to main data 
+    
+    temp = data1 %>% group_by(group.id) %>% slice(1) # same group ID, same grid/district/state 
+    
+    rownames(temp) = temp$group.id # only to setup adding the group.id column for the future left_join
+    coordinates(temp) = ~LONGITUDE + LATITUDE # convert to SPDF?
+    #proj4string(temp) = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+    temp = over(temp,districtmap) # returns only ATTRIBUTES of districtmap (DISTRICT and ST_NM)
+    temp = data.frame(temp) # convert into data frame for left_join
+    temp$group.id = rownames(temp) # add column to join with the main data
+    data1 = left_join(temp,data1)
+    
+    
+    # add columns with GRID ATTRIBUTES to main data
+    
+    temp = data1 %>% group_by(group.id) %>% slice(1)
+    
+    rownames(temp) = temp$group.id
+    coordinates(temp) = ~LONGITUDE + LATITUDE
+    temp = over(temp,gridmapg1)
+    temp = data.frame(temp)
+    temp$group.id = rownames(temp)
+    data1 = left_join(temp,data1)
+    names(data1)[1] = "gridg1"
+    #data1$gridg1 = as.factor(data1$gridg1)
+    
+    temp = data1 %>% group_by(group.id) %>% slice(1)
+    
+    rownames(temp) = temp$group.id
+    coordinates(temp) = ~LONGITUDE + LATITUDE
+    temp = over(temp,gridmapg2)
+    temp = data.frame(temp)
+    temp$group.id = rownames(temp)
+    data1 = left_join(temp,data1)
+    names(data1)[1] = "gridg2"
+    #data1$gridg2 = as.factor(data1$gridg2)
+    
+    temp = data1 %>% group_by(group.id) %>% slice(1)
+    
+    rownames(temp) = temp$group.id
+    coordinates(temp) = ~LONGITUDE + LATITUDE
+    temp = over(temp,gridmapg3)
+    temp = data.frame(temp)
+    temp$group.id = rownames(temp)
+    data1 = left_join(temp,data1)
+    names(data1)[1] = "gridg3"
+    #data1$gridg3 = as.factor(data1$gridg3)
+    
+    temp = data1 %>% group_by(group.id) %>% slice(1)
+    
+    rownames(temp) = temp$group.id
+    coordinates(temp) = ~LONGITUDE + LATITUDE
+    temp = over(temp,gridmapg4)
+    temp = data.frame(temp)
+    temp$group.id = rownames(temp)
+    data1 = left_join(temp,data1)
+    names(data1)[1] = "gridg4"
+    #data1$gridg4 = as.factor(data1$gridg4)
+    
+    temp = data1 %>% group_by(group.id) %>% slice(1)
+    
+    rownames(temp) = temp$group.id
+    coordinates(temp) = ~LONGITUDE + LATITUDE
+    temp = over(temp,gridmapg5)
+    temp = data.frame(temp)
+    temp$group.id = rownames(temp)
+    data1 = left_join(temp,data1)
+    names(data1)[1] = "gridg5"
+    #data1$gridg5 = as.factor(data1$gridg5)
+    
+    ## 
+    
+    ## move personal locations to nearest hotspots
+    
+    allhotspots = data1 %>% filter(LOCALITY.TYPE == "H") %>%
+      group_by(LOCALITY.ID) %>% summarize(max(LATITUDE),max(LONGITUDE)) %>% # get lat long for each hotspot
+      ungroup
+    
+    names(allhotspots)[c(2,3)] = c("LATITUDE","LONGITUDE")
+    
+    # using DATA TABLES below
+    
+    setDT(data1) # useful for extremely large data frames as each object will then be modified in place without creating 
+    # a copy, creates a 'reference' apparently; this will considerably reduce RAM usage 
+    hotspots = as.matrix(allhotspots[, 3:2])
+    
+    # again 'refernce' based, choosing nearest hotspots to each location
+    data1[, LOCALITY.HOTSPOT := allhotspots[which.min(spDists(x = hotspots, y = cbind(LONGITUDE, LATITUDE))),]$LOCALITY.ID, by=.(LONGITUDE, LATITUDE)] 
+    data1 = as.data.frame(data1) # back into dataframe
+  }
   
   # add columns with DISTRICT and ST_NM to main data 
   
@@ -239,7 +414,7 @@ addmapvars = function(datapath = "data.RData", mappath = "maps.RData")
   temp$group.id = rownames(temp)
   data = left_join(temp,data)
   names(data)[1] = "gridg1"
-  data$gridg1 = as.factor(data$gridg1)
+  #data$gridg1 = as.factor(data$gridg1)
   
   temp = data %>% group_by(group.id) %>% slice(1)
   
@@ -250,7 +425,7 @@ addmapvars = function(datapath = "data.RData", mappath = "maps.RData")
   temp$group.id = rownames(temp)
   data = left_join(temp,data)
   names(data)[1] = "gridg2"
-  data$gridg2 = as.factor(data$gridg2)
+  #data$gridg2 = as.factor(data$gridg2)
   
   temp = data %>% group_by(group.id) %>% slice(1)
   
@@ -261,7 +436,7 @@ addmapvars = function(datapath = "data.RData", mappath = "maps.RData")
   temp$group.id = rownames(temp)
   data = left_join(temp,data)
   names(data)[1] = "gridg3"
-  data$gridg3 = as.factor(data$gridg3)
+  #data$gridg3 = as.factor(data$gridg3)
   
   temp = data %>% group_by(group.id) %>% slice(1)
   
@@ -272,7 +447,7 @@ addmapvars = function(datapath = "data.RData", mappath = "maps.RData")
   temp$group.id = rownames(temp)
   data = left_join(temp,data)
   names(data)[1] = "gridg4"
-  data$gridg4 = as.factor(data$gridg4)
+  #data$gridg4 = as.factor(data$gridg4)
   
   temp = data %>% group_by(group.id) %>% slice(1)
   
@@ -283,35 +458,50 @@ addmapvars = function(datapath = "data.RData", mappath = "maps.RData")
   temp$group.id = rownames(temp)
   data = left_join(temp,data)
   names(data)[1] = "gridg5"
-  data$gridg5 = as.factor(data$gridg5)
+  #data$gridg5 = as.factor(data$gridg5)
   
   ## 
   
-  ## move personal locations to nearest hotspots
+  if(KL)
+  {
+    ## move personal locations to nearest hotspots
+    
+    allhotspots = data %>% filter(LOCALITY.TYPE == "H") %>%
+      group_by(LOCALITY.ID) %>% summarize(max(LATITUDE),max(LONGITUDE)) %>% # get lat long for each hotspot
+      ungroup
+    
+    names(allhotspots)[c(2,3)] = c("LATITUDE","LONGITUDE")
+    
+    # using DATA TABLES below
+    
+    setDT(data) # useful for extremely large data frames as each object will then be modified in place without creating 
+    # a copy, creates a 'reference' apparently; this will considerably reduce RAM usage 
+    hotspots = as.matrix(allhotspots[, 3:2])
+    
+    # again 'refernce' based, choosing nearest hotspots to each location
+    data[, LOCALITY.HOTSPOT := allhotspots[which.min(spDists(x = hotspots, y = cbind(LONGITUDE, LATITUDE))),]$LOCALITY.ID, by=.(LONGITUDE, LATITUDE)] 
+    data = as.data.frame(data) # back into dataframe
+  }
   
-  allhotspots = data %>% filter(LOCALITY.TYPE == "H") %>%
-    group_by(LOCALITY.ID) %>% summarize(max(LATITUDE),max(LONGITUDE)) %>% # get lat long for each hotspot
-    ungroup
-  
-  names(allhotspots)[c(2,3)] = c("LATITUDE","LONGITUDE")
-  
-  # using DATA TABLES below
-  
-  setDT(data) # useful for extremely large data frames as each object will then be modified in place without creating 
-  # a copy, creates a 'reference' apparently; this will considerably reduce RAM usage 
-  hotspots = as.matrix(allhotspots[, 3:2])
-  
-  # again 'refernce' based, choosing nearest hotspots to each location
-  data[, LOCALITY.HOTSPOT := allhotspots[which.min(spDists(x = hotspots, y = cbind(LONGITUDE, LATITUDE))),]$LOCALITY.ID, by=.(LONGITUDE, LATITUDE)] 
-  data = as.data.frame(data) # back into dataframe
-  
-  assign("data",data,.GlobalEnv)
   assign("gridlevels",gridlevels,.GlobalEnv)
   rm(addmapvars, districtmap, gridmapg1, gridmapg2, gridmapg3, gridmapg4, gridmapg5,
      indiamap, statemap, calculateslope, createmask, errordiv,
-     expandbyspecies, freqtrends, plotfreqmap, plottrends, readcleanrawdata, pos = ".GlobalEnv")
+     expandbyspecies, freqtrends, plotfreqmap, plottrends, readcleanrawdata,
+     createmaps, erroradd, pos = ".GlobalEnv")
   
-  save.image("dataforspatialanalyses.RData")
+  if(!isTRUE(KL))
+  {
+    assign("data",data,.GlobalEnv)
+    save.image("dataforspatialanalyses.RData")
+  }
+  
+  if(KL)
+  {
+    assign("KLatlas",data1,.GlobalEnv)
+    assign("KLnonatlas",data,.GlobalEnv)
+    save.image("KLforspatialanalyses.RData")
+  }
+
 }
 
 
@@ -385,6 +575,12 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
   require(RColorBrewer)
   require(scales)
   
+  data$gridg1 = as.factor(data$gridg1)
+  data$gridg2 = as.factor(data$gridg2)
+  data$gridg3 = as.factor(data$gridg3)
+  data$gridg4 = as.factor(data$gridg4)
+  data$gridg5 = as.factor(data$gridg5)
+  
   load(mappath)
   
   filterstate = fortify(statemap)
@@ -427,6 +623,8 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
           plot.title = element_text(hjust = 0.5),
           panel.background = element_blank())+
     coord_map()
+  
+  #datax = data %>% group_by(group.id) %>% slice(1) %>% ungroup
   
   if (level == "species")
   {
@@ -1396,9 +1594,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
       {
         emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg4"))) # SPDF to plot
         switch = T
-      }
-      else
-      {
+      }else{
         switch = F
       }
       
@@ -1469,9 +1665,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
       {
         emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg5"))) # SPDF to plot
         switch = T
-      }
-      else
-      {
+      }else{
         switch = F
       }
       
@@ -1558,12 +1752,15 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
     {if(resolution != "state" & resolution != "district")geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'white', fill = 'white')}+
     {if(resolution == "state" | resolution == "district")geom_path(data = filterdistrict, aes(x = long, y = lat, group = group), col = 'darkolivegreen', size = 0.5)}+
     geom_path(data = filterstate, aes(x = long, y = lat, group = group), col = 'black', size = 1) +
-    {if(l <= 2)scale_fill_manual(values = vals[1:l],
-                                 breaks = sm$freq1, labels = sm$freq1)} +
-    {if(l == 3)scale_fill_manual(values = vals[1:l],
+    {if(smooth & resolution != "state" & resolution != "district")scale_fill_gradient2(low = muted("blue"),
+                         high = "white", space = "Lab", na.value = "grey50", trans = 'reverse',
+                         breaks = breaks, labels = labels)} +
+    {if(!isTRUE(smooth) & l <= 2)scale_fill_manual(values = vals[1:l],
+                               breaks = sm$freq1, labels = sm$freq1)} +
+    {if(!isTRUE(smooth) & l == 3)scale_fill_manual(values = vals[1:l],
                                  breaks = sm$freq1, labels = c(paste("<=",sm$max[1]),paste(sm$min[2]," - ",sm$max[2]),
                                  paste(">",sm$min[3])))} +
-    {if(l > 3)scale_fill_manual(values = vals,breaks = sm$freq1, labels = c(paste("<=",sm$max[1]),paste(sm$min[2]," - ",sm$max[2]),
+    {if(!isTRUE(smooth) & l > 3)scale_fill_manual(values = vals,breaks = sm$freq1, labels = c(paste("<=",sm$max[1]),paste(sm$min[2]," - ",sm$max[2]),
                                  paste(sm$min[3]," - ",sm$max[3]),paste(">",sm$min[4])))} +
     {if(switch)scale_colour_manual(values = cols)} +
     #theme(legend.justification=c(1,1), legend.position=c(0.99,0.99)) +
@@ -1571,15 +1768,77 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
     {if(!isTRUE(rich) | level != "species")ggtitle(taxonname)} +
     {if(!isTRUE(rich) | level != "species")theme(plot.title = element_text(hjust = 0.5, vjust = 0.1, size = 20))} +
     guides(fill = guide_legend(title = add, reverse = TRUE, override.aes = list(size=10)))
-    #geom_point(data = data, aes(x = LONGITUDE, y = LATITUDE), col = 'red', size = 2)+
     #theme(legend.position = "none")+
     #ggtitle(endyear)
+    #geom_point(data = datax, aes(x = LONGITUDE, y = LATITUDE), col = "red", alpha = 0.1)
   
   return(plot)
 }
 
+########################################################################################
+
+## remove all probable errors
+## type can be "trends" or "range"
+
+completelistcheck = function(data)
+{
+  require(tidyverse)
+  
+  data = data %>%
+    mutate(speed = EFFORT.DISTANCE.KM*60/DURATION.MINUTES,
+           sut = no.sp*60/DURATION.MINUTES)
+  
+  temp = data %>%
+    filter(ALL.SPECIES.REPORTED == 1, PROTOCOL.TYPE != "Incidental") %>%
+    group_by(group.id) %>% slice(1)
+  
+  # remove all clearly nocturnal lists - starting after 7pm and ending before 5pm
+  
+  # exclude any list that may in fact be incomplete
+  
+  vel = quantile(temp$speed, 0.99, na.rm = T)
+  time = quantile(temp$sut, 0.025, na.rm = T)
+
+  grp = temp %>%
+    filter(no.sp <= 3, is.na(DURATION.MINUTES)) %>%
+    distinct(group.id)
+  
+  data = data %>%
+    mutate(ALL.SPECIES.REPORTED = 
+             case_when(ALL.SPECIES.REPORTED == 1 & (group.id %in% grp | speed > vel |
+                         (sut < time & no.sp <= 3) | PROTOCOL.TYPE == "Incidental") ~ 0, 
+                       ALL.SPECIES.REPORTED == 0 ~ 0,
+                       TRUE ~ 1))
+  
+  data = data %>%
+    select(-speed,-sut)
+}
 
 ########################################################################################
+
+## filter out nocturnal lists
+
+nocturnallistcheck = function(data)
+{
+  require(tidyverse)
+  require(lubridate)
+  
+  temp = data.frame(data$TIME.OBSERVATIONS.STARTED)
+  temp = temp %>%
+    separate(data.TIME.OBSERVATIONS.STARTED, c("hr","min"))
+  data = cbind(data,temp)
+  
+  data = data %>%
+    mutate(hr = as.numeric(hr), min = as.numeric(min)) %>%
+    mutate(end = floor((hr*60+min+DURATION.MINUTES)/60)) %>%
+    filter(is.na(hr) | (end >= 7 & hr <= 17) | 
+             (hr >= 6 & hr <= 17) | end >= 31) %>%
+    select(-hr,-min,-end)
+  
+  return(data)
+}
+
+################################################################
 
 
 ## ensure that the working directory has list of India's birds with scientific names 
@@ -1590,6 +1849,12 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
 expandbyspecies = function(data, species)
 {
   require(tidyverse)
+  
+  data$gridg1 = as.factor(data$gridg1)
+  data$gridg2 = as.factor(data$gridg2)
+  data$gridg3 = as.factor(data$gridg3)
+  data$gridg4 = as.factor(data$gridg4)
+  data$gridg5 = as.factor(data$gridg5)
   
   data = data %>%
     mutate(timegroups = as.character(year)) %>%
@@ -1626,6 +1891,12 @@ expandbyspecies = function(data, species)
   ## join the two, deal with NAs next
   
   expanded = left_join(expanded,data)
+  expanded = expanded %>%
+    dplyr::select(-c("CATEGORY","COMMON.NAME",
+                    "LOCALITY.ID","LOCALITY.TYPE",
+                    "LATITUDE","LONGITUDE","TIME.OBSERVATIONS.STARTED",
+                    "PROTOCOL.TYPE",
+                    "ALL.SPECIES.REPORTED","group.id"))
   
   ## deal with NAs
   
@@ -1657,11 +1928,23 @@ expandbyspecies = function(data, species)
 ## only last 5 years for non-trend analyses
 
 freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis="trivial pa",
-                      tempres="none",spaceres="none",trends=F,minobs=100,baseyear=2010,zinf=0)
+                      tempres="none",spaceres="none",trends=F,minobs=100,baseyear=2010,zinf=0,KL=F)
 {
   require(tidyverse)
   require(lme4)
   require(VGAM)
+  
+  if (KL)
+  {trends == F}
+  
+  if (analysis != "pa2" & KL)
+  {analysis = "pa3"}
+  
+  data$gridg1 = as.factor(data$gridg1)
+  data$gridg2 = as.factor(data$gridg2)
+  data$gridg3 = as.factor(data$gridg3)
+  data$gridg4 = as.factor(data$gridg4)
+  data$gridg5 = as.factor(data$gridg5)
   
   ## errors for wrong parameter values
   
@@ -2603,28 +2886,40 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
         f2 = data.frame(freq = numeric(length(ltemp$no.sp)))
         f2$se = numeric(length(ltemp$no.sp))
         
-        predFun = function(m1) {
-          predict(m1,ltemp, re.form = NA, allow.new.levels=TRUE)
-        }
-        
-        pred = bootMer(m1, nsim=100, FUN=predFun, parallel = "snow")
-        
-        for (i in 1:length(ltemp$no.sp))
+        if (!isTRUE(KL))
         {
-          f2$freq[i] = median(pred$t[,i])
-          f2$se[i] = sd(pred$t[,i])
+          predFun = function(m1) {
+            predict(m1,ltemp, re.form = NA, allow.new.levels=TRUE)
+          }
+          
+          pred = bootMer(m1, nsim=100, FUN=predFun, parallel = "snow")
+          
+          for (i in 1:length(ltemp$no.sp))
+          {
+            f2$freq[i] = median(pred$t[,i])
+            f2$se[i] = sd(pred$t[,i])
+          }
+          
+          f2$freqt = cloglog(f2$freq,inverse = T)
+          f2$cl = cloglog((f2$freq-f2$se),inverse = T)
+          f2$set = f2$freqt-f2$cl
+          
+          fx = f2 %>%
+            summarize(freq = mean(freqt), se = sqrt(sum(set^2)/n()))
+          fx$se = fx$se/length(f2$set)
+          
+          f1$freq = fx$freq
+          f1$se = fx$se
         }
         
-        f2$freqt = cloglog(f2$freq,inverse = T)
-        f2$cl = cloglog((f2$freq-f2$se),inverse = T)
-        f2$set = f2$freqt-f2$cl
-        
-        fx = f2 %>%
-          summarize(freq = mean(freqt), se = sqrt(sum(set^2)))
-        fx$se = fx$se/length(f2$set)
-        
-        f1$freq = fx$freq
-        f1$se = fx$se
+        if (KL)
+        {
+          f2$freq = predict(m1, newdata = ltemp,
+                            type="response", re.form = NA)
+          f1$freq = mean(f2$freq)
+          f1$se = NA
+        }
+       
       }
       
       if (analysis == "count1" | analysis == "count2" | analysis == "count3")
@@ -2635,7 +2930,7 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
         newdata$se = as.numeric(fd$se.fit)
         
         fx = newdata %>%
-          summarize(freq = mean(freq), se = sqrt(sum(se^2)))
+          summarize(freq = mean(freq), se = sqrt(sum(se^2)/n()))
         fx$se = fx$se/length(newdata$se)
         
         f1$freq = fx$freq
@@ -2706,7 +3001,7 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
     names(f1)[1] = "timegroupsf"
     mp = data.frame(timegroupsf = c("before 1999","2000-2005","2006-2010",
                                     "2011-2013","2014","2015","2016","2017","2018"), 
-                    timegroups = as.numeric(c(1995,2003,2008,2012,2014,2015,2016,2017,2018)))
+                    timegroups = as.numeric(c(1999,2003,2008,2012,2014,2015,2016,2017,2018)))
     f1 = left_join(f1,mp)
     f1$species = species
   }
@@ -2714,6 +3009,91 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
   return(f1)
 }
 
+#################################################################################
+
+## standardize trends
+
+stdtrends = function(trends, recent = F, stdby = 1)
+{
+  require(tidyverse)
+  
+  modtrends = trends
+  
+  if (isTRUE(recent))
+  {
+    tg = c(2014,2015,2016,2017,2018)
+  }else
+  {
+    tg = unique(modtrends$timegroups)
+  }
+  
+  if (stdby == 1)
+  {
+    recenttrends = modtrends %>%
+      filter(timegroups %in% tg) %>%
+      group_by(species) %>% mutate(freq1 = first(freq)) %>% ungroup() %>%
+      group_by(species) %>% mutate(se1 = first(se)) %>% ungroup() %>%
+      mutate(nmfreqbyspec = as.numeric(errordiv(freq,freq1,se,se1)[,1])) %>%
+      mutate(nmsebyspec = as.numeric(errordiv(freq,freq1,se,se1)[,2])) %>%
+      mutate(nmfreq = freq/max(freq1))
+    recenttrends$nmsebyspec[recenttrends$timegroups == min(recenttrends$timegroups)] = 0
+  }
+  
+  if (stdby == 2)
+  {
+    recenttrends = modtrends %>%
+      filter(timegroups %in% tg) %>%
+      group_by(species) %>% mutate(freq1 = last(freq)) %>% ungroup() %>%
+      group_by(species) %>% mutate(se1 = last(se)) %>% ungroup() %>%
+      mutate(nmfreqbyspec = as.numeric(errordiv(freq,freq1,se,se1)[,1])) %>%
+      mutate(nmsebyspec = as.numeric(errordiv(freq,freq1,se,se1)[,2])) %>%
+      mutate(nmfreq = freq/max(freq1))
+    recenttrends$nmsebyspec[recenttrends$timegroups == max(recenttrends$timegroups)] = 0
+  }
+  
+  if (stdby == 3)
+  {
+    recenttrends = modtrends %>%
+      filter(timegroups %in% tg) %>%
+      group_by(species) %>% mutate(freq1 = freq[timegroups == 2014]) %>% ungroup() %>%
+      group_by(species) %>% mutate(se1 = se[timegroups == 2014]) %>% ungroup() %>%
+      mutate(nmfreqbyspec = as.numeric(errordiv(freq,freq1,se,se1)[,1])) %>%
+      mutate(nmsebyspec = as.numeric(errordiv(freq,freq1,se,se1)[,2])) %>%
+      mutate(nmfreq = freq/max(freq1))
+    recenttrends$nmsebyspec[recenttrends$timegroups == 2014] = 0
+  }
+  
+  recenttrends$nmfreqbyspec = recenttrends$nmfreqbyspec*100
+  recenttrends$nmsebyspec = recenttrends$nmsebyspec*100
+  
+  recenttrends = recenttrends %>%
+    select(timegroupsf,method,timegroups,species,nmfreqbyspec,nmsebyspec)
+  
+  return(recenttrends)
+}
+
+###################################################################################
+
+## calculate geometric means for composite trends
+
+composite = function(trends, recent = F, stdby = 1, name = "unnamed group")
+{
+  require(tidyverse)
+  
+  modtrends = stdtrends(trends, recent, stdby)
+  
+  compositetrends = modtrends %>%
+    group_by(timegroups) %>% mutate(tempfreq = prod(nmfreqbyspec)) %>% ungroup %>%
+    group_by(timegroups) %>% mutate(tempse = max(tempfreq)*sqrt(sum((nmsebyspec/nmfreqbyspec)^2))) %>% 
+    ungroup %>%
+    group_by(timegroups) %>% summarize(nmfreqbyspec = exp(mean(log(nmfreqbyspec))),
+                                       nmsebyspec = (1/length(unique(species)))*
+                                         nmfreqbyspec*max(tempse)/max(tempfreq)) %>%
+    ungroup %>%
+    mutate(species = name)
+  
+  return(compositetrends)
+}
 
 
 
@@ -2728,118 +3108,53 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
 
 
 
-plottrends = function(trends,type = "species",singlespecies = NA,selectspecies = NA,smethod = "pa2",recent = F)
+plottrends = function(trends,selectspecies = NA,recent = F)
 {
   require(tidyverse)
   require(ggthemes)
   
   theme_set(theme_tufte())
   
-  modtrends = trends
+  recenttrends = trends %>%
+    filter(species %in% selectspecies)
 
   cols = c("#D55E00", "#E69F00", "#56B4E9", "#CC79A7", "#999999", "#F0E442", "#009E73", "#0072B2")
   
-  bksm = c("trivial pa","gridded pa","pa1","pa2","pa3")
-  lbsm = c("country average","grided average","model 1","model 2","model 3")
-  nm = length(unique(trends$method))
   ns = length(selectspecies)
   
-  if (isTRUE(recent))
-  {
-    tg = c(2014,2015,2016,2017,2018)
-  }else
-  {
-    tg = unique(modtrends$timegroups)
-  }
+
+  cols1 = cols[c(1:ns)]
+  bks1 = selectspecies
+  lbs1 = selectspecies
   
   
   
-  ################# by species ########################
+  recenttrends$species = factor(recenttrends$species, levels = selectspecies)
   
-  if (type == "species")
-  {
-    modtrends = modtrends %>%
-      filter(method == smethod)
-    
-    cols1 = cols[c(1:ns)]
-    bks1 = selectspecies
-    lbs1 = selectspecies
-    
-    recenttrends = modtrends %>%
-      filter(timegroups %in% tg) %>%
-      filter(species %in% selectspecies) %>%
-      group_by(species) %>% mutate(freq1 = freq[1]) %>% ungroup() %>%
-      group_by(species) %>% mutate(se1 = se[1]) %>% ungroup() %>%
-      mutate(nmfreqbyspec = as.numeric(errordiv(freq,freq1,se,se1)[,1])) %>%
-      mutate(nmsebyspec = as.numeric(errordiv(freq,freq1,se,se1)[,2])) %>%
-      mutate(nmfreq = freq/max(freq1))
-    recenttrends$nmsebyspec[recenttrends$timegroups == min(recenttrends$timegroups)] = 0
-    
-    recenttrends$species = factor(recenttrends$species, levels = selectspecies)
-    
-    temp = recenttrends
-    
-    ggp = ggplot(temp, aes(x=timegroups, y=nmfreqbyspec, colour=species)) + 
-      geom_point(size = 3) +
-      geom_line(aes(group = species),size = 1.5) +
-      geom_ribbon(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec),
-                      ymax = (nmfreqbyspec + nmsebyspec), fill = species), colour = NA, alpha = 0.1) +
-      xlab("years") +
-      ylab("frequency of reporting")
-    
-    ggp1 = ggp +
-      theme(axis.title.x = element_text(size = 18), axis.text.x = element_text(size = 14),
-            axis.title.y = element_text(angle = 90, size = 18), axis.text.y = element_text(size = 16)) +
-      theme(legend.title = element_blank(), legend.text = element_text(size = 16)) +
-      scale_colour_manual(breaks = bks1, 
-                          labels = lbs1,
-                          values = cols1) +
-      scale_fill_manual(breaks = bks1, 
-                          labels = lbs1,
-                          values = cols1) +
-      scale_y_continuous(limits = c(0,1.8))
-      #theme(legend.position = "none")
-  }
+  temp = recenttrends
   
+  ggp = ggplot(temp, aes(x=timegroups, y=nmfreqbyspec, colour=species)) + 
+    geom_point(size = 3) +
+    geom_line(size = 1.5) +
+    #geom_line(aes(group = species),size = 1.5) +
+    geom_ribbon(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
+                    ymax = (nmfreqbyspec + nmsebyspec*1.96), fill = species), colour = NA, alpha = 0.1) +
+    xlab("years") +
+    ylab("frequency of reporting")
   
-  ################# by method ########################
-  
-  
-  if (type == "method")
-  {
-    cols1 = cols[1:nm]
-    bks1 = bksm[1:nm]
-    lbs1 = lbsm[1:nm]
-    
-    recenttrends = modtrends %>%
-      filter(timegroups %in% tg) %>%
-      group_by(method,species) %>% mutate(freq1 = freq[1]) %>% ungroup() %>%
-      group_by(method,species) %>% mutate(nmfreqbyspecmeth = freq/freq1) %>% ungroup() %>%
-      group_by(species) %>% mutate(freq2 = freq[1]) %>% ungroup() %>%
-      group_by(species) %>% mutate(nmfreqbyspec = freq/freq2) %>% ungroup() %>%
-      mutate(nmfreq = freq/max(freq1))
-    
-    recenttrends$method = factor(recenttrends$method, levels = bks1)
-    
-    temp = recenttrends[recenttrends$species %in% selectspecies,]
-    
-    ggp = ggplot(temp, aes(x=timegroups, y=nmfreqbyspecmeth, colour=method)) + 
-      geom_point(size = 3) +
-      geom_line(aes(group = method),size = 1.5) +
-      ggtitle(selectspecies) +
-      theme(plot.title = element_text(hjust = 0.5, vjust = 0.1, size = 18)) +
-      xlab("years") +
-      ylab("frequency of reporting")
-    
-    ggp1 = ggp +
-      theme(axis.title.x = element_text(size = 18), axis.text.x = element_text(size = 14),
-            axis.title.y = element_text(angle = 90, size = 18), axis.text.y = element_text(size = 16)) +
-      theme(legend.title = element_blank(), legend.text = element_text(size = 16)) +
-      scale_colour_manual(breaks = bks1, 
-                          labels = lbs1,
-                          values = cols1) +
-      scale_y_continuous(limits = c(round(min(temp$nmfreqbyspecmeth),1)-0.1,round(max(temp$nmfreqbyspecmeth),1)+0.1))
-  }
+  ggp1 = ggp +
+    theme(axis.title.x = element_text(size = 18), axis.text.x = element_text(size = 14),
+          axis.title.y = element_text(angle = 90, size = 18), axis.text.y = element_text(size = 16)) +
+    theme(legend.title = element_blank(), legend.text = element_text(size = 16)) +
+    scale_colour_manual(breaks = bks1, 
+                        labels = lbs1,
+                        values = cols1) +
+    scale_fill_manual(breaks = bks1, 
+                        labels = lbs1,
+                        values = cols1)
+    #scale_y_continuous(limits = c(0,1.1))
+    #theme(legend.position = "none")
+
   
   return(ggp1)
 }
@@ -2864,74 +3179,66 @@ errordiv = function(x1,x2,se1,se2)
 ## funtion to calculate slope from trends
 
 
-calculateslope = function(trends)
+calculateslope = function(trends, species, recent  = T, composite = F)
 {
   require(tidyverse)
+  name = species
   
-  sp = unique(trends$species)
-  corr = data.frame(species = sp, recentslope = 0, recentse = 0, histslope = 0, histse = 0, recentp = 0,
-                    histp = 0, recentfreqi = 0, histfreqi = 0, recentsei = 0, histsei = 0)
-  for (i in 1:length(sp))
+  if (recent)
   {
-    data = trends %>% filter(species == sp[i])
-    samp = data.frame(timegroups = rep(data$timegroups, each = 50))
-    samp$freq = 0
-    for (j in 1:length(data$timegroups))
+    if (composite)
     {
-      samp$freq[(50*(j-1)+1):(50*j)] = rnorm(50,data$freq[j],data$se[j])
+      trends = composite(trends, recent = T)
+      sp = trends$species[1]
     }
-    sampsum = samp %>%
-      group_by(timegroups) %>% summarize(freq2 = mean(freq), se2 = sd(freq)) %>% ungroup
-    samp = left_join(samp,sampsum)
     
-    recents = samp[samp$timegroups >= 2014,]
-    
-    samp$freq = samp$freq - samp$freq2[1]
-    recents$freq = recents$freq - recents$freq2[1]
-    
-    samp$timegroups = samp$timegroups - min(samp$timegroups)
-    recents$timegroups = recents$timegroups - min(recents$timegroups)
-    hist = with(samp, summary(lm(freq~0+timegroups)))
-    recent = with(recents, summary(lm(freq~0+timegroups)))
-    
-    corr$recentslope[i] = recent$coefficients[1,1]
-    corr$recentse[i] = recent$coefficients[1,2]
-    corr$histslope[i] = hist$coefficients[1,1]
-    corr$histse[i] = hist$coefficients[1,2]
-    corr$recentp[i] = recent$coefficients[1,4]
-    corr$histp[i] = hist$coefficients[1,4]
-    
-    samp = samp %>%
-      mutate(freq1 = freq2[1]) %>% ungroup() %>%
-      mutate(se1 = se2[1]) %>% ungroup()
-    
-    recents = recents %>%
-      mutate(freq1 = freq2[1]) %>% ungroup() %>%
-      mutate(se1 = se2[1]) %>% ungroup()
-    
-    corr$recentfreqi[i] = recents$freq1[1]
-    corr$recentsei[i] = recents$se1[1]
-    corr$histfreqi[i] = samp$freq1[1]
-    corr$histsei[i] = samp$se1[1]
+    if (!isTRUE(composite))
+    {
+      trends = trends %>% filter(species == name)
+      trends = stdtrends(trends, recent = T)
+      sp = species
+    }
   }
   
-  corr$recentfreqp = as.numeric(errordiv(corr$recentslope,corr$recentfreqi,
-                                         corr$recentse,corr$recentsei)[,1])*100
-  corr$recentsep = as.numeric(errordiv(corr$recentslope,corr$recentfreqi,
-                                       corr$recentse,corr$recentsei)[,2])*100
-  corr$histfreqp = as.numeric(errordiv(corr$histslope,corr$histfreqi,
-                                       corr$histse,corr$histsei)[,1])*100
-  corr$histsep = as.numeric(errordiv(corr$histslope,corr$histfreqi,
-                                     corr$histse,corr$histsei)[,2])*100
+  if (!isTRUE(recent))
+  {
+    if (composite)
+    {
+      trends = composite(trends, recent = F)
+      sp = trends$species[1]
+    }
+    
+    if (!isTRUE(composite))
+    {
+      trends = trends %>% filter(species == name)
+      trends = stdtrends(trends, recent = F)
+      sp = species
+    }
+  }
   
-  corr[corr$recentp > 0.05,]$recentp = 1
-  corr[corr$recentp < 0.05,]$recentp = 0
-  #corr[corr$histp > 0.05,]$histp = 1
-  corr[corr$histp < 0.05,]$histp = 0
+  corr = data.frame(species = sp, slope = 0, ci = 0, p = 0)
+  samp = data.frame(timegroups = rep(trends$timegroups, each = 50))
+  samp$freq = 0
   
-  corr1 = corr[,c(1,6,7,12,13,14,15)]
-  names(corr1)[4:7] = c("recentchange","recenterror","historicalchange","historicalerror")
-  corr1 = corr1[,c(1,2,4,5)]
+  for (j in 1:length(trends$timegroups))
+  {
+    samp$freq[(50*(j-1)+1):(50*j)] = rnorm(50,trends$nmfreqbyspec[j],trends$nmsebyspec[j])
+  }
   
-  return(corr1)
+  samp$timegroups = samp$timegroups - min(samp$timegroups)
+  samp$freq = samp$freq-100
+
+  result = with(samp, summary(lm(freq~0+timegroups)))
+  
+  corr$slope = result$coefficients[1,1]
+  corr$ci = result$coefficients[1,2]*1.96
+  corr$p = result$coefficients[1,4]
+
+  return(corr)
+}
+
+erroradd = function(vec)
+{
+  err = sqrt(sum(vec^2))
+  return(err)
 }
