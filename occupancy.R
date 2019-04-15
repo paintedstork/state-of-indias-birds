@@ -22,15 +22,6 @@ occufreq = function(data, species, mig, resolution, type = "null", nb = 4, cutof
   data = data %>%
     filter(EFFORT.DISTANCE.KM <= 50, year > 2013)
   
-  ## remove vagrants
-  
-  d = data %>%
-    group_by(gridg5,month,COMMON.NAME) %>% summarize (nyear = n_distinct(year)) %>% ungroup %>%
-    filter(nyear >= 3) %>% select(gridg5,month,COMMON.NAME)
-  
-  d = left_join(d,data)
-  data = anti_join(data,d)
-  
   ## remove unlikely observations/passage
   
   if (cutoff != 0)
@@ -178,19 +169,22 @@ occufreq = function(data, species, mig, resolution, type = "null", nb = 4, cutof
       {
         nbt$gridg = as.character(nbt$gridg)
         nbt$gridg = as.numeric(nbt$gridg)
+        nbti$gridg = as.character(nbti$gridg)
+        nbti$gridg = as.numeric(nbti$gridg)
         
         for (i in 1:length(nbt$gridg))
         {
           temp = as.numeric(nb4g[[nbt$gridg[i]]])
-          sm = sum(nbt[nbt$gridg %in% temp,]$fl)/length(temp)
+          sm = sum(nbti[nbti$gridg %in% temp,]$fl)/length(temp)
           nbt$nb4[i] = sm
           temp = as.numeric(nb8g[[nbt$gridg[i]]])
-          sm = sum(nbt[nbt$gridg %in% temp,]$fl)/length(temp)
+          sm = sum(nbti[nbti$gridg %in% temp,]$fl)/length(temp)
           nbt$nb8[i] = sm
         }
         
         nbt$gridg = as.character(nbt$gridg)
-        tp = nbt
+        tp1 = nbt %>% select(-fl)
+        tp = left_join(nbti,tp1)
         nbt = nbt[,-2]
         
         nbtx = tp[tp$fl != 1,]

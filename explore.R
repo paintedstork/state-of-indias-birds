@@ -19,8 +19,10 @@ theme_set(theme_tufte())
 source('~/GitHub/state-of-indias-birds/functions.R')
 
 load("dataforspatialanalyses.RData")
+specieslist = selectspecies(data,20,5,"ebd_IN_relDec-2018.txt")
 data = completelistcheck(data)
 data = nocturnallistcheck(data)
+data = removevagrants(data)
 
 
 
