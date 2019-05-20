@@ -2,16 +2,18 @@ library(tidyverse)
 library(ggthemes)
 
 source('~/GitHub/state-of-indias-birds/functions.R')
-readcleanrawdata("ebd_IN_relDec-2018.txt")
+readcleanrawdata("ebd_IN_relApr-2019.txt")
+source('~/GitHub/state-of-indias-birds/functions.R')
+createmaps()
 source('~/GitHub/state-of-indias-birds/functions.R')
 addmapvars()
 
+source('~/GitHub/state-of-indias-birds/functions.R')
 readcleanrawdata(KL=T)
 source('~/GitHub/state-of-indias-birds/functions.R')
 addmapvars("KL.RData", KL=T)
 
-source('~/GitHub/state-of-indias-birds/functions.R')
-createmaps()
+
 
 
 theme_set(theme_tufte())
@@ -19,10 +21,15 @@ theme_set(theme_tufte())
 source('~/GitHub/state-of-indias-birds/functions.R')
 
 load("dataforspatialanalyses.RData")
-specieslist = selectspecies(data,20,5,"ebd_IN_relDec-2018.txt")
-data = completelistcheck(data)
-data = nocturnallistcheck(data)
-data = removevagrants(data)
+dlist = dataspeciesfilter(data,15,4,"ebd_IN_relApr-2019.txt")
+
+data = dlist$data
+selectedspecies = dlist$specieslist
+appendix1 = dlist$fulllist
+databins = dlist$binneddata
+meadianlla = dlist$medianlla  
+
+write.csv(appendix1, "appendix1.csv")
 
 
 
@@ -167,15 +174,49 @@ for (i in 11:15)
 a = unique(trends$species)
 
 
-comp = composite(trends2, stdby = 1, recent = T)
-plottrends(trends = comp, selectspecies = "unnamed group")
+comp1 = composite(trends[trends$species %in% listf[c(5,15,16,20,21)],], stdby = 1, recent = F)
+comp1$species = "wetland species"
+comp2 = composite(trends[trends$species %in% listf[c(13,14,17,18,19,22,23)],], stdby = 1, recent = F)
+comp2$species = "generalists"
+comp = rbind(comp1,comp2)
+plottrends(trends = comp, selectspecies = c("wetland species","generalists"))
 
-trends1 = stdtrends(trends2, recent = F, stdby = 1)
-plottrends(trends = trends1, selectspecies = "House Sparrow")
+trends1 = stdtrends(trends[trends$species == "Red-necked Falcon",], recent = F, stdby = 1)
+plottrends(trends = trends1, selectspecies = "Red-necked Falcon")
 
+trends1 = stdtrends(trends, recent = F, stdby = 1)
+trends1 = trends1[trends1$timegroupsf == 2018,]
+trends1$max = trends1$nmfreqbyspec + 1.96*trends1$nmsebyspec
+trends1$min = trends1$nmfreqbyspec - 1.96*trends1$nmsebyspec
 
-calculateslope(trends2, species = "House Sparrow", recent = T, composite = F)
-write.csv(temp, "slopes.csv")
+trends1$trend = "stable"
+trends1[trends1$max<50,]$trend = "strong decline"
+trends1[trends1$max<75 & trends1$max > 50,]$trend = "moderate decline"
+trends1[trends1$min>200,]$trend = "strong increase"
+trends1[trends1$min>133 & trends1$min < 200,]$trend = "moderate increase"
+
+trends1 = trends1[,c(4,9)]
+write.csv(trends1,"ht.csv")
+
+slopes = calculateslope(trends, species = listf[1], recent = T, composite = F)
+
+for (i in 2:23)
+{
+  slopes1 = calculateslope(trends, species = listf[i], recent = T, composite = F)
+  slopes = rbind(slopes,slopes1)
+}
+
+slopes$max = slopes$slope + slopes$ci
+slopes$min = slopes$slope - slopes$ci
+
+slopes$trend = "stable"
+slopes[slopes$max< -5,]$trend = "strong decline"
+slopes[slopes$max< -2 & slopes$max > -5,]$trend = "moderate decline"
+slopes[slopes$min>5,]$trend = "strong increase"
+slopes[slopes$min>2 & slopes$min < 5,]$trend = "moderate increase"
+
+slopes = slopes[,c(1,7)]
+write.csv(slopes, "rt.csv")
 
 
 

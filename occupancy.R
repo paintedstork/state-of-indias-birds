@@ -22,6 +22,11 @@ occufreq = function(data, species, mig, resolution, type = "null", nb = 4, cutof
   data = data %>%
     filter(EFFORT.DISTANCE.KM <= 50, year > 2013)
   
+  data = data %>%
+    mutate(OBSERVATION.COUNT = replace(OBSERVATION.COUNT, !is.na(OBSERVATION.COUNT), "1"))
+  
+  data$OBSERVATION.COUNT = as.numeric(data$OBSERVATION.COUNT)
+  
   ## remove unlikely observations/passage
   
   if (cutoff != 0)
@@ -143,6 +148,7 @@ occufreq = function(data, species, mig, resolution, type = "null", nb = 4, cutof
       len = length(nbt$fl)
       
       nbti = inc %>%
+        filter(COMMON.NAME == species[s]) %>%
         group_by(gridg) %>% summarize(fl = sum(OBSERVATION.COUNT)) %>%
         mutate(fl=replace(fl, fl > 1, 1))
       
@@ -168,9 +174,9 @@ occufreq = function(data, species, mig, resolution, type = "null", nb = 4, cutof
       if(type == "nb" | type == "nosptimenb")
       {
         nbt$gridg = as.character(nbt$gridg)
-        nbt$gridg = as.numeric(nbt$gridg)
+        #nbt$gridg = as.numeric(nbt$gridg)
         nbti$gridg = as.character(nbti$gridg)
-        nbti$gridg = as.numeric(nbti$gridg)
+        #nbti$gridg = as.numeric(nbti$gridg)
         
         for (i in 1:length(nbt$gridg))
         {
@@ -183,8 +189,9 @@ occufreq = function(data, species, mig, resolution, type = "null", nb = 4, cutof
         }
         
         nbt$gridg = as.character(nbt$gridg)
+        tp = nbt
         tp1 = nbt %>% select(-fl)
-        tp = left_join(nbti,tp1)
+        #tp = left_join(nbti,tp1)
         nbt = nbt[,-2]
         
         nbtx = tp[tp$fl != 1,]
@@ -298,7 +305,7 @@ occufreq = function(data, species, mig, resolution, type = "null", nb = 4, cutof
           f2 = predict(occ_det, newdata = newdat2, type = "state")
           f2 = f2 %>% filter(!is.na(Predicted))
           f2a = (sum(f2$Predicted) + fil)/len
-          f2b = erroradd(f2$SE)/len
+          f2b = erroradd(f2$SE)/sqrt(len)
           
           est[s,"detprob", match(r,res)] =  f1
           est[s,"occ", match(r,res)] = f2a
@@ -340,7 +347,7 @@ occufreq = function(data, species, mig, resolution, type = "null", nb = 4, cutof
           f2 = predict(occ_det, newdata = newdat2, type = "state")
           f2 = f2 %>% filter(!is.na(Predicted))
           f2a = (sum(f2$Predicted) + fil)/len
-          f2b = erroradd(f2$SE)/len
+          f2b = erroradd(f2$SE)/sqrt(len)
           
           est[s,"detprob", match(r,res)] =  f1
           est[s,"occ", match(r,res)] = f2a

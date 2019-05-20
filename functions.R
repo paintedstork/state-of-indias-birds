@@ -3,7 +3,7 @@
 ## read and clean raw data and add important columns like group id, seaonality variables
 ## place raw txt file (India download) in working directory 
 
-readcleanrawdata = function(rawpath = "ebd_IN_relDec-2018.txt", KL = F, klpath = "kllists.csv")
+readcleanrawdata = function(rawpath = "ebd_IN_relApr-2019.txt", KL = F, klpath = "kllists.csv")
 {
   require(lubridate)
   require(tidyverse)
@@ -103,13 +103,11 @@ readcleanrawdata = function(rawpath = "ebd_IN_relDec-2018.txt", KL = F, klpath =
     group_by(group.id) %>% mutate(no.sp = n_distinct(COMMON.NAME)) %>%
     ungroup
   
-  rm(createmaps, addmapvars, calculateslope, createmask, errordiv,
-     expandbyspecies, freqtrends, plotfreqmap, plottrends,
-     readcleanrawdata, erroradd, pos = ".GlobalEnv")
-  
   if(!isTRUE(KL))
   {
     assign("data",data,.GlobalEnv)
+    
+    rm(list=setdiff(ls(envir = .GlobalEnv), c("data")), pos = ".GlobalEnv")
     
     temp = data %>%
       group_by(COMMON.NAME) %>% slice(1) %>% ungroup()
@@ -117,18 +115,17 @@ readcleanrawdata = function(rawpath = "ebd_IN_relDec-2018.txt", KL = F, klpath =
     write.csv(temp,"indiaspecieslist.csv")
     
     save.image("data.RData")
-    
   }
   
   if(KL)
   {
     assign("KLatlas",data1,.GlobalEnv)
     assign("KLnonatlas",data,.GlobalEnv)
-    save.image("KL.RData")  
     
+    rm(list=setdiff(ls(envir = .GlobalEnv), c("KLatlas","KLnonatlas")), pos = ".GlobalEnv")
+    
+    save.image("KL.RData")  
   }
-  
-
 }
 
 
@@ -150,7 +147,6 @@ createmaps = function(g1=20,g2=50,g3=80,g4=100,g5=200,g6=320,path1="India",name1
   require(tidyverse)
   require(rgdal)
   require(sp)
-  
   
   # reading maps
   
@@ -243,9 +239,24 @@ createmaps = function(g1=20,g2=50,g3=80,g4=100,g5=200,g6=320,path1="India",name1
 
   assign("gridlevels",c(g1,g2,g3,g4,g5,g6),.GlobalEnv)
   
-  rm(createmaps, addmapvars, calculateslope, createmask, errordiv,
-     expandbyspecies, freqtrends, plotfreqmap, plottrends,
-     readcleanrawdata, pos = ".GlobalEnv")
+  rm(list=setdiff(ls(envir = .GlobalEnv), c("districtmap", "statemap", "indiamap", "gridmapg1", "gridmapg2", 
+                          "gridmapg3", "gridmapg4", "gridmapg5", "gridmapg6", "nb4g2", "nb4g3", 
+                          "nb4g4", "nb4g5", "nb4g6", "nb8g2", "nb8g3", "nb8g4", "nb8g5", "nb8g6",
+                          "gridlevels")), pos = ".GlobalEnv")
+  
+  save.image("maps.RData")
+  
+  rm(list=setdiff(ls(envir = .GlobalEnv), c("nb4g2", "nb4g3", "nb4g4", 
+                          "nb4g5", "nb4g6", "nb8g2", "nb8g3", "nb8g4", "nb8g5", "nb8g6",
+                          "gridlevels")), pos = ".GlobalEnv")
+  
+  save.image("neighbours.RData")
+  
+  load("maps.RData")
+  
+  rm(list=setdiff(ls(envir = .GlobalEnv), c("districtmap", "statemap", "indiamap", "gridmapg1", "gridmapg2", 
+                          "gridmapg3", "gridmapg4", "gridmapg5", "gridmapg6",
+                          "gridlevels")), pos = ".GlobalEnv")
   
   save.image("maps.RData")
 }
@@ -282,8 +293,7 @@ createmask = function(grid=27,path1="India",name1="India_2011")
   assign("mask",fortify(mask),.GlobalEnv)
   assign("border",fortify(extentmap),.GlobalEnv)
   
-  rm(createmask, pos = ".GlobalEnv")
-  
+  rm(list=setdiff(ls(envir = .GlobalEnv), c("mask", "border")), pos = ".GlobalEnv")  
   save.image("mask.RData")
 }
 
@@ -519,14 +529,12 @@ addmapvars = function(datapath = "data.RData", mappath = "maps.RData", KL = F)
   }
   
   assign("gridlevels",gridlevels,.GlobalEnv)
-  rm(addmapvars, districtmap, gridmapg1, gridmapg2, gridmapg3, gridmapg4, gridmapg5,
-     indiamap, statemap, calculateslope, createmask, errordiv,
-     expandbyspecies, freqtrends, plotfreqmap, plottrends, readcleanrawdata,
-     createmaps, erroradd, pos = ".GlobalEnv")
-  
+
   if(!isTRUE(KL))
   {
     assign("data",data,.GlobalEnv)
+    rm(list=setdiff(ls(envir = .GlobalEnv), c("data", "gridlevels")), pos = ".GlobalEnv")
+    
     save.image("dataforspatialanalyses.RData")
   }
   
@@ -534,6 +542,8 @@ addmapvars = function(datapath = "data.RData", mappath = "maps.RData", KL = F)
   {
     assign("KLatlas",data1,.GlobalEnv)
     assign("KLnonatlas",data,.GlobalEnv)
+    rm(list=setdiff(ls(envir = .GlobalEnv), c("KLatlas", "KLnonatlas", "gridlevels")), pos = ".GlobalEnv")
+    
     save.image("KLforspatialanalyses.RData")
   }
 
@@ -1818,44 +1828,6 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
 completelistcheck = function(data)
 {
   require(tidyverse)
-  
-  data = data %>%
-    mutate(speed = EFFORT.DISTANCE.KM*60/DURATION.MINUTES,
-           sut = no.sp*60/DURATION.MINUTES)
-  
-  temp = data %>%
-    filter(ALL.SPECIES.REPORTED == 1, PROTOCOL.TYPE != "Incidental") %>%
-    group_by(group.id) %>% slice(1)
-  
-  # remove all clearly nocturnal lists - starting after 7pm and ending before 5pm
-  
-  # exclude any list that may in fact be incomplete
-  
-  vel = quantile(temp$speed, 0.99, na.rm = T)
-  time = quantile(temp$sut, 0.025, na.rm = T)
-
-  grp = temp %>%
-    filter(no.sp <= 3, is.na(DURATION.MINUTES)) %>%
-    distinct(group.id)
-  
-  data = data %>%
-    mutate(ALL.SPECIES.REPORTED = 
-             case_when(ALL.SPECIES.REPORTED == 1 & (group.id %in% grp | speed > vel |
-                         (sut < time & no.sp <= 3) | PROTOCOL.TYPE == "Incidental") ~ 0, 
-                       ALL.SPECIES.REPORTED == 0 ~ 0,
-                       TRUE ~ 1))
-  
-  data = data %>%
-    select(-speed,-sut)
-}
-
-########################################################################################
-
-## filter out nocturnal lists
-
-nocturnallistcheck = function(data)
-{
-  require(tidyverse)
   require(lubridate)
   
   temp = data.frame(data$TIME.OBSERVATIONS.STARTED)
@@ -1864,24 +1836,70 @@ nocturnallistcheck = function(data)
   data = cbind(data,temp)
   
   data = data %>%
+    mutate(speed = EFFORT.DISTANCE.KM*60/DURATION.MINUTES,
+           sut = no.sp*60/DURATION.MINUTES) %>%
     mutate(hr = as.numeric(hr), min = as.numeric(min)) %>%
-    mutate(end = floor((hr*60+min+DURATION.MINUTES)/60)) %>%
-    filter(is.na(hr) | (end >= 7 & hr <= 17) | 
-             (hr >= 6 & hr <= 17) | end >= 31) %>%
-    select(-hr,-min,-end)
+    mutate(end = floor((hr*60+min+DURATION.MINUTES)/60))
   
-  return(data)
+  temp = data %>%
+    filter(ALL.SPECIES.REPORTED == 1, PROTOCOL.TYPE != "Incidental") %>%
+    group_by(group.id) %>% slice(1)
+  
+  # exclude any list that may in fact be incomplete
+  
+  vel = 40
+  time = 2
+
+  grp = temp %>%
+    filter(no.sp <= 3, is.na(DURATION.MINUTES)) %>%
+    distinct(group.id)
+  
+  data = data %>%
+    mutate(ALL.SPECIES.REPORTED = 
+             case_when(ALL.SPECIES.REPORTED == 1 & (group.id %in% grp | speed > vel |
+                         (sut < time & no.sp <= 3) | PROTOCOL.TYPE == "Incidental" | 
+                           (!is.na(hr) & ((hr <= 4 & end <= 4) | (hr >= 20 & end <= 28)))) ~ 0, 
+                       ALL.SPECIES.REPORTED == 0 ~ 0,
+                       TRUE ~ 1))
+  
+  data = data %>%
+    select(-speed,-sut,-hr,-min,-end)
 }
+
+################################################
 
 ## remove vagrants
 
-removevagrants = function(data)
+removevagrants = function(data, rawpath = "ebd_IN_relApr-2019.txt")
 {
+  preimp = c("SCIENTIFIC.NAME","COMMON.NAME")
+  
+  nms = read.delim(rawpath, nrows = 1, sep = "\t", header = T, quote = "", stringsAsFactors = F, na.strings = c(""," ",NA))
+  nms = names(nms)
+  nms[!(nms %in% preimp)] = "NULL"
+  nms[nms %in% preimp] = NA
+  
+  names = read.delim(rawpath, colClasses = nms, sep = "\t", header = T, quote = "", stringsAsFactors = F, na.strings = c(""," ",NA))
+  names = names %>%
+    distinct(SCIENTIFIC.NAME,COMMON.NAME)
+  
+  migstatus = read.csv("Migratory Status - Migratory Status.csv")
+  migstatus = left_join(migstatus,names,by = c("eBird.Scientific.Name" = "SCIENTIFIC.NAME"))
+  migspecies = migstatus %>%
+    filter(Altitudinal.Migrant == 1 | Summer.Visitor == 1 | Winter.Visitor == 1 | 
+             Strictly.Passage == 1) %>%
+    select(COMMON.NAME)
+  migspecies = as.vector(migspecies$COMMON.NAME)
+  
   d = data %>%
+    filter(COMMON.NAME %in% migspecies) %>%
     group_by(gridg5,month,COMMON.NAME) %>% summarize (nyear = n_distinct(year)) %>% ungroup %>%
-    filter(nyear >= 3) %>% select(gridg5,month,COMMON.NAME)
+    filter(nyear <= 3) %>% select(gridg5,month,COMMON.NAME)
   
   d = left_join(d,data)
+  d = d %>%
+    filter(year > 2013)
+  
   data = anti_join(data,d)
   return(data)
 }
@@ -1893,17 +1911,12 @@ removevagrants = function(data)
 ## select species for State of India's Birds, and species for historical and recent trends
 ## includes all endemics (endemicity) and essential species (SelectSpecies)
 
-selectspecies = function(data,listlimit = 20,gridlimit = 5,rawpath = "ebd_IN_relDec-2018.txt")
+dataspeciesfilter = function(data,listlimit = 15,gridlimit = 4,rawpath = "ebd_IN_relApr-2019.txt")
 {
   require(tidyverse)
   
-  ss = read.csv("SelectSpecies.csv")
-  end = read.csv("endemicity.csv")
-  diu = read.csv("activity.csv")
-  
-  names(ss)[1] = "COMMON.NAME"
-  names(end)[3] = "SCIENTIFIC.NAME"
-  names(diu)[3] = "SCIENTIFIC.NAME"
+  data = data %>%
+    filter(is.na(EFFORT.DISTANCE.KM) | EFFORT.DISTANCE.KM <= 50)
   
   preimp = c("SCIENTIFIC.NAME","COMMON.NAME")
   
@@ -1916,15 +1929,19 @@ selectspecies = function(data,listlimit = 20,gridlimit = 5,rawpath = "ebd_IN_rel
   names = names %>%
     distinct(SCIENTIFIC.NAME,COMMON.NAME)
   
-  end = left_join(end,names)
-  diu = left_join(diu,names)
+  diu = read.csv("Activity - Activity.csv")
+  end = read.csv("Endemicity - Endemicity.csv")
+  ess = read.csv("Select Species from List - Select Species from List.csv")
+  
+  diu = left_join(diu,names, by = c("eBird.Scientific.Name" = "SCIENTIFIC.NAME"))
+  end = left_join(end,names, by = c("eBird.Scientific.Name" = "SCIENTIFIC.NAME"))
   
   data = data %>%
     mutate(timegroups = as.character(year)) %>%
     mutate(timegroups = ifelse(year <= 1999, "before 1999", timegroups)) %>%
     #mutate(timegroups = ifelse(year >= 1990 & year <= 1999, "1990-1999", timegroups)) %>%
-    mutate(timegroups = ifelse(year > 1999 & year <= 2007, "2000-2007", timegroups)) %>%
-    mutate(timegroups = ifelse(year > 2007 & year <= 2010, "2008-2010", timegroups)) %>%
+    mutate(timegroups = ifelse(year > 1999 & year <= 2006, "2000-2006", timegroups)) %>%
+    mutate(timegroups = ifelse(year > 2006 & year <= 2010, "2007-2010", timegroups)) %>%
     mutate(timegroups = ifelse(year > 2010 & year <= 2012, "2011-2012", timegroups)) %>%
     mutate(timegroups = ifelse(year == 2013, "2013", timegroups)) %>%
     mutate(timegroups = ifelse(year == 2014, "2014", timegroups)) %>%
@@ -1933,17 +1950,21 @@ selectspecies = function(data,listlimit = 20,gridlimit = 5,rawpath = "ebd_IN_rel
     mutate(timegroups = ifelse(year == 2017, "2017", timegroups)) %>%
     mutate(timegroups = ifelse(year == 2018, "2018", timegroups))
   
-  datax = data %>%
-    group_by(timegroups) %>% summarize(lists = n_distinct(group.id))
-  
   data = completelistcheck(data)
-  data = nocturnallistcheck(data)
+  data = removevagrants(data)
+
+  datax = data %>%
+    filter(ALL.SPECIES.REPORTED == 1) %>%
+    group_by(timegroups) %>% summarize(lists = n_distinct(group.id), year = round(median(year)))
   
-  data = data %>%
-    filter(ALL.SPECIES.REPORTED == 1, EFFORT.DISTANCE.KM <= 50)
-  
+  datay = data %>%
+    group_by(gridg4,gridg2,group.id) %>% slice(1) %>% ungroup %>%
+    group_by(gridg4,gridg2) %>% summarize(medianLLA = median(no.sp)) %>%
+    group_by(gridg4) %>% summarize(medianLLA = mean(medianLLA)) %>%
+    summarize(medianLLA = round(mean(medianLLA)))
+
   datah = data %>%
-    filter(CATEGORY == "species") %>%
+    filter(ALL.SPECIES.REPORTED == 1, CATEGORY == "species") %>%
     group_by(COMMON.NAME,timegroups) %>% summarize(lists = n(), cells = n_distinct(gridg5)) %>%
     filter(lists > listlimit, cells > gridlimit) %>%
     group_by(COMMON.NAME) %>% summarize(years = n()) %>%
@@ -1951,25 +1972,31 @@ selectspecies = function(data,listlimit = 20,gridlimit = 5,rawpath = "ebd_IN_rel
     mutate(ht = 1) %>% select (COMMON.NAME,ht)
   
   datar = data %>%
-    filter(CATEGORY == "species", year > 2013) %>%
+    filter(ALL.SPECIES.REPORTED == 1, CATEGORY == "species", year > 2013) %>%
     group_by(COMMON.NAME,year) %>% summarize(lists = n(), cells = n_distinct(gridg5)) %>%
     filter(lists > listlimit, cells > gridlimit) %>%
     group_by(COMMON.NAME) %>% summarize(years = n()) %>%
     filter(years == 5) %>%
     mutate(rt = 1) %>% select(COMMON.NAME,rt)
   
+  dataf = data %>%
+    filter(CATEGORY == "species") %>%
+    distinct(COMMON.NAME)
   
-  dataf = left_join(end,ss)
-  dataf = left_join(dataf,diu)
-  dataf = left_join(dataf,datah)
-  dataf = left_join(dataf,datar)
+  dataf = left_join(dataf,datah,by = c("COMMON.NAME"))
+  dataf = left_join(dataf,datar,by = c("COMMON.NAME"))
+  dataf = left_join(dataf,diu,by = c("COMMON.NAME"))
+  dataf = left_join(dataf,end,by = c("COMMON.NAME"))
+  dataf = left_join(dataf,ess,by = c("COMMON.NAME" = "species"))
   
   specieslist = dataf %>%
-    filter(is.na(discard) & (essential == 1 | Subcontinent == 1 | Himalayas == 1 | 
-             ht == 1 | rt == 1) & !is.na(B.Diurnal)) %>%
+    filter((essential == 1 | Subcontinent == 1 | Himalayas == 1 | 
+             ht == 1 | rt == 1) & (!is.na(B.Diurnal) | !is.na(NB.Diurnal))) %>%
     select(COMMON.NAME,ht,rt)
   
-  return(specieslist)
+  sl = list("data" = data, "specieslist" = specieslist, "binneddata" = datax, 
+            "medianlla" = datay$medianLLA, "fulllist" = dataf)
+  return(sl)
 }
 
 ######################################################################################
@@ -1991,29 +2018,30 @@ expandbyspecies = function(data, species)
   data$gridg4 = as.factor(data$gridg4)
   data$gridg5 = as.factor(data$gridg5)
   
-  data = data %>%
-    mutate(timegroups = as.character(year)) %>%
-    mutate(timegroups = ifelse(year <= 1999, "before 1999", timegroups)) %>%
+  #data = data %>%
+  #  mutate(timegroups = as.character(year)) %>%
+  #  mutate(timegroups = ifelse(year <= 1999, "before 1999", timegroups)) %>%
     #mutate(timegroups = ifelse(year >= 1990 & year <= 1999, "1990-1999", timegroups)) %>%
-    mutate(timegroups = ifelse(year > 1999 & year <= 2007, "2000-2007", timegroups)) %>%
-    mutate(timegroups = ifelse(year > 2007 & year <= 2010, "2008-2010", timegroups)) %>%
-    mutate(timegroups = ifelse(year > 2010 & year <= 2012, "2011-2012", timegroups)) %>%
-    mutate(timegroups = ifelse(year == 2013, "2013", timegroups)) %>%
-    mutate(timegroups = ifelse(year == 2014, "2014", timegroups)) %>%
-    mutate(timegroups = ifelse(year == 2015, "2015", timegroups)) %>%
-    mutate(timegroups = ifelse(year == 2016, "2016", timegroups)) %>%
-    mutate(timegroups = ifelse(year == 2017, "2017", timegroups)) %>%
-    mutate(timegroups = ifelse(year == 2018, "2018", timegroups))
+  #  mutate(timegroups = ifelse(year > 1999 & year <= 2006, "2000-2006", timegroups)) %>%
+  #  mutate(timegroups = ifelse(year > 2006 & year <= 2010, "2007-2010", timegroups)) %>%
+  #  mutate(timegroups = ifelse(year > 2010 & year <= 2012, "2011-2012", timegroups)) %>%
+  #  mutate(timegroups = ifelse(year == 2013, "2013", timegroups)) %>%
+  #  mutate(timegroups = ifelse(year == 2014, "2014", timegroups)) %>%
+  #  mutate(timegroups = ifelse(year == 2015, "2015", timegroups)) %>%
+  #  mutate(timegroups = ifelse(year == 2016, "2016", timegroups)) %>%
+  #  mutate(timegroups = ifelse(year == 2017, "2017", timegroups)) %>%
+  #  mutate(timegroups = ifelse(year == 2018, "2018", timegroups))
   
   data$timegroups = as.factor(data$timegroups)
   
   ## considers only complete lists
   
   checklistinfo = data %>%
-    distinct(gridg1,gridg2,gridg3,gridg4,gridg5,DISTRICT,ST_NM,
-             LOCALITY.ID,LOCALITY.TYPE,LATITUDE,LONGITUDE,OBSERVATION.DATE,TIME.OBSERVATIONS.STARTED,
-             OBSERVER.ID,PROTOCOL.TYPE,DURATION.MINUTES,EFFORT.DISTANCE.KM,NUMBER.OBSERVERS,ALL.SPECIES.REPORTED,
-             group.id,month,year,day,week,fort,LOCALITY.HOTSPOT,no.sp,timegroups)
+    distinct(gridg1,gridg2,gridg3,gridg4,gridg5,gridg6,DISTRICT,ST_NM,CATEGORY,
+             LATITUDE,LONGITUDE,TIME.OBSERVATIONS.STARTED,
+             OBSERVER.ID,PROTOCOL.TYPE,DURATION.MINUTES,EFFORT.DISTANCE.KM,
+             ALL.SPECIES.REPORTED,
+             group.id,month,year,cyear,day,no.sp,timegroups)
   
   checklistinfo = checklistinfo %>%
     filter(ALL.SPECIES.REPORTED == 1) %>%
@@ -2029,7 +2057,6 @@ expandbyspecies = function(data, species)
   expanded = left_join(expanded,data)
   expanded = expanded %>%
     dplyr::select(-c("CATEGORY","COMMON.NAME",
-                    "LOCALITY.ID","LOCALITY.TYPE",
                     "LATITUDE","LONGITUDE","TIME.OBSERVATIONS.STARTED",
                     "PROTOCOL.TYPE",
                     "ALL.SPECIES.REPORTED","group.id"))
@@ -2063,7 +2090,8 @@ expandbyspecies = function(data, species)
 ## only last 5 years for non-trend analyses
 
 freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis="trivial pa",
-                      tempres="none",spaceres="none",trends=F,minobs=100,baseyear=2010,zinf=0,KL=F)
+                      tempres="none",spaceres="none",trends=F,minobs=100,baseyear=2010,zinf=0,
+                      KL=F,databins=databins)
 {
   require(tidyverse)
   require(lme4)
@@ -2074,6 +2102,7 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
   data$gridg3 = as.factor(data$gridg3)
   data$gridg4 = as.factor(data$gridg4)
   data$gridg5 = as.factor(data$gridg5)
+  data$gridg6 = as.factor(data$gridg6)
   
   if (KL)
   {
@@ -2145,7 +2174,6 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
       filter(DISTRICT == unitname)
   }
   
-  data$fort = as.factor(data$fort)
   data$month = as.factor(data$month)
   
   if (!species %in% unique(data$COMMON.NAME))
@@ -2160,8 +2188,8 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
       mutate(timegroups = as.character(year)) %>%
       mutate(timegroups = ifelse(year <= 1999, "before 1999", timegroups)) %>%
       #mutate(timegroups = ifelse(year >= 1990 & year <= 1999, "1990-1999", timegroups)) %>%
-      mutate(timegroups = ifelse(year > 1999 & year <= 2007, "2000-2007", timegroups)) %>%
-      mutate(timegroups = ifelse(year > 2007 & year <= 2010, "2008-2010", timegroups)) %>%
+      mutate(timegroups = ifelse(year > 1999 & year <= 2006, "2000-2006", timegroups)) %>%
+      mutate(timegroups = ifelse(year > 2006 & year <= 2010, "2007-2010", timegroups)) %>%
       mutate(timegroups = ifelse(year > 2010 & year <= 2012, "2011-2012", timegroups)) %>%
       mutate(timegroups = ifelse(year == 2013, "2013", timegroups)) %>%
       mutate(timegroups = ifelse(year == 2014, "2014", timegroups)) %>%
@@ -2174,30 +2202,6 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
   }
   
 
-  if (tempres == "fortnight" & spaceres == "g2")
-  {
-    data$gridg = data$gridg2
-    temp = data %>%
-      filter(COMMON.NAME == species) %>%
-      distinct(gridg2,fort)
-  }
-  
-  if (tempres == "fortnight" & spaceres == "g4")
-  {
-    data$gridg = data$gridg4
-    temp = data %>%
-      filter(COMMON.NAME == species) %>%
-      distinct(gridg4,fort)
-  }
-  
-  if (tempres == "fortnight" & spaceres == "none")
-  {
-    data$gridg = data$gridg4
-    temp = data %>%
-      filter(COMMON.NAME == species) %>%
-      distinct(fort)
-  }
-  
   if (tempres == "month" & spaceres == "g2")
   {
     data$gridg = data$gridg2
@@ -2764,8 +2768,8 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
     
     if (analysis == "pa1")
     {
-      data1 = data %>% select(-timegroups)
-      ed = expandbyspecies(data1,species)
+      #data1 = data %>% select(-timegroups)
+      ed = expandbyspecies(data,species)
       
       if (politicalunit == "country")
       {
@@ -2794,8 +2798,8 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
     
     if (analysis == "pa2")
     {
-      data1 = data %>% select(-timegroups)
-      ed = expandbyspecies(data1,species)
+      #data1 = data %>% select(-timegroups)
+      ed = expandbyspecies(data,species)
       
       if (spaceres == "none")
       {
@@ -2824,8 +2828,8 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
     
     if (analysis == "pa3")
     {
-      data1 = data %>% select(-timegroups)
-      ed = expandbyspecies(data1,species)
+      #data1 = data %>% select(-timegroups)
+      ed = expandbyspecies(data,species)
       
       if (spaceres == "none")
       {
@@ -2859,8 +2863,8 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
     
     if (analysis == "count1")
     {
-      data1 = data %>% select(-timegroups)
-      ed = expandbyspecies(data1,species)
+      #data1 = data %>% select(-timegroups)
+      ed = expandbyspecies(data,species)
       
       require(glmmTMB)
       
@@ -2936,8 +2940,8 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
     
     if (analysis == "count2")
     {
-      data1 = data %>% select(-timegroups)
-      ed = expandbyspecies(data1,species)
+      #data1 = data %>% select(-timegroups)
+      ed = expandbyspecies(data,species)
       
       require(glmmTMB)
       
@@ -3033,7 +3037,7 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
             predict(m1,ltemp, re.form = NA, allow.new.levels=TRUE)
           }
           
-          pred = bootMer(m1, nsim=100, FUN=predFun, parallel = "snow")
+          pred = bootMer(m1, nsim=60, FUN=predFun, parallel = "snow")
           
           for (i in 1:length(ltemp$no.sp))
           {
@@ -3102,7 +3106,7 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
           predict(m1,ltemp, re.form = NA, allow.new.levels=TRUE)
         }
         
-        pred = bootMer(m1, nsim = 100, FUN = predFun, parallel = "snow")
+        pred = bootMer(m1, nsim = 60, FUN = predFun, parallel = "snow")
         
         for (i in 1:length(ltemp$no.sp))
         {
@@ -3136,13 +3140,13 @@ freqtrends = function(data,species,politicalunit="country",unitname=NA,analysis=
       }
     }
     
-    f1$timegroups = factor(f1$timegroups, levels = c("before 1999","2000-2007","2008-2010",
+    f1$timegroups = factor(f1$timegroups, levels = c("before 1999","2000-2006","2007-2010",
                                                      "2011-2012","2013","2014","2015","2016","2017","2018"))
     f1 = f1[order(f1$method,f1$timegroups),]
     names(f1)[1] = "timegroupsf"
-    mp = data.frame(timegroupsf = c("before 1999","2000-2007","2008-2010",
+    mp = data.frame(timegroupsf = c("before 1999","2000-2006","2007-2010",
                                     "2011-2012","2013","2014","2015","2016","2017","2018"), 
-                    timegroups = as.numeric(c(1999,2004,2009,2011,2013,2014,2015,2016,2017,2018)))
+                    timegroups = as.numeric(databins$year))
     f1 = left_join(f1,mp)
     f1$species = species
   }
@@ -3278,6 +3282,10 @@ plottrends = function(trends,selectspecies = NA,recent = F)
     geom_point(size = 3) +
     geom_line(size = 1.5) +
     #geom_line(aes(group = species),size = 1.5) +
+    #geom_hline(yintercept = 200, linetype = "dotted", size = 0.5) +
+    geom_hline(yintercept = 133, linetype = "dotted", size = 0.5) +
+    geom_hline(yintercept = 75, linetype = "dotted", size = 0.5) +
+    geom_hline(yintercept = 50, linetype = "dotted", size = 0.5) +
     geom_ribbon(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
                     ymax = (nmfreqbyspec + nmsebyspec*1.96), fill = species), colour = NA, alpha = 0.1) +
     xlab("years") +
@@ -3292,8 +3300,8 @@ plottrends = function(trends,selectspecies = NA,recent = F)
                         values = cols1) +
     scale_fill_manual(breaks = bks1, 
                         labels = lbs1,
-                        values = cols1)
-    #scale_y_continuous(limits = c(0,1.1))
+                        values = cols1) +
+    scale_y_continuous(breaks = c(50,75,100,133))
     #theme(legend.position = "none")
 
   
