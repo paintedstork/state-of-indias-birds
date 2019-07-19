@@ -624,7 +624,6 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
   data$gridg2 = as.factor(data$gridg2)
   data$gridg3 = as.factor(data$gridg3)
   data$gridg4 = as.factor(data$gridg4)
-  data$gridg5 = as.factor(data$gridg5)
   
   load(mappath)
   
@@ -637,15 +636,12 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
   
   if (states[1] != "none")
   {
-    if (resolution == "district" | resolution == "state")
-    {
-      filterstate = fortify(statemap[statemap@data$ST_NM %in% states,], region = c("ST_NM"))
-      
-      data = data %>%
-        filter(ST_NM %in% states)
-      
-      filterdistrict = fortify(districtmap[districtmap@data$ST_NM %in% states,], region = c("DISTRICT"))
-    }
+    filterstate = fortify(statemap[statemap@data$ST_NM %in% states,], region = c("ST_NM"))
+    
+    data = data %>%
+      filter(ST_NM %in% states)
+    
+    filterdistrict = fortify(districtmap[districtmap@data$ST_NM %in% states,], region = c("DISTRICT"))
   }
   
   
@@ -708,10 +704,10 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
     {
       data = data %>% filter(TAXON.NAME == taxonname)
     }else{
-      data = data %>% distinct(gridg5,group.id,gridg4,gridg3,gridg2,gridg1,DISTRICT,ST_NM,LOCALITY.ID,
-                               LOCALITY.TYPE,LATITUDE,LONGITUDE,OBSERVATION.DATE,TIME.OBSERVATIONS.STARTED,
-                               OBSERVER.ID,PROTOCOL.TYPE,DURATION.MINUTES,EFFORT.DISTANCE.KM,NUMBER.OBSERVERS,
-                               ALL.SPECIES.REPORTED,month,year,day,week,fort,no.sp,LOCALITY.HOTSPOT,TAXON.NAME)
+      data = data %>% distinct(group.id,gridg4,gridg3,gridg2,gridg1,DISTRICT,ST_NM,LOCALITY.ID,
+                               LATITUDE,LONGITUDE,TIME.OBSERVATIONS.STARTED,
+                               OBSERVER.ID,PROTOCOL.TYPE,DURATION.MINUTES,EFFORT.DISTANCE.KM,
+                               ALL.SPECIES.REPORTED,month,year,cyear,day,no.sp,TAXON.NAME)
     }
   }else{
     data$TAXON.NAME = data$COMMON.NAME
@@ -748,6 +744,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
     {
       if (add == "species"){
         temp = data %>% 
+          filter(CATEGORY == "species" | CATEGORY == "issf") %>%
           group_by(ST_NM) %>%
           summarize(freq = n_distinct(COMMON.NAME))
       }
@@ -814,6 +811,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
     {
       if (add == "species"){
         temp = data %>% 
+          filter(CATEGORY == "species" | CATEGORY == "issf") %>%
           group_by(DISTRICT) %>%
           summarize(freq = n_distinct(COMMON.NAME))
       }
@@ -883,6 +881,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
       
       if (add == "species"){
         temp = data %>% 
+          filter(CATEGORY == "species" | CATEGORY == "issf") %>%
           group_by(gridg1) %>%
           summarize(freq = n_distinct(COMMON.NAME))
       }
@@ -963,6 +962,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
       
       if (add == "species"){
         temp = data %>% 
+          filter(CATEGORY == "species" | CATEGORY == "issf") %>%
           group_by(gridg2) %>%
           summarize(freq = n_distinct(COMMON.NAME))
       }
@@ -1043,6 +1043,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
       
       if (add == "species"){
         temp = data %>% 
+          filter(CATEGORY == "species" | CATEGORY == "issf") %>%
           group_by(gridg3) %>%
           summarize(freq = n_distinct(COMMON.NAME))
       }
@@ -1123,6 +1124,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
       
       if (add == "species"){
         temp = data %>% 
+          filter(CATEGORY == "species" | CATEGORY == "issf") %>%
           group_by(gridg4) %>%
           summarize(freq = n_distinct(COMMON.NAME))
       }
@@ -1185,86 +1187,6 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
       
       datar = datar %>%
         group_by(gridg4) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
-                                                            max(maxlong)),runif(n(),
-                                                                                max(minlat),
-                                                                                max(maxlat)))[,1],
-                                    LATITUDE = cbind(runif(n(),max(minlong),
-                                                           max(maxlong)),runif(n(),
-                                                                               max(minlat),
-                                                                               max(maxlat)))[,2])
-    }
-    
-    if (resolution == "g5")
-    {
-      datar = data %>%
-        group_by(gridg5,COMMON.NAME) %>% slice(1) %>% ungroup()
-      
-      if (add == "species"){
-        temp = data %>% 
-          group_by(gridg5) %>%
-          summarize(freq = n_distinct(COMMON.NAME))
-      }
-      if (add == "unique lists"){
-        temp = data %>% 
-          group_by(gridg5) %>%
-          summarize(freq = n_distinct(group.id))
-      }
-      if (add == "observers"){
-        temp = data %>% 
-          group_by(gridg5) %>%
-          summarize(freq = n_distinct(OBSERVER.ID))
-      }
-      if (add == "unique locations"){
-        temp = data %>% 
-          group_by(gridg5) %>%
-          summarize(freq = n_distinct(LOCALITY.ID))
-      }
-      
-      min = min(temp$freq)
-      max = max(temp$freq)
-      
-      filled = data %>%
-        group_by(gridg5) %>%
-        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-        filter(lists >= cutoff) %>%
-        distinct(gridg5,lists)
-      
-      fortified = fortify(gridmapg5, region = c("id"))
-      fortind = fortify(indiamap)
-      mnlo = min(fortind$long)
-      mnla = min(fortind$lat)
-      mxlo = max(fortind$long)
-      mxla = max(fortind$lat)
-      
-      fort1 = fortified %>%
-        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
-      
-      zlists = setdiff(unique(fort1$id),unique(filled$gridg5))
-      empty = data.frame(unique(zlists),0)
-      names(empty) = names(filled)
-      
-      fortified$id = as.factor(fortified$id)
-      fort1$id = as.factor(fort1$id)
-      
-      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg5"))) # SPDF to plot
-      
-      if(length(zlists > 0))
-      {
-        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg5"))) # SPDF to plot
-        switch = T
-      }
-      else
-      {
-        switch = F
-      }
-      
-      mmplotdf = plotdf %>%
-        group_by(id) %>% summarize(minlong = min(long), maxlong = max(long), minlat = min(lat),maxlat = max(lat)) %>% ungroup()
-      
-      datar = left_join(datar,mmplotdf,by = c("gridg5" = 'id'))
-      
-      datar = datar %>%
-        group_by(gridg5) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
                                                             max(maxlong)),runif(n(),
                                                                                 max(minlat),
                                                                                 max(maxlat)))[,1],
@@ -1668,77 +1590,6 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
                                                                                max(minlat),
                                                                                max(maxlat)))[,2])
     }
-    
-    if (resolution == "g5")
-    {
-      temp = data %>% 
-        group_by(gridg5) %>%
-        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-        filter(TAXON.NAME == taxonname, lists >= cutoff) %>%
-        group_by(gridg5) %>%
-        summarize(freq = n_distinct(group.id)/max(lists))
-      
-      min = min(temp$freq)
-      max = max(temp$freq)
-      
-      filled = data %>%
-        group_by(gridg5) %>%
-        mutate(lists = n_distinct(group.id)) %>% ungroup() %>%
-        filter(lists >= cutoff) %>%
-        distinct(gridg5,lists)
-      
-      fortified = fortify(gridmapg5, region = c("id"))
-      fortind = fortify(indiamap)
-      mnlo = min(fortind$long)
-      mnla = min(fortind$lat)
-      mxlo = max(fortind$long)
-      mxla = max(fortind$lat)
-      
-      fort1 = fortified %>%
-        group_by(id) %>% filter(all(long >= mnlo),all(lat >= mnla),all(long <= mxlo),all(lat <= mxla))
-      
-      zlists = setdiff(unique(fort1$id),unique(filled$gridg5))
-      empty = data.frame(unique(zlists),0)
-      names(empty) = names(filled)
-      
-      fortified$id = as.factor(fortified$id)
-      fort1$id = as.factor(fort1$id)
-      
-      plotdf = na.omit(left_join(fortified,temp, by = c('id' = "gridg5"))) # SPDF to plot
-      
-      if(length(zlists > 0))
-      {
-        emptydf = na.omit(left_join(fort1,empty, by = c('id' = "gridg5"))) # SPDF to plot
-        switch = T
-      }else{
-        switch = F
-      }
-      
-      data1 = data1 %>%
-        group_by(gridg5) %>% slice(1) %>% ungroup()
-      
-      mmplotdf = plotdf %>%
-        group_by(id) %>% summarize(minlong = min(long), maxlong = max(long), minlat = min(lat), maxlat = max(lat), freq = max(freq)) %>% ungroup()
-      
-      data1 = left_join(data1,mmplotdf,by = c("gridg5" = 'id'))
-      roundUp = function(x) 10^ceiling(log10(x))
-      data1$freq = round(data1$freq*roundUp(1/median(na.omit(data1$freq)))*10)
-      data1 = data1 %>% filter(freq > 0)
-      
-      
-      data1 = data1[rep(row.names(data1), data1$freq),]
-      
-      
-      data1 = data1 %>%
-        group_by(gridg5) %>% mutate(LONGITUDE = cbind(runif(n(),max(minlong),
-                                                            max(maxlong)),runif(n(),
-                                                                                max(minlat),
-                                                                                max(maxlat)))[,1],
-                                    LATITUDE = cbind(runif(n(),max(minlong),
-                                                           max(maxlong)),runif(n(),
-                                                                               max(minlat),
-                                                                               max(maxlat)))[,2])
-    }
   }
   
   if(resolution != "state" & resolution != "district"){load(maskpath)}
@@ -1794,9 +1645,9 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
     {if(smooth & resolution != "state" & resolution != "district" & rich)stat_density2d(data = datar, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), h = h, n = 100, geom = "polygon")} +
     {if(!isTRUE(smooth) | resolution == "state" | resolution == "district")geom_polygon(data = plotdf, aes(x = long, y = lat, group = group, fill = freq1))} +
     {if(switch & showempty)geom_polygon(data = emptydf, aes(x = long, y = lat, group = group, col = cl), fill = "grey30")} +
-    {if(resolution != "state" & resolution != "district")geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'white', fill = 'white')}+
+    #{if(resolution != "state" & resolution != "district")geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'white', fill = 'white')}+
     {if(resolution == "state" | resolution == "district")geom_path(data = filterdistrict, aes(x = long, y = lat, group = group), col = 'darkolivegreen', size = 0.5)}+
-    geom_path(data = filterstate, aes(x = long, y = lat, group = group), col = 'black', size = 1) +
+    geom_path(data = filterdistrict, aes(x = long, y = lat, group = group), col = 'black', size = 1) +
     {if(smooth & resolution != "state" & resolution != "district")scale_fill_gradient2(low = muted("blue"),
                          high = "white", space = "Lab", na.value = "grey50", trans = 'reverse',
                          breaks = breaks, labels = labels)} +

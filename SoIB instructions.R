@@ -22,7 +22,7 @@ createmaps()
 ## writes 'data.RData' to the home folder
 
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
-readcleanrawdata("ebd_IN_relApr-2019.txt") 
+readcleanrawdata("ebd_IN_relMay-2019.txt","Sensitive_India_may 2019.csv") 
 
 ## add map and grid variables to the dataset (dataframe)
 ## has to be run after the previous step
@@ -44,7 +44,7 @@ addmapvars()
 ## and selected species list, data
 
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
-dataspeciesfilter(listlimit = 15,gridlimit = 4)
+dataspeciesfilter(locationlimit = 15,gridlimit = 4)
 
 
 
@@ -66,7 +66,7 @@ dataspeciesfilter(listlimit = 15,gridlimit = 4)
 
 
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
-occ = SoIBoccupancy(data,species)
+occ = SoIBoccupancy(data,species,areag=areag1)
 
 ## for the final run, species = specieslist$COMMON.NAME (or this incrementally)
 
@@ -80,7 +80,12 @@ occ = SoIBoccupancy(data,species)
 ## with error = F, errors are not computed, function runs faster
 
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
-tre = freqtrends(data,species,specieslist,error=T,nsim=1000) # start off with fewer bootstraps - nsim
+load("dataforanalyses.RData")
+species = "Indian Peafowl"
+start = Sys.time()
+tre <- freqtrends(data,species,specieslist,error=T,nsim=100)
+end = Sys.time()
+print(end-start)
 
 ## this has to be run for all species in specieslist
 
@@ -116,24 +121,7 @@ tre = freqtrends(data,species,specieslist,error=T,nsim=1000) # start off with fe
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
 
 ## all information to be added as columns to trend file
-## group = c(grouping1,grouping2,grouping3...)
-
-## this has to be run for selected groupings in each froup
-
-#c = 0
-#for (i in group)
-#{
-#  c = c + 1
-#  comptrends1 = composite(trends, i)
-#  if (c == 1)
-#  {
-#    comptrends = comptrends1
-#  }
-#  if (c > 1)
-#  {
-#    comptrends = rbind(comptrends,comptrends1)
-#  }
-#}
+## create separate composite data frames and merge
 
 
 

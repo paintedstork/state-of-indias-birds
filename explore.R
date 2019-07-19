@@ -2,7 +2,7 @@ library(tidyverse)
 library(ggthemes)
 
 source('~/GitHub/state-of-indias-birds/functions.R')
-readcleanrawdata("ebd_IN_relApr-2019.txt")
+readcleanrawdata("ebd_IN_relMay-2019.txt")
 source('~/GitHub/state-of-indias-birds/functions.R')
 createmaps()
 source('~/GitHub/state-of-indias-birds/functions.R')
@@ -21,7 +21,7 @@ theme_set(theme_tufte())
 source('~/GitHub/state-of-indias-birds/functions.R')
 
 load("dataforspatialanalyses.RData")
-dlist = dataspeciesfilter(data,15,4,"ebd_IN_relApr-2019.txt")
+dlist = dataspeciesfilter(data,15,4,"ebd_IN_relMay-2019.txt")
 
 data = dlist$data
 selectedspecies = dlist$specieslist
@@ -48,7 +48,7 @@ plotfreqmap(data1, "Little Stint", "g4")
 plotfreqmap(data1, "Eurasian Curlew", "g4")
 
 data1 = data %>% filter(month %in% c(4,5,6))
-plotfreqmap(data1, "Indian Skimmer", "g4")
+plotfreqmap(data, "Indian Skimmer", "g4")
 data1 = data %>% filter(month %in% c(4,5))
 
 family = c("Great Hornbill","Rufous-necked Hornbill","Malabar Gray Hornbill","Indian Gray Hornbill",
@@ -87,9 +87,20 @@ for(i in c("trivial","null","nosp","nosptime","nb","nosptimenb"))
   print(end-start)
 }
 
-plotfreqmap(data, "White-cheeked Barbet", "district", level = "species", season = "year round", smooth = F, 
-            rich = T, add = "species", h = 1.2, cutoff = 5, baseyear = 1900, endyear = 2018, 
-            showempty = F, states = "Karnataka")
+plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Common Myna", "district",
+            level = "species", 
+            season = "year round",
+            smooth = F, 
+            rich = T, add = "unique lists", h = 1.2, cutoff = 5, baseyear = 1900, endyear = 2018, 
+            showempty = F, states = c("Kerala"))
+
+plotfreqmap(data[data$CATEGORY == "species",], "White-cheeked Barbet", "state", level = "species", 
+            season = "year round",
+            smooth = F, 
+            rich = T, add = "species", h = 1.4, cutoff = 5, baseyear = 1900, endyear = 2018, 
+            showempty = F, states = "none")
+
+
 
 #, states = c("Karnataka","Tamil Nadu","Kerala","Andhra Pradesh","Telangana")
 
@@ -152,72 +163,41 @@ for (i in 1:50)
 }
 
 
-trends1 = freqtrends(KLnonatlas, species = "White-cheeked Barbet", politicalunit="state", 
-                     unitname="Kerala",
-                     analysis="pa2", tempres="month", spaceres="g4", trends=F, minobs=10, 
-                     baseyear=2013, zinf=0, KL = F)
+trends = b
+plottrends(trends, selectspecies = c("House Sparrow","Red-necked Falcon","Ashy Prinia"))
 
-for (i in 11:15)
-{
-  start = Sys.time()
-  abund1 = freqtrends(data, species = list[i], politicalunit="state", unitname="Kerala",
-                      analysis="pa4", tempres="month", spaceres="g4", trends=F, minobs=100, 
-                      baseyear=2013, zinf=0)
-  end = Sys.time()
-  print(end-start)
-  if (i == 11)
-    abund = abund1
-  if (i > 11)
-    abund = rbind(abund,abund1)
-}
+list1 = c("Shikra","Booted Eagle",
+          "Black Kite","Brahminy Kite")
 
-a = unique(trends$species)
+list2 = c("Bonelli's Eagle",
+          "Crested Hawk-Eagle",
+          "Black Eagle","Crested Goshawk","Crested Serpent-Eagle",
+          "Gray-headed Fish-Eagle","Pallas's Fish-Eagle",
+          "Rufous-bellied Eagle","Oriental Honey-buzzard","White-eyed Buzzard")
+
+list3 = c("Tawny Eagle","Red-necked Falcon",
+             "Short-toed Snake-Eagle",
+             "Eurasian Kestrel","Black-winged Kite","Pallid Harrier","Montagu's Harrier",
+             "Peregrine Falcon",
+             "Eurasian Marsh-Harrier")
+
+list4 = c("Eurasian Griffon","Egyptian Vulture","Bearded Vulture","White-rumped Vulture",
+             "Indian Vulture","Red-headed Vulture")
 
 
-comp1 = composite(trends[trends$species %in% listf[c(5,15,16,20,21)],], stdby = 1, recent = F)
-comp1$species = "wetland species"
-comp2 = composite(trends[trends$species %in% listf[c(13,14,17,18,19,22,23)],], stdby = 1, recent = F)
-comp2$species = "generalists"
-comp = rbind(comp1,comp2)
-plottrends(trends = comp, selectspecies = c("wetland species","generalists"))
 
-trends1 = stdtrends(trends[trends$species == "Red-necked Falcon",], recent = F, stdby = 1)
-plottrends(trends = trends1, selectspecies = "Red-necked Falcon")
+plotcompositetrends(trends, specieslist = specieslist, g1 = list1, 
+                    g2 = list2,
+                    g3 = list3, 
+                    g4 = list4, 
+                    n1 = "Commensal\nRaptors (1)",
+                    n2 = "Forest\nRaptors (2)",
+                    n3 = "Open Habitat\nRaptors (3)",
+                    n4 = "Vultures (4)"
+                    )
 
-trends1 = stdtrends(trends, recent = F, stdby = 1)
-trends1 = trends1[trends1$timegroupsf == 2018,]
-trends1$max = trends1$nmfreqbyspec + 1.96*trends1$nmsebyspec
-trends1$min = trends1$nmfreqbyspec - 1.96*trends1$nmsebyspec
-
-trends1$trend = "stable"
-trends1[trends1$max<50,]$trend = "strong decline"
-trends1[trends1$max<75 & trends1$max > 50,]$trend = "moderate decline"
-trends1[trends1$min>200,]$trend = "strong increase"
-trends1[trends1$min>133 & trends1$min < 200,]$trend = "moderate increase"
-
-trends1 = trends1[,c(4,9)]
-write.csv(trends1,"ht.csv")
-
-slopes = calculateslope(trends, species = listf[1], recent = T, composite = F)
-
-for (i in 2:23)
-{
-  slopes1 = calculateslope(trends, species = listf[i], recent = T, composite = F)
-  slopes = rbind(slopes,slopes1)
-}
-
-slopes$max = slopes$slope + slopes$ci
-slopes$min = slopes$slope - slopes$ci
-
-slopes$trend = "stable"
-slopes[slopes$max< -5,]$trend = "strong decline"
-slopes[slopes$max< -2 & slopes$max > -5,]$trend = "moderate decline"
-slopes[slopes$min>5,]$trend = "strong increase"
-slopes[slopes$min>2 & slopes$min < 5,]$trend = "moderate increase"
-
-slopes = slopes[,c(1,7)]
-write.csv(slopes, "rt.csv")
-
+c = rbind(c4,c5)
+plottrends(trends, selectspecies = list4[c(2,4)])
 
 
 ## pull data from the cloud
