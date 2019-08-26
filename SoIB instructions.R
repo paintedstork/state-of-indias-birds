@@ -87,6 +87,8 @@ tre <- freqtrends(data,species,specieslist,error=T,nsim=100)
 end = Sys.time()
 print(end-start)
 
+tre <- freqtrendsrestricted(data,species,restrictedspecieslist,nsim=1000)
+
 ## this has to be run for all species in specieslist
 
 #c = 0

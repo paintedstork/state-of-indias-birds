@@ -109,7 +109,35 @@ readcleanrawdata = function(rawpath = "ebd_IN_relMay-2019.txt",
     mutate(CATEGORY = replace(CATEGORY, COMMON.NAME == "Taiga/Red-breasted Flycatcher",
                               "species")) %>%
     mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Taiga/Red-breasted Flycatcher", 
-                                 "Red-breasted Fycatcher"))
+                                 "Red-breasted Fycatcher")) %>%
+    mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Changeable Hawk-Eagle", 
+                               "Crested Hawk-Eagle")) %>%
+    mutate(CATEGORY = replace(CATEGORY, COMMON.NAME == "Changeable/Crested Hawk-Eagle",
+                            "species")) %>%
+    mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Changeable/Crested Hawk-Eagle", 
+                                 "Crested Hawk-Eagle")) %>%
+    mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Chestnut Munia", 
+                                 "Tricolored Munia")) %>%
+    mutate(CATEGORY = replace(CATEGORY, COMMON.NAME == "Tricolored x Chestnut Munia (hybrid)",
+                                "species")) %>%
+    mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Tricolored x Chestnut Munia (hybrid)", 
+                                   "Tricolored Munia")) %>%
+    mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "House Swift", 
+                                 "Little Swift")) %>%
+    mutate(CATEGORY = replace(CATEGORY, COMMON.NAME == "Little/House Swift",
+                                "species")) %>%
+    mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Little/House Swift", 
+                                   "Little Swift")) %>%
+    mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Sykes's Warbler", 
+                                 "Booted Warbler")) %>%
+    mutate(CATEGORY = replace(CATEGORY, COMMON.NAME == "Booted/Sykes's Warbler",
+                              "species")) %>%
+    mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Booted/Sykes's Warbler", 
+                                 "Booted Warbler")) %>%
+    mutate(CATEGORY = replace(CATEGORY, COMMON.NAME == "Iduna sp.",
+                              "species")) %>%
+    mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Iduna sp.", 
+                                 "Booted Warbler"))
   
   ## setup eBird data ##
   
@@ -451,7 +479,7 @@ removevagrants = function(data)
 {
   migstatus = read.csv("Migratory Status - Migratory Status.csv")
   migspecies = migstatus %>%
-    filter(Strictly.Altitudinal.Migrant == 1 | Summer.Visitor == 1 | Winter.Visitor == 1 | 
+    filter(Summer.Visitor == 1 | Winter.Visitor == 1 | 
              Strictly.Passage == 1) %>%
     select(eBird.English.Name)
   migspecies = as.vector(migspecies$eBird.English.Name)
@@ -480,10 +508,13 @@ dataspeciesfilter = function(datapath = "data.RData",
                              locationlimit = 15,gridlimit = 4)
 {
   require(tidyverse)
+  require(DataCombine)
   
   diu = read.csv("Activity - Activity.csv")
   end = read.csv("Endemicity - Endemicity.csv")
   ess = read.csv("Select Species from List - Select Species from List.csv")
+  mig = read.csv("Migratory Status - Migratory Status.csv")
+  resident = as.character(mig$eBird.English.Name[!is.na(mig$Resident)])
   
   load(datapath)
   
@@ -540,7 +571,8 @@ dataspeciesfilter = function(datapath = "data.RData",
              "filter 1 usable observations")
   x8 = paste(length(unique(data[data$ALL.SPECIES.REPORTED == 1,]$group.id)),
              "filter 2 unique complete checklists")
-  x9 = paste(length(unique(data[data$timegroups == "before 2000",]$group.id)),
+  x9 = paste(length(unique(data[data$timegroups == "before 2000" &
+                          data$ALL.SPECIES.REPORTED == 1,]$group.id)),
              "pre-2000 checklists")
   
   databins = data %>%
@@ -573,7 +605,65 @@ dataspeciesfilter = function(datapath = "data.RData",
     filter(years == 5) %>%
     mutate(rt = 1) %>% select(COMMON.NAME,rt)
   
-  dataf = data.frame(COMMON.NAME = as.character(ess$species))
+  dataresth1 = data %>%
+    filter(ALL.SPECIES.REPORTED == 1, CATEGORY == "species" | CATEGORY == "issf") %>%
+    group_by(COMMON.NAME,timegroups) %>% summarize(cells = n_distinct(gridg4)) %>%
+    filter(cells <= gridlimit) %>%
+    group_by(COMMON.NAME) %>% summarize(years = n()) %>%
+    filter(years == 10) %>%
+    select (COMMON.NAME)
+  
+  speciesresth = data.frame(species = intersect(unique(dataresth1$COMMON.NAME),resident))
+  speciesresth$validh = NA
+  
+  for (i in 1:length(speciesresth$species))
+  {
+    tempresth1 = data %>%
+      filter(COMMON.NAME == speciesresth$species[i]) %>%
+      distinct(gridg1)
+    tempresth1 = tempresth1 %>% left_join(data)
+    tempresth2 = tempresth1 %>%
+      filter(COMMON.NAME == speciesresth$species[i]) %>%
+      group_by(timegroups) %>% summarize(n = n_distinct(group.id)) %>%
+      filter(n > 10)
+    tempresth1 = tempresth1 %>%
+      group_by(timegroups) %>% summarize(n = n_distinct(group.id)) %>%
+      filter(n > 50)
+    if (length(tempresth1$timegroups) == 10 & length(tempresth2$timegroups) == 10)
+      speciesresth$validh[speciesresth$species == speciesresth$species[i]] = 1
+  }
+  
+  datarestr1 = data %>%
+    filter(ALL.SPECIES.REPORTED == 1, CATEGORY == "species" | CATEGORY == "issf", year > 2013) %>%
+    group_by(COMMON.NAME,timegroups) %>% summarize(cells = n_distinct(gridg4)) %>%
+    filter(cells <= gridlimit) %>%
+    group_by(COMMON.NAME) %>% summarize(years = n()) %>%
+    filter(years == 5) %>%
+    select (COMMON.NAME)
+  
+  speciesrestr = data.frame(species = intersect(unique(datarestr1$COMMON.NAME),resident))
+  speciesrestr$validr = NA
+  
+  for (i in 1:length(unique(datarestr1$COMMON.NAME)))
+  {
+    temprestr1 = data %>%
+      filter(COMMON.NAME == speciesrestr$species[i]) %>%
+      distinct(gridg1)
+    temprestr1 = temprestr1 %>% left_join(data)
+    temprestr2 = temprestr1 %>%
+      filter(COMMON.NAME == speciesrestr$species[i],year > 2013) %>%
+      group_by(timegroups) %>% summarize(n = n_distinct(group.id)) %>%
+      filter(n > 20)
+    temprestr1 = temprestr1 %>%
+      filter(year > 2013) %>%
+      group_by(timegroups) %>% summarize(n = n_distinct(group.id)) %>%
+      filter(n > 100)
+    if (length(temprestr1$timegroups) == 5 & length(temprestr2$timegroups) == 5)
+      speciesrestr$validr[speciesrestr$species == speciesrestr$species[i]] = 1
+  }
+  
+  dataf = data.frame(COMMON.NAME = as.character(ess$species), 
+                     SCIENTIFIC.NAME = as.character(ess$scientific))
   
   dataf = left_join(dataf,datah,by = c("COMMON.NAME"))
   dataf = left_join(dataf,datar,by = c("COMMON.NAME"))
@@ -585,6 +675,19 @@ dataspeciesfilter = function(datapath = "data.RData",
     filter((essential == 1 | Subcontinent == 1 | Himalayas == 1 | 
               ht == 1 | rt == 1) & (!is.na(B.Diurnal) | !is.na(NB.Diurnal))) %>%
     select(COMMON.NAME,ht,rt)
+  dataf$ht[is.na(dataf$B.Diurnal) & is.na(dataf$NB.Diurnal)] = NA
+  dataf$rt[is.na(dataf$B.Diurnal) & is.na(dataf$NB.Diurnal)] = NA
+  
+  restrictedspecieslist  = data.frame(species = specieslist$COMMON.NAME)
+  restrictedspecieslist = left_join(restrictedspecieslist,speciesresth)
+  restrictedspecieslist = left_join(restrictedspecieslist,speciesrestr)
+  
+  restrictedspecieslist = restrictedspecieslist %>%
+    filter(!is.na(validh) | !is.na(validr))
+  check1 = restrictedspecieslist$species[!is.na(restrictedspecieslist$validh)]
+  check2 = restrictedspecieslist$species[!is.na(restrictedspecieslist$validr)]
+  
+  names(restrictedspecieslist) = c("COMMON.NAME","ht","rt")
   
   t1 = dataf %>%
     filter((ht == 1 | rt == 1) & (!is.na(B.Diurnal) | !is.na(NB.Diurnal)))
@@ -603,9 +706,9 @@ dataspeciesfilter = function(datapath = "data.RData",
   specieslist1 = specieslist1 %>% select(COMMON.NAME,selected)
   
   dataf = dataf %>%
-    select(COMMON.NAME,ht,rt,Subcontinent,Himalayas,essential,NB.Diurnal)
+    select(COMMON.NAME,SCIENTIFIC.NAME,ht,rt,Subcontinent,Himalayas,essential,NB.Diurnal)
   dataf = left_join(dataf,specieslist1)
-  names(dataf) = c("COMMON.NAME","Long-term Analysis","Current change Analysis","Subcontinental Endemics",
+  names(dataf) = c("COMMON.NAME","SCIENTIFIC.NAME","Long-term Analysis","Current change Analysis","Subcontinental Endemics",
                    "Himalayan Endemics","Significant Species","Diurnal Species","Selected Species")
   
   sampledcells = c(length(unique(data$gridg1)),length(unique(data$gridg2)),
@@ -629,21 +732,75 @@ dataspeciesfilter = function(datapath = "data.RData",
   assign("totalcells",totalcells,.GlobalEnv)
   assign("gridlevels",gridlevels,.GlobalEnv)
   assign("specieslist",specieslist,.GlobalEnv)
+  assign("restrictedspecieslist",restrictedspecieslist,.GlobalEnv)
   
   dataf[is.na(dataf)] = ""
   dataf[dataf == 1] = "X"
+  
+  species2018 = read.csv("eBird-Clements-v2018-integrated-checklist-August-2018.csv")
+  species2018 = species2018 %>%
+    filter(category == "species") %>%
+    distinct(English.name,scientific.name) %>%
+    filter(English.name %in% dataf$COMMON.NAME)
+  names(species2018)[1] = "name2018"
+  
+  species2019 = read.csv("eBird-Clements-v2019-integrated-checklist-August-2019.csv")
+  species2019 = species2019 %>%
+    filter(category == "species") %>%
+    distinct(English.name,scientific.name)
+  
+  change = species2019 %>% filter(English.name %in% c("Spoon-billed Sandpiper","Ludlow's Fulvetta",
+                                                      "Slaty-backed Flycatcher","Brown Rock Chat",
+                                                      "Yellow-bellied Flowerpecker",
+                                                      "Yellow-throated Sparrow"))
+  change$name2018 = c("Spoon-billed Sandpiper","Ludlow's Fulvetta",
+                      "Slaty-backed Flycatcher","Indian Chat",
+                      "Yellow-bellied Flowerpecker",
+                      "Chestnut-shouldered Petronia")
+  
+  species2018$scientific.name = as.character(species2018$scientific.name)
+  species2018[species2018$name2018 %in% change$name2018,]$scientific.name = 
+    as.character(change$scientific.name)
+  
+  dataf$SCIENTIFIC.NAME = as.character(dataf$SCIENTIFIC.NAME)
+  dataf[dataf$COMMON.NAME %in% change$name2018,]$SCIENTIFIC.NAME = 
+    as.character(change$scientific.name)
+  
+  map1819 = left_join(species2018,species2019)
+  map1819 = map1819[!is.na(map1819$English.name),]
+  map1819 = map1819 %>% select(-name2018)
+  
+  dataf = left_join(dataf,map1819,by = c("SCIENTIFIC.NAME" = "scientific.name"))
+  dataf = dataf[!is.na(dataf$English.name),]
+  dataf$COMMON.NAME = dataf$English.name
+  dataf = dataf %>% select(-English.name)
+  
+  pos = match("Indian Roller",dataf$COMMON.NAME)
+  toadd = dataf[pos,]
+  toadd$COMMON.NAME = "Indochinese Roller"
+  toadd$SCIENTIFIC.NAME = "Coracias affinis"
+  toadd$`Long-term Analysis` = toadd$`Current change Analysis` = toadd$`Subcontinental Endemics` =
+    toadd$`Significant Species` = toadd$`Selected Species` = ""
+  
+  dataf = InsertRow(dataf,toadd,pos+1)
+  
   names(dataf)[1] = "eBird English Name"
+  names(dataf)[2] = "eBird Scientific Name"
+  
+  dataf$'Long-term Analysis'[dataf$'eBird English Name' %in% check1] = "X"
+  dataf$'Current change Analysis'[dataf$'eBird English Name' %in% check2] = "X"
   write.csv(dataf,"fullspecieslist.csv",row.names = F)
   
   rm(list=setdiff(ls(envir = .GlobalEnv), c("data","specieslist","databins",
                                             "sampledcells","totalcells","gridlevels","area",
-                                            "areag1","areag2","areag3","areag4","stats")), 
+                                            "areag1","areag2","areag3","areag4","stats",
+                                            "restrictedspecieslist")), 
      pos = ".GlobalEnv")
   
   save.image("dataforanalyses.RData")
   
   rm(data, specieslist, databins, sampledcells, totalcells, gridlevels, area,
-     areag1, areag2, areag3, areag4, stats, pos = ".GlobalEnv")
+     areag1, areag2, areag3, areag4, stats, restrictedspecieslist, pos = ".GlobalEnv")
 }
 
 ######################################################################################
@@ -670,7 +827,8 @@ expandbyspecies = function(data, species)
   
   checklistinfo = data %>%
     distinct(gridg1,gridg2,gridg3,gridg4,
-             ALL.SPECIES.REPORTED,OBSERVER.ID,
+             ALL.SPECIES.REPORTED,OBSERVER.ID,city,
+             #DURATION.MINUTES,EFFORT.DISTANCE.KM,
              group.id,month,year,no.sp,timegroups,region)
   
   checklistinfo = checklistinfo %>%
@@ -1028,8 +1186,8 @@ plottrends = function(trends,selectspecies,leg = T)
   limu = round(max(maxci))
   limu = limu+5
   
-  liml = 0
-  limu = 250
+  liml = -50
+  limu = 300
   
   #liml = 1
   #limu = 149
@@ -1058,7 +1216,7 @@ plottrends = function(trends,selectspecies,leg = T)
       #position = pd,
       #size = 0.5) +
       xlab("years") +
-      ylab("frequency of reporting")
+      ylab("change in frequency of reporting")
     
     ggp1 = ggp +
       theme(axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 12),
@@ -1074,9 +1232,11 @@ plottrends = function(trends,selectspecies,leg = T)
       scale_x_continuous(breaks = xbreaks,
                          #limits = c(1993,2018),
                          labels = lbreaks) +
-      scale_y_continuous(breaks = c(0,50,75,100,133,200), labels = c("-100%","-50%","-25%","0%",
-                                                                     "+33%","+100%"), 
-                         limits = c(liml,limu))
+      scale_y_continuous(breaks = c(0,50,75,100,133,200), 
+                         #limits = c(liml,limu),
+                         labels = c("-100%","-50%","-25%","0%",
+                                                                     "+33%","+100%")
+                         )
     #theme(legend.position = "none")
     
     require(gridExtra)
@@ -1098,6 +1258,10 @@ plottrends = function(trends,selectspecies,leg = T)
     tiff('plot1.tiff', units="in", width=10, height=7, res=1000)
     grid_arrange_shared_legend(ggp1)
     dev.off()
+    
+    png('plot1.png', units="in", width=10, height=7, res=1000)
+    grid_arrange_shared_legend(ggp1)
+    dev.off()
   }
   
   if(!isTRUE(leg))
@@ -1116,7 +1280,7 @@ plottrends = function(trends,selectspecies,leg = T)
       #geom_errorbar(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
       #ymax = (nmfreqbyspec + nmsebyspec*1.96)), width = 0.1, size = 0.1, position = pd) +
       xlab("years") +
-      ylab("frequency of reporting")
+      ylab("change in frequency of reporting")
     
     ggp1 = ggp +
       theme(axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 11),
@@ -1130,9 +1294,11 @@ plottrends = function(trends,selectspecies,leg = T)
                         labels = lbs1,
                         values = cols1) +
       scale_x_continuous(breaks = xbreaks, labels = lbreaks) +
-      scale_y_continuous(breaks = c(0,50,75,100,133,200), labels = c("-100%","-50%","-25%","0%",
-                                                                     "+33%","+100%"), 
-                         limits = c(liml,limu))
+      scale_y_continuous(breaks = c(0,50,75,100,133,200), 
+                         #limits = c(liml,limu),
+                         labels = c("-100%","-50%","-25%","0%",
+                                    "+33%","+100%")
+      )
     #theme(legend.position = "none")
     
     ggpx = ggp +
@@ -1147,9 +1313,11 @@ plottrends = function(trends,selectspecies,leg = T)
                         labels = lbs1,
                         values = cols1) +
       scale_x_continuous(breaks = xbreaks, labels = lbreaks) +
-      scale_y_continuous(breaks = c(0,50,75,100,133,200), labels = c("-100%","-50%","-25%","0%",
-                                                                     "+33%","+100%"), 
-                         limits = c(liml,limu)) +
+      scale_y_continuous(breaks = c(0,50,75,100,133,200), 
+                         #limits = c(liml,limu),
+                         labels = c("-100%","-50%","-25%","0%",
+                                    "+33%","+100%")
+      ) +
     theme(legend.position = "none")
     
     require(gridExtra)
@@ -1185,8 +1353,8 @@ plottrends = function(trends,selectspecies,leg = T)
 # plot composite trends
 
 plotcompositetrends = function(trends,specieslist,g1=NA,g2=NA,g3=NA,g4=NA,g5=NA,g6=NA,g7=NA,g8=NA,
-                               n1="1",n2="2",n3="3",n4="4",n5="5",n6="6",
-                               n7="7",n8="8")
+                               n1=NA,n2=NA,n3=NA,n4=NA,n5=NA,n6=NA,
+                               n7=NA,n8=NA)
 {
   require(tidyverse)
   require(ggthemes)
@@ -1200,10 +1368,16 @@ plotcompositetrends = function(trends,specieslist,g1=NA,g2=NA,g3=NA,g4=NA,g5=NA,
     break
   
   n = c(n1,n2,n3,n4,n5,n6,n7,n8)
-  n = n[1:l]
+  n = n[!is.na(n)]
   n1 = as.character(c(1:l))
   
-  speciesl = unique(trends$species)
+  speciesl = as.character()
+  for (i in 1:l)
+  {
+    speciesl = c(speciesl,g[[i]])
+  }
+  
+  speciesl = unique(speciesl)
   
   tsl = calculatetrendslope(trends, speciesl[1], specieslist, composite = F)
   for (i in 2:length(speciesl))
@@ -1212,32 +1386,7 @@ plotcompositetrends = function(trends,specieslist,g1=NA,g2=NA,g3=NA,g4=NA,g5=NA,
     tsl = rbind(tsl,tsl1)
   }
   
-  tsl$mintrend = tsl$trend - tsl$trendci
-  tsl$maxtrend = tsl$trend + tsl$trendci
-  tsl$minslope = tsl$slope - tsl$slopeci
-  tsl$maxslope = tsl$slope + tsl$slopeci
-  
-  trendscat = tsl %>%
-    mutate(longcat = 
-             case_when(maxtrend <= -50 ~ "Strong Decline",
-                       maxtrend <= -25 ~ "Moderate Decline",
-                       mintrend >= 100 ~ "Strong Increase",
-                       mintrend >= 33 ~ "Moderate Increase",
-                       TRUE ~ "Stable")
-    ) %>%
-    mutate(shortcat = 
-             case_when(maxslope <= -2 ~ "Strong Decline",
-                       maxslope <= -1 ~ "Moderate Decline",
-                       minslope >= 2 ~ "Strong Increase",
-                       minslope >= 1 ~ "Moderate Increase",
-                       TRUE ~ "Stable")
-    ) %>%
-    select(species,trend,trendci,slope,slopeci,longcat,shortcat)
-  
-  trendscat$longcat = factor(trendscat$longcat, levels = c("Strong Decline","Moderate Decline","Stable",
-                                                           "Moderate Increase","Strong Increase"))
-  trendscat$shortcat = factor(trendscat$shortcat, levels = c("Strong Decline","Moderate Decline","Stable",
-                                                             "Moderate Increase","Strong Increase"))
+  trendscat = tsl
   
   for (i in 1:l)
   {
@@ -1354,6 +1503,12 @@ plotcompositetrends = function(trends,specieslist,g1=NA,g2=NA,g3=NA,g4=NA,g5=NA,
   grid::grid.draw(g)
   dev.off()
   
+  png('plot2.png', units="in", width=10, height=7, res=1000)
+  grid::grid.draw(g)
+  dev.off()
+  
+  ggsave(file="composite.svg", plot=g, units="in", width=10, height=7)
+  
   #theme(legend.position = "none")
   
 }
@@ -1370,12 +1525,12 @@ calculatetrendslope = function(trends, species, specieslist, composite = F)
   
   corr = data.frame(species = name, trend = NA, trendci = NA, slope = NA, slopeci = NA)
 
-  specieslist = specieslist %>%
+  speciesl = specieslist %>%
     filter(COMMON.NAME == species)
   
-  if (is.na(specieslist$ht) & is.na(specieslist$rt))
+  if (is.na(speciesl$ht) & is.na(speciesl$rt))
   {
-    return(corr)
+    #return(corr)
   }
   
   trends = na.omit(trends)
@@ -1385,39 +1540,84 @@ calculatetrendslope = function(trends, species, specieslist, composite = F)
     trends = stdtrends(trends)
   }
   
-  if (!is.na(specieslist$ht) & !is.na(specieslist$rt))
+  if (!is.na(speciesl$ht) & !is.na(speciesl$rt))
   {
     corr$trend = tail(trends,1)$nmfreqbyspec
     corr$trendci = tail(trends,1)$nmsebyspec*1.96
   }
   
-  trends1 = trends1 %>% filter(timegroups > 2013)
-  if (!isTRUE(composite))
+  if (!is.na(speciesl$rt))
   {
-    trends1 = stdtrends(trends1)
-  }
-  
-  tm = trends1$timegroups
-  tm = tm - min(tm)
-  sl = numeric(1000)
-
-  for (i in 1:1000)
-  {
-    samp = numeric(length(trends1$timegroups))
-    for (j in 1:length(trends1$timegroups))
+    trends1 = trends1 %>% filter(timegroups > 2013)
+    if (!isTRUE(composite))
     {
-      samp[j] = rnorm(1,trends1$nmfreqbyspec[j],trends1$nmsebyspec[j])
+      trends1 = stdtrends(trends1)
     }
-    samp = samp - 100
-    result = summary(lm(samp~0+tm))
-    sl[i] = result$coefficients[1,1]
+    
+    tm = trends1$timegroups
+    tm = tm - min(tm)
+    sl = numeric(1000)
+    
+    for (i in 1:1000)
+    {
+      samp = numeric(length(trends1$timegroups))
+      for (j in 1:length(trends1$timegroups))
+      {
+        samp[j] = rnorm(1,trends1$nmfreqbyspec[j],trends1$nmsebyspec[j])
+      }
+      samp = samp - 100
+      result = summary(lm(samp~0+tm))
+      sl[i] = result$coefficients[1,1]
+    }
+    
+    corr$slope = mean(sl)
+    corr$slopeci = sd(sl)*1.96
+    corr$trend = corr$trend - 100
   }
   
-  corr$slope = mean(sl)
-  corr$slopeci = sd(sl)*1.96
-  corr$trend = corr$trend - 100
+  trends = corr
   
-  return(corr)
+  trends$mintrend = trends$trend - trends$trendci
+  trends$maxtrend = trends$trend + trends$trendci
+  trends$minslope = trends$slope - trends$slopeci
+  trends$maxslope = trends$slope + trends$slopeci
+  
+  trendscat = trends %>%
+    mutate(longcat = 
+             case_when(is.na(trend) ~ "Data Deficient",
+                       trendci > 33 & abs(trendci/trend) > 0.5 ~ "Uncertain",
+                       maxtrend <= -50 ~ "Strong Decline",
+                       maxtrend <= -25 ~ "Moderate Decline",
+                       mintrend >= 100 ~ "Strong Increase",
+                       mintrend >= 33 ~ "Moderate Increase",
+                       TRUE ~ "Stable")
+    ) %>%
+    mutate(shortcat = 
+             case_when(is.na(slope) ~ "Data Deficient",
+                       slopeci > 20 & abs(slopeci/slope) > 0.9 ~ "Uncertain",
+                       maxslope <= -2 ~ "Strong Decline",
+                       maxslope <= -1 ~ "Moderate Decline",
+                       minslope >= 2 ~ "Strong Increase",
+                       minslope >= 1 ~ "Moderate Increase",
+                       TRUE ~ "Stable")
+    ) %>%
+    select(species,trend,trendci,mintrend,maxtrend,slope,slopeci,minslope,maxslope,longcat,shortcat)
+  
+  trendscat$longcat[trendscat$species %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
+                                             "Taiga Flycatcher","Chestnut Munia")] = NA
+  trendscat$shortcat[trendscat$species %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
+                                             "Taiga Flycatcher","Chestnut Munia")] = NA
+  
+  trendscat$mintrend[trendscat$mintrend < -100] = -100
+  
+  trendscat$longcat = factor(trendscat$longcat, levels = c("Strong Decline","Moderate Decline",
+                                                           "Data Deficient","Uncertain","Stable",
+                                                           "Moderate Increase","Strong Increase"))
+  trendscat$shortcat = factor(trendscat$shortcat, levels = c("Strong Decline","Moderate Decline",
+                                                             "Data Deficient","Uncertain","Stable",
+                                                             "Moderate Increase","Strong Increase"))
+  
+  return(trendscat)
 }
 
 
@@ -1434,11 +1634,6 @@ occufreq = function(data, species, areag, rerun = F, datatofill)
   require(data.table)
   require(unmarked)
   
-  if(rerun)
-  {
-    species = datatofill$species
-  }
-  
   load("neighbours.RData")
   
   migstatus = read.csv("Migratory Status - Migratory Status.csv")
@@ -1446,12 +1641,36 @@ occufreq = function(data, species, areag, rerun = F, datatofill)
   migstatus = migstatus %>%
     mutate(mig = 
              case_when(!is.na(Summer.Visitor) & !is.na(Winter.Visitor) ~ "LM",
+                       !is.na(Resident) & !is.na(Winter.Visitor) ~ "LM",
+                       !is.na(Summer.Visitor) & !is.na(Resident) ~ "LM",
                        !is.na(Summer.Visitor) ~ "S",
-                       !is.na(Summer.Visitor) | !is.na(Winter.Visitor) | !is.na(Strictly.Passage) ~ "W/P",
+                       !is.na(Winter.Visitor) | !is.na(Strictly.Passage) ~ "W/P",
                        !is.na(Uncertain.Vagrant) & is.na(Resident) ~ "U",
                        TRUE ~ "R")
     ) %>%
     select(eBird.English.Name,mig)
+  
+  migstatus$mig[migstatus$eBird.English.Name %in% c("Himalayan Cuckoo","Common Cuckoo",
+                                                    "Watercock")] = "S"
+  migstatus$mig[migstatus$eBird.English.Name %in% c("Indian Skimmer","Black-bellied Tern",
+                                                    "Black-capped Kingfisher",
+                                                    "Mountain Chiffchaff","Red-rumped Swallow")] = "R"
+  
+  migstatus$mig[migstatus$eBird.English.Name %in% c("Smoky Warbler","Wallcreeper",
+                                                    "Long-billed Pipit")] = "W/P"
+  
+  migstatus$mig[migstatus$eBird.English.Name %in% c("Saker Falcon")] = "LM"
+  
+  if(rerun)
+  {
+    species = datatofill$species
+    
+    temp = datatofill %>%
+      filter((!is.na(trivB) & (is.na(occB) | is.na(occB.ci))) | 
+               (!is.na(trivM) & (is.na(occM) | is.na(occM.ci))))
+    
+    species = species[species %in% temp$species]
+  }
   
   migstatus = migstatus %>%
     filter(eBird.English.Name %in% species)
@@ -1485,31 +1704,56 @@ occufreq = function(data, species, areag, rerun = F, datatofill)
   if(rerun)
   {
     est[,1] = datatofill$detprobB
-    est[,2] = datatofill$occB
-    est[,3] = datatofill$occB.ci
-    est[,4] = datatofill$trivB
-    est[,5] = datatofill$sampareaB
+    est[,2] = datatofill$occB*10000
+    est[,3] = datatofill$occB.ci*10000
+    est[,4] = datatofill$trivB*10000
+    est[,5] = datatofill$sampareaB*10000
     est[,6] = datatofill$detprobM
-    est[,7] = datatofill$occM
-    est[,8] = datatofill$occM.ci
-    est[,9] = datatofill$trivM
-    est[,10] = datatofill$sampareaM
+    est[,7] = datatofill$occM*10000
+    est[,8] = datatofill$occM.ci*10000
+    est[,9] = datatofill$trivM*10000
+    est[,10] = datatofill$sampareaM*10000
     est[,11] = datatofill$migstatus
     
-    temp = datatofill %>%
-      filter((!is.na(trivB) & (is.na(occB) | is.na(occB.ci))) | 
-               (!is.na(trivM) & (is.na(occM) | is.na(occM.ci))))
+    if (migstatus == "LM")
+    {
+      index = 1:length(species)
+      x = numeric(0)
+      
+      for (i in unique(species))
+      {
+        temp = datatofill %>%
+          filter(species == i, migstatus == "LM")
+        
+        if (length(temp$species) != 0)
+        {
+          if (!is.na(temp$trivB) & (!is.na(temp$occB) & !is.na(temp$occB.ci)))
+          {
+            x1 = intersect(index[species == i], index[mig == "MS"])
+            x = c(x,index[x1])
+          }
+          if (!is.na(temp$trivM) & (!is.na(temp$occM) & !is.na(temp$occM.ci)))
+          {
+            x2 = intersect(index[species == i], index[mig == "MW"])
+            x = c(x,index[x2])
+          }
+        }
+      }
+      species = species[-x]
+      mig = mig[-x]
+    }
     
-    species = species[species %in% temp$species]
-    speciesf = speciesf[speciesf %in% temp$species]
-    mig = mig[species %in% temp$species]
-    migf = migf[speciesf %in% temp$species]
+
   }
 
-
-  
   for(s in 1:length(species))
   {
+    if(rerun)
+    {
+      if (is.na(datatofill$sampareaB[s]) & is.na(datatofill$sampareaM[s]))
+        next
+    }
+    
     if (mig[s] == "S" | mig[s] == "W/P")
     {
       temp1 = data %>%
@@ -1546,6 +1790,28 @@ occufreq = function(data, species, areag, rerun = F, datatofill)
     sampledarea = sampledarea %>% distinct(gridg1,area)
     len = length(sampledarea$area)
     sampledarea = sum(sampledarea$area)
+    
+    if (length(datac$COMMON.NAME[datac$COMMON.NAME == species[s]]) == 0)
+    {
+      estdf = data.frame(rep(rownames(est)))
+      names(estdf) = "species"
+      
+      estdf$detprobB = NA
+      estdf$occB = NA
+      estdf$occB.ci = NA
+      estdf$trivB = NA
+      estdf$sampareaB = NA
+      estdf$detprobM = NA
+      estdf$occM = NA
+      estdf$occM.ci = NA
+      estdf$trivM = NA
+      estdf$sampareaM = NA
+      
+      names(migstatus)[2] = "migstatus"
+      estdf = left_join(estdf,migstatus,by = c("species" = "eBird.English.Name"))
+      
+      return(estdf)
+    }
     
     selexp = expandbyspecies(datac,species[s])
     
@@ -1715,7 +1981,7 @@ SoIBoccupancy = function(data,species,areag)
                (!is.na(trivM) & (is.na(occM) | is.na(occM.ci))))
     if(length(temp$species) == 0)
       break
-    if(c == 5)
+    if(c == 10)
       break
     a = occufreq(data,species,areag,rerun=T,datatofill=a)
   }
@@ -1907,6 +2173,144 @@ freqtrendsr = function(data,species,specieslist,
     
     f1$se = NA
   }
+  
+  
+  f1$timegroups = factor(f1$timegroups, levels = c("before 2000","2000-2006","2007-2010",
+                                                   "2011-2012","2013","2014","2015","2016","2017","2018"))
+  f1 = f1[order(f1$timegroups),]
+  names(f1)[1] = "timegroupsf"
+  mp = data.frame(timegroupsf = c("before 2000","2000-2006","2007-2010",
+                                  "2011-2012","2013","2014","2015","2016","2017","2018"), 
+                  timegroups = as.numeric(databins))
+  f1 = left_join(f1,mp)
+  f1$species = species
+  
+  if (is.na(specieslist$ht) & !is.na(specieslist$rt))
+  {
+    f1 = rbind(g1,f1)
+  }
+  
+  return(f1)
+}
+
+
+#######################################################################################
+
+freqtrendsrestricted = function(data,species,specieslist,
+                      databins=c(1993,2004,2009,2012,2013,2014,2015,2016,2017,2018))
+{
+  require(tidyverse)
+  require(VGAM)
+
+  data$gridg1 = as.factor(data$gridg1)
+  data$gridg2 = as.factor(data$gridg2)
+  data$gridg3 = as.factor(data$gridg3)
+  data$gridg4 = as.factor(data$gridg4)
+
+  specieslist = specieslist %>%
+    filter(COMMON.NAME == species)
+  
+  ## filters data based on whether the species has been selected for long-term trends (ht) 
+  ## or short-term trends (rt) 
+  
+  if (is.na(specieslist$ht) & !is.na(specieslist$rt))
+  {
+    g1 = data.frame(timegroups = unique(data$timegroups))
+    g1$se = g1$freq = NA
+    g1$timegroups = factor(g1$timegroups, levels = c("before 2000","2000-2006","2007-2010",
+                                                     "2011-2012","2013","2014","2015","2016","2017","2018"))
+    g1 = g1[order(g1$timegroups),]
+    names(g1)[1] = "timegroupsf"
+    mp = data.frame(timegroupsf = c("before 2000","2000-2006","2007-2010",
+                                    "2011-2012","2013","2014","2015","2016","2017","2018"), 
+                    timegroups = as.numeric(databins))
+    g1 = left_join(g1,mp)
+    g1$species = species
+    g1 = g1 %>%
+      filter(timegroups < 2014)
+    
+    data = data %>%
+      filter(year >= 2014)
+  }
+  
+  if (is.na(specieslist$ht) & is.na(specieslist$rt))
+  {
+    f1 = data.frame(timegroups = unique(data$timegroups))
+    f1$se = f1$freq = NA
+    f1$timegroups = factor(f1$timegroups, levels = c("before 2000","2000-2006","2007-2010",
+                                                     "2011-2012","2013","2014","2015","2016","2017","2018"))
+    f1 = f1[order(f1$timegroups),]
+    names(f1)[1] = "timegroupsf"
+    mp = data.frame(timegroupsf = c("before 2000","2000-2006","2007-2010",
+                                    "2011-2012","2013","2014","2015","2016","2017","2018"), 
+                    timegroups = as.numeric(databins))
+    f1 = left_join(f1,mp)
+    f1$species = species
+    return(f1)
+  }
+  
+  ## errors for wrong parameter values
+  
+  ## considers only complete lists
+  
+  data = data %>%
+    filter(ALL.SPECIES.REPORTED == 1)
+  
+  data$month = as.factor(data$month)
+  
+  if (!species %in% unique(data$COMMON.NAME))
+    return(paste(species,"is not a valid species name for the region selected"))
+  
+  
+  data$timegroups = as.factor(data$timegroups)
+  data$gridg = data$gridg1
+  temp = data %>%
+    filter(COMMON.NAME == species) %>%
+    distinct(gridg1)
+  data = temp %>% left_join(data)
+  
+  ## calculate a median list length to use to predict
+  
+  datay = data %>%
+    group_by(group.id) %>% slice(1) %>% ungroup %>%
+    summarize(medianlla = median(no.sp))
+  
+  medianlla = datay$medianlla
+  
+  ## expand dataframe to include absences as well
+  
+  ed = expandbyspecies(data,species)
+  tm = unique(data$timegroups)
+  #rm(data, pos = ".GlobalEnv")
+  
+  ## the model
+  
+  m1 = glm(OBSERVATION.COUNT ~ month + log(no.sp) + timegroups, data = ed, 
+             family=binomial(link = 'cloglog'))
+  
+  ## prepare a new data file to predict
+  
+  f = data.frame(unique(tm))
+  f = do.call("rbind", replicate(length(unique(ed$month)),f,simplify=F))
+  names(f) = "timegroups"
+  f$month = rep(unique(ed$month), each = length(f$timegroups)/length(unique(ed$month)))
+  ltemp = data.frame(timegroups = f$timegroups,
+                     no.sp = medianlla, month = f$month)
+  
+  f1 = data.frame(timegroups = tm)
+  
+  f2 = data.frame(freq = numeric(length(ltemp$no.sp)))
+  f2$se = numeric(length(ltemp$no.sp))
+  f2$timegroups = ltemp$timegroups
+  
+  fx = predict(m1, ltemp, se.fit = T, "response")
+  f2$freq = fx$fit
+  f2$se = fx$se.fit
+  
+  f2 = f2 %>%
+    group_by(timegroups) %>% summarize(freq = mean(freq), se = sqrt(sum(se^2)/n())) 
+  
+  f1 = left_join(f1,f2)
   
   
   f1$timegroups = factor(f1$timegroups, levels = c("before 2000","2000-2006","2007-2010",

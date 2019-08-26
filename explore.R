@@ -92,13 +92,14 @@ plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Common M
             season = "year round",
             smooth = F, 
             rich = T, add = "unique lists", h = 1.2, cutoff = 5, baseyear = 1900, endyear = 2018, 
-            showempty = F, states = c("Kerala"))
+            showempty = F, states = c("Delhi"))
 
-plotfreqmap(data[data$CATEGORY == "species",], "White-cheeked Barbet", "state", level = "species", 
+plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Rufous Babbler", "g2", 
+            level = "species", 
             season = "year round",
             smooth = F, 
-            rich = T, add = "species", h = 1.4, cutoff = 5, baseyear = 1900, endyear = 2018, 
-            showempty = F, states = "none")
+            rich = F, add = "frequency", h = 1.4, cutoff = 5, baseyear = 1900, endyear = 2018, 
+            showempty = F, states = c("none"))
 
 
 
