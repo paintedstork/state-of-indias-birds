@@ -1,4 +1,19 @@
-library(tidyverse)
+require(tidyverse)
+load("data.RData")
+latlong = data %>% distinct(group.id,LONGITUDE,LATITUDE)
+load("dataforanalyses.RData")
+data = left_join(data,latlong)
+load("maps.RData")
+load("neighbours.RData")
+source('~/GitHub/state-of-indias-birds/SoIB functions.R')
+pg = fortify(gridmapg1, region = c("id"))
+lgrid = fortify(gridmapg3, region = c("id"))
+
+datac = data %>%
+  distinct(group.id,LONGITUDE,LATITUDE)
+
+datac = datac[duplicated(datac[,2:3]),]
+
 
 t3 = data %>%
   filter(COMMON.NAME == "Red-necked Falcon") %>%
@@ -17,13 +32,12 @@ n = setdiff(t2,t)
 n = intersect(n,unique(data$gridg1))
 
 filtercountry = fortify(indiamap)
-pg = fortify(gridmapg1, region = c("id"))
+
 pg1 = pg %>%
   filter(id %in% t)
 pg2 = pg %>%
   filter(id %in% n)
 
-lgrid = fortify(gridmapg3, region = c("id"))
 lgrid = lgrid %>%
   filter(id %in% unique(data$gridg3))
 
@@ -46,14 +60,13 @@ plotindiamap = ggplot() +
         panel.background = element_blank())+
   coord_map()
 
-datac = data %>%
-  distinct(group.id,LONGITUDE,LATITUDE)
 
-datac = datac[duplicated(datac[,2:3]),]
 
-plotindiamap +
+ggp = plotindiamap +
   #geom_path(data = lgrid, aes(x = long, y = lat, group = group), col = "black") +
   #geom_point(data = datac, aes(x = LONGITUDE, y = LATITUDE),col = "red", alpha = 0.3, size = 2, stroke = 0)
   geom_polygon(data = pg1, aes(x = long, y = lat, group = group), col = "red", fill = "red") +
   geom_polygon(data = pg2, aes(x = long, y = lat, group = group), col = "red", fill = "red", alpha = 0.3)
+
+
   

@@ -11,7 +11,7 @@ readcleanrawdata = function(rawpath = "ebd_IN_relMay-2019.txt",
   
   # select only necessary columns
   preimp = c("CATEGORY","COMMON.NAME","SCIENTIFIC.NAME","OBSERVATION.COUNT",
-             "LOCALITY.ID","LOCALITY.TYPE","REVIEWED","APPROVED",
+             "LOCALITY.ID","LOCALITY.TYPE","REVIEWED","APPROVED","STATE","COUNTY",
              "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
              "PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM",
              "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","GROUP.IDENTIFIER","SAMPLING.EVENT.IDENTIFIER")
@@ -39,18 +39,49 @@ readcleanrawdata = function(rawpath = "ebd_IN_relMay-2019.txt",
   
   # read sensitive species data
   nms = nms[-47]
-  sesp = read.csv(sensitivepath, colClasses = nms)
+  sesp = read.csv(sensitivepath, colClasses = nms, stringsAsFactors = F)
   stdformat = data.frame(date = as.character(sesp$OBSERVATION.DATE))
   stdformat = stdformat %>%
     separate(date, c("month","day","year"), "/")
   stdformat$year = as.numeric(stdformat$year)
   sesp$OBSERVATION.DATE = paste(stdformat$year,"-",stdformat$month,"-",stdformat$day, sep = "")
+  sesp = sesp %>% mutate(GROUP.IDENTIFIER = ifelse(GROUP.IDENTIFIER == "", NA, GROUP.IDENTIFIER))
 
   # merge both data frames
   data = rbind(data,sesp)
   
   data = data %>%
-    filter(!COMMON.NAME %in% c("Western Orphean Warbler"))
+    filter(!COMMON.NAME %in% c("Western Orphean Warbler"),
+           (!COMMON.NAME %in% c("Jungle Prinia") | !STATE %in% c("Uttarakhand","Jammu and Kashmir",
+                                                                "Chandigarh","Punjab",
+                                                                "Himachal Pradesh") | 
+             COUNTY %in% c("Hardwar")),
+           (!COMMON.NAME %in% c("Orange Minivet") | !STATE %in% c("Gujarat") | 
+              COUNTY %in% c("Narmada","Navsari","The Dangs")),
+           (!COMMON.NAME %in% c("Red-breasted Flycatcher") | !STATE %in% c("West Bengal")),
+           (!COMMON.NAME %in% c("Brown-cheeked Fulvetta") | !STATE %in% c("Sikkim")),
+           (!COMMON.NAME %in% c("Chestnut-shouldered Petronia") | !COUNTY %in% 
+              c("Darjiling","Jalpaiguri")),
+           (!COMMON.NAME %in% c("Indian Robin") | 
+              (!STATE %in% c("Arunachal Pradesh","Mizoram","Manipur",
+                            "Sikkim","Nagaland","Tripura",
+                            "Assam") & 
+              !COUNTY %in% c("Darjiling","Jalpaiguri","Koch Bihar"))),
+           (!COMMON.NAME %in% c("Brown-capped Woodpecker") | 
+              (!STATE %in% c("Arunachal Pradesh","Mizoram","Manipur",
+                             "Sikkim","Nagaland","Tripura",
+                             "Assam","Jammu and Kashmir") & 
+                 !COUNTY %in% c("Darjiling","Jalpaiguri","Koch Bihar","Dehradun","Almora","Shimla",
+                                "Mandi","Kangra","Chamba","Kullu"))),
+           (!COMMON.NAME %in% c("Rusty-throated Wren-Babbler") | !STATE %in% c("Manipur","Mizoram",
+                                                                               "Nagaland")),
+           (!COMMON.NAME %in% c("Gray Sibia") | !STATE %in% c("Arunachal Pradesh")),
+           (!COMMON.NAME %in% c("Indian Silverbill") | 
+              (!STATE %in% c("Arunachal Pradesh","Mizoram","Manipur",
+                            "Sikkim","Nagaland","Tripura",
+                            "Assam") & 
+              !COUNTY %in% c("Darjiling","Jalpaiguri","Koch Bihar"))))
+  
 
   # create and write a file with common names and scientific names of all Indian species
   # useful for mapping
@@ -160,6 +191,82 @@ readcleanrawdata = function(rawpath = "ebd_IN_relMay-2019.txt",
     mutate(year = ifelse(day <= 151, cyear-1, cyear)) %>%
     group_by(group.id) %>% mutate(no.sp = n_distinct(COMMON.NAME)) %>%
     ungroup
+  
+  data = data %>% filter(year < 2019)
+  
+  ## remove probable mistakes
+  
+  data = data %>%
+    filter(!group.id %in% c("S52427664","S52427820","S56787688","S52402064","S53042612",
+                            "S33740440"),
+           !COMMON.NAME == "Nilgiri Pipit" | !group.id %in% c("S29668163","S29668256"),
+           !COMMON.NAME == "Ashambu Laughingthrush" | !group.id %in% c("S56229913","S56933026"),
+           !COMMON.NAME == "Asian Barred Owlet" | !group.id %in% c("G2041445"),
+           !COMMON.NAME == "Blue-eared Kingfisher" | !group.id %in% c("S32961812"),
+           !COMMON.NAME == "Blue-capped Redstart" | !group.id %in% c("S53495281"),
+           !COMMON.NAME == "Painted Bush-Quail" | !group.id %in% c("S27051065"),
+           !COMMON.NAME == "Blue-fronted Redstart" | !group.id %in% c("S21233304"),
+           !COMMON.NAME == "Brown Hornbill" | !group.id %in% c("S43551831"),
+           !COMMON.NAME == "Common Hill Myna" | !group.id %in% c("S52357374","S53043299",
+                                                                 "G3013891","S42764844",
+                                                                 "S46360523","S27918190"),
+           !COMMON.NAME == "Brown-cheeked Fulvetta" | !group.id %in% c("S44659529","S40566180",
+                                                                 "G3974238"),
+           !COMMON.NAME == "Common Raven" | !group.id %in% c("G2347843","S34953487","S49490692"),
+           !COMMON.NAME == "Crimson-backed Sunbird" | !group.id %in% c("G2337363","S41299024","S42586621",
+                                                                       "S44235135","S55677832"),
+           !COMMON.NAME == "Fire-tailed Myzornis" | !group.id %in% c("S42743967"),
+           !COMMON.NAME == "Flame-throated Bulbul" | !group.id %in% c("S46388374"),
+           !COMMON.NAME == "Golden-fronted Leafbird" | !group.id %in% c("S51010614","S20859862",
+                                                                        "S35527622","S40801323",
+                                                                        "S52222471","S42293210",
+                                                                        "S42565278","G2925840",
+                                                                        "G2925839"),
+           !COMMON.NAME == "Greater Adjutant" | !group.id %in% c("S42194637","S34314503"),
+           !COMMON.NAME == "Jungle Owlet" | !group.id %in% c("S29235308","S27617824",
+                                                             "S32956267","S40541020",
+                                                             "S56307563","S56320053",
+                                                             "S56321414","S56345734",
+                                                             "G2353309","S22537736",
+                                                             "S56129491","S50441851",
+                                                             "S50442387","G1486831",
+                                                             "S32601844"),
+           !COMMON.NAME == "Large Woodshrike" | !group.id %in% c("G2907799","S23455075"),
+           !COMMON.NAME == "Lesser Racket-tailed Drongo" | !group.id %in% c("S49094276"),
+           !COMMON.NAME == "Long-billed Sunbird" | !group.id %in% c("S54163831","S52859270"),
+           !COMMON.NAME == "Malabar Gray Hornbill" | !group.id %in% c("S40060028"),
+           !COMMON.NAME == "Gray Sibia" | !group.id %in% c("S29321497"),
+           !COMMON.NAME == "Nicobar Imperial-Pigeon" | !group.id %in% c("G3671404","S30505431",
+                                                                        "S32591199","S34756528",
+                                                                        "S34773949","S34779113",
+                                                                        "S24322442"),
+           !COMMON.NAME == "Nicobar Parakeet" | !group.id %in% c("S56338976","S55428987",
+                                                                 "S50021690","S42333230"),
+           !COMMON.NAME == "Nilgiri Sholakili" | !group.id %in% c("G2809524"),
+           !COMMON.NAME == "Palani Laughingthrush" | !group.id %in% c("S37500763","S31503751",
+                                                                      "G1050022","S26314587",
+                                                                      "G3893563"),
+           !COMMON.NAME == "Green Imperial-Pigeon" | !group.id %in% c("S42404810","S54172419",
+                                                                      "S54171884","S19503596"),
+           !COMMON.NAME == "Rufous-fronted Prinia" | !group.id %in% c("S40763806","S36754186",
+                                                                      "S33722312","S47874534",
+                                                                      "S55205625","S26234020",
+                                                                      "S47854569","S47903089",
+                                                                      "S42242712","S22225425",
+                                                                      "S44388179","G1261451",
+                                                                      "S47862934","S46497353",
+                                                                      "S47901972","S45790541"),
+           !COMMON.NAME == "Scaly Laughingthrush" | !group.id %in% c("S34973616"),
+           !COMMON.NAME == "Sikkim Treecreeper" | !group.id %in% c("G4224790","S21504333"),
+           !COMMON.NAME == "Slaty-headed Parakeet" | !group.id %in% c("G1588346"),
+           !COMMON.NAME == "Southern Hill Myna" | !group.id %in% c("G3967773"),
+           !COMMON.NAME == "White-bellied Woodpecker" | !group.id %in% c("G2804044","S37750658"),
+           !COMMON.NAME == "Chestnut-crowned Laughingthrush" | !group.id %in% c("G1098538","G3643918",
+                                                                                "G3665046","S35804354",
+                                                                                "S47949100","S50609308"),
+           !COMMON.NAME == "White-browed Fantail" | !group.id %in% c("S17017380","S22224770",
+                                                                     "S19422597","G1506668")
+           )
   
   assign("data",data,.GlobalEnv)
   
@@ -493,6 +600,8 @@ removevagrants = function(data)
   d = d %>%
     filter(year > 2013)
   
+  save(d,file = "vagrantdata.RData")
+  
   data = anti_join(data,d)
   return(data)
 }
@@ -557,7 +666,7 @@ dataspeciesfilter = function(datapath = "data.RData",
     mutate(timegroups = ifelse(year == 2018, "2018", timegroups))
   
   data = removevagrants(data)
-  
+
   x3 = paste(nrow(data),"filter 1 observations")
   x4 = paste(length(unique(data$group.id)),"filter 1 unique checklists")
   x5 = paste(nrow(data[data$ALL.SPECIES.REPORTED == 1,]),
@@ -673,8 +782,14 @@ dataspeciesfilter = function(datapath = "data.RData",
   
   specieslist = dataf %>%
     filter((essential == 1 | Subcontinent == 1 | Himalayas == 1 | 
-              ht == 1 | rt == 1) & (!is.na(B.Diurnal) | !is.na(NB.Diurnal))) %>%
+              ht == 1 | rt == 1) & 
+             (!is.na(B.Diurnal) | !is.na(NB.Diurnal) | COMMON.NAME == "Jerdon's Courser") & 
+             (is.na(discard))) %>%
     select(COMMON.NAME,ht,rt)
+  specieslist$ht[specieslist$COMMON.NAME == "Besra"] = NA
+  specieslist$rt[specieslist$COMMON.NAME == "Besra"] = NA
+  specieslist$ht[specieslist$COMMON.NAME == "Common Flameback"] = NA
+  specieslist$rt[specieslist$COMMON.NAME == "Common Flameback"] = NA
   dataf$ht[is.na(dataf$B.Diurnal) & is.na(dataf$NB.Diurnal)] = NA
   dataf$rt[is.na(dataf$B.Diurnal) & is.na(dataf$NB.Diurnal)] = NA
   
@@ -688,6 +803,13 @@ dataspeciesfilter = function(datapath = "data.RData",
   check2 = restrictedspecieslist$species[!is.na(restrictedspecieslist$validr)]
   
   names(restrictedspecieslist) = c("COMMON.NAME","ht","rt")
+  
+  randomcheck = data %>% filter(ALL.SPECIES.REPORTED == 1, 
+                                COMMON.NAME %in% restrictedspecieslist$COMMON.NAME) %>%
+    group_by(COMMON.NAME) %>% summarize(n = n_distinct(gridg1)) %>% filter(n > 4)
+  
+  restrictedspecieslist = restrictedspecieslist %>% filter(COMMON.NAME %in% randomcheck$COMMON.NAME)
+  restrictedspecieslist = restrictedspecieslist %>% filter(!COMMON.NAME %in% c("Indian Bustard"))
   
   t1 = dataf %>%
     filter((ht == 1 | rt == 1) & (!is.na(B.Diurnal) | !is.na(NB.Diurnal)))
@@ -706,10 +828,12 @@ dataspeciesfilter = function(datapath = "data.RData",
   specieslist1 = specieslist1 %>% select(COMMON.NAME,selected)
   
   dataf = dataf %>%
-    select(COMMON.NAME,SCIENTIFIC.NAME,ht,rt,Subcontinent,Himalayas,essential,NB.Diurnal)
+    select(COMMON.NAME,SCIENTIFIC.NAME,ht,rt,Subcontinent,Himalayas,essential,discard,NB.Diurnal)
   dataf = left_join(dataf,specieslist1)
-  names(dataf) = c("COMMON.NAME","SCIENTIFIC.NAME","Long-term Analysis","Current change Analysis","Subcontinental Endemics",
-                   "Himalayan Endemics","Significant Species","Diurnal Species","Selected Species")
+  names(dataf) = c("COMMON.NAME","SCIENTIFIC.NAME","Long-term Analysis","Current change Analysis",
+                   "Subcontinental Endemics",
+                   "Himalayan/NE Near-Endemics","Significant - Indian Context",
+                   "Not Relevant - Indian Context","Diurnal","Selected - SOIB")
   
   sampledcells = c(length(unique(data$gridg1)),length(unique(data$gridg2)),
                    length(unique(data$gridg3)),length(unique(data$gridg4)))
@@ -780,7 +904,7 @@ dataspeciesfilter = function(datapath = "data.RData",
   toadd$COMMON.NAME = "Indochinese Roller"
   toadd$SCIENTIFIC.NAME = "Coracias affinis"
   toadd$`Long-term Analysis` = toadd$`Current change Analysis` = toadd$`Subcontinental Endemics` =
-    toadd$`Significant Species` = toadd$`Selected Species` = ""
+    toadd$`Significant - Indian Context` = toadd$`Selected - SOIB` = ""
   
   dataf = InsertRow(dataf,toadd,pos+1)
   
@@ -798,6 +922,7 @@ dataspeciesfilter = function(datapath = "data.RData",
      pos = ".GlobalEnv")
   
   save.image("dataforanalyses.RData")
+  save(specieslist,restrictedspecieslist,file = "specieslists.RData")
   
   rm(data, specieslist, databins, sampledcells, totalcells, gridlevels, area,
      areag1, areag2, areag3, areag4, stats, restrictedspecieslist, pos = ".GlobalEnv")
@@ -922,6 +1047,7 @@ freqtrends = function(data,species,specieslist,
                     timegroups = as.numeric(databins))
     f1 = left_join(f1,mp)
     f1$species = species
+    f1 = f1 %>% filter(!is.na(f1$timegroups))
     return(f1)
   }
   
@@ -1000,8 +1126,8 @@ freqtrends = function(data,species,specieslist,
     
     for (i in 1:length(ltemp$no.sp))
     {
-      f2$freq[i] = median(pred$t[,i])
-      f2$se[i] = sd(pred$t[,i])
+      f2$freq[i] = median(na.omit(pred$t[,i]))
+      f2$se[i] = sd(na.omit(pred$t[,i]))
     }
     
     f2$freqt = cloglog(f2$freq,inverse = T)
@@ -1140,7 +1266,7 @@ composite = function(trends, name = "unnamed group")
 
 
 
-plottrends = function(trends,selectspecies,leg = T)
+plottrends = function(trends,selectspecies,leg = T,rem = F)
 {
   require(tidyverse)
   require(ggthemes)
@@ -1150,12 +1276,39 @@ plottrends = function(trends,selectspecies,leg = T)
   recenttrends = trends %>%
     filter(species %in% selectspecies)
   
-  if (names(recenttrends)[2]  != "nmfreqbyspec")
+  if (rem)
+  {
+    map = read.csv("Map to Other Lists - map.csv")
+    map = map %>%
+      filter(!eBird.English.Name.2018 %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
+                                             "Taiga Flycatcher","Chestnut Munia","Desert Whitethroat",
+                                             "Hume's Whitethroat","Changeable Hawk-Eagle")) %>%
+      select(eBird.English.Name.2018,eBird.English.Name.2019)
+    
+    lists = read.csv("stateofindiasbirds.csv")
+    lists = left_join(lists,map,by = c("eBird.English.Name" = "eBird.English.Name.2019"))
+    lists = lists %>% select(-eBird.English.Name) %>% mutate(species = eBird.English.Name.2018) %>% 
+      select(-eBird.English.Name.2018) %>% filter(!is.na(species))
+    
+    
+    for (i in 1:length(selectspecies))
+    {
+      if (lists$Long.Term.Status[lists$species == selectspecies[i]] == "Uncertain")
+      {
+        recenttrends$freq[recenttrends$species == selectspecies[i] &
+                            recenttrends$timegroups %in% c(1993,2004,2009,2012,2013)] = NA
+        recenttrends$freq[recenttrends$species == selectspecies[i] &
+                            recenttrends$timegroups %in% c(1993,2004,2009,2012,2013)] = NA
+      }
+    }
+  }
+  
+  if (names(recenttrends)[2] != "nmfreqbyspec")
   {
     recenttrends = stdtrends(recenttrends)
   }
   
-  cols = c("#D55E00", "#E69F00", "#56B4E9", "#CC79A7", "#999999", "#F0E442", "#009E73", "#0072B2",
+  cols = c("#E49B36", "#869B27", "#A13E2B", "#78CAE0", "#B69AC9", "#EA5599", "#31954E", "#493F3D",
            "#CC6666", "#9999CC", "#000000", "#66CC99")
   
   ns = length(selectspecies)
@@ -1172,6 +1325,9 @@ plottrends = function(trends,selectspecies,leg = T)
   xbreaks = temp$timegroups[c(1:4,6,8,10)]
   lbreaks = temp$timegroupsf[c(1:4,6,8,10)]
   
+  xbreaksl = temp$timegroups[c(1:3,6,8,10)]
+  lbreaksl = temp$timegroupsf[c(1:3,6,8,10)]
+  
   require(extrafont)
   #loadfonts(device = "win")
   
@@ -1186,8 +1342,8 @@ plottrends = function(trends,selectspecies,leg = T)
   limu = round(max(maxci))
   limu = limu+5
   
-  liml = -50
-  limu = 300
+  #liml = 0
+  #limu = 150
   
   #liml = 1
   #limu = 149
@@ -1204,10 +1360,12 @@ plottrends = function(trends,selectspecies,leg = T)
         #position = pd,
         size = 1.5) +
       #geom_line(aes(group = species),size = 1.5) +
-      geom_hline(yintercept = 200, linetype = "dotted", size = 0.5) +
-      geom_hline(yintercept = 133, linetype = "dotted", size = 0.5) +
+      geom_hline(yintercept = 150, linetype = "dotted", size = 0.5) +
+      geom_hline(yintercept = 125, linetype = "dotted", size = 0.5) +
+      geom_hline(yintercept = 100, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 75, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 50, linetype = "dotted", size = 0.5) +
+      geom_hline(yintercept = 25, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 0, linetype = "dotted", size = 0.5) +
       geom_ribbon(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
                       ymax = (nmfreqbyspec + nmsebyspec*1.96), fill = species), colour = NA, alpha = 0.1) +
@@ -1232,11 +1390,11 @@ plottrends = function(trends,selectspecies,leg = T)
       scale_x_continuous(breaks = xbreaks,
                          #limits = c(1993,2018),
                          labels = lbreaks) +
-      scale_y_continuous(breaks = c(0,50,75,100,133,200), 
+      scale_y_continuous(breaks = c(0,25,50,75,100,125,150), 
                          #limits = c(liml,limu),
-                         labels = c("-100%","-50%","-25%","0%",
-                                                                     "+33%","+100%")
-                         )
+                         labels = c("-100%","-75","-50%","-25%","0%",
+                                    "+25%","+50%")
+      )
     #theme(legend.position = "none")
     
     require(gridExtra)
@@ -1255,11 +1413,12 @@ plottrends = function(trends,selectspecies,leg = T)
         heights = unit.c(unit(1, "npc") - lheight, lheight))
     }
     
-    tiff('plot1.tiff', units="in", width=10, height=7, res=1000)
-    grid_arrange_shared_legend(ggp1)
-    dev.off()
+    #tiff('plot1.tiff', units="in", width=10, height=7, res=1000)
+    #grid_arrange_shared_legend(ggp1)
+    #dev.off()
+    name = paste(selectspecies[1],".png",sep="")
     
-    png('plot1.png', units="in", width=10, height=7, res=1000)
+    png(name, units="in", width=10, height=7, res=1000)
     grid_arrange_shared_legend(ggp1)
     dev.off()
   }
@@ -1270,10 +1429,12 @@ plottrends = function(trends,selectspecies,leg = T)
       geom_point(size = 3) +
       geom_line(size = 1.5) +
       #geom_line(aes(group = species),size = 1.5) +
-      geom_hline(yintercept = 200, linetype = "dotted", size = 0.5) +
-      geom_hline(yintercept = 133, linetype = "dotted", size = 0.5) +
+      #geom_hline(yintercept = 150, linetype = "dotted", size = 0.5) +
+      geom_hline(yintercept = 125, linetype = "dotted", size = 0.5) +
+      geom_hline(yintercept = 100, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 75, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 50, linetype = "dotted", size = 0.5) +
+      geom_hline(yintercept = 25, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 0, linetype = "dotted", size = 0.5) +
       geom_ribbon(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
                       ymax = (nmfreqbyspec + nmsebyspec*1.96), fill = species), colour = NA, alpha = 0.1) +
@@ -1282,9 +1443,14 @@ plottrends = function(trends,selectspecies,leg = T)
       xlab("years") +
       ylab("change in frequency of reporting")
     
+    xbreaks1 = temp$timegroups[1:10]
+    lbreaks1 = temp$timegroupsf[1:10]
+    
     ggp1 = ggp +
-      theme(axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 11),
-            axis.title.y = element_text(angle = 90, size = 16), axis.text.y = element_text(size = 14)) +
+      theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
+            axis.title.y = element_blank(), 
+            axis.text.y = element_text(size = 14, colour = "#56697B", face = "italic"),
+            axis.ticks.y = element_blank()) +
       theme(legend.title = element_blank(), legend.text = element_text(size = 12)) +
       theme(text=element_text(family="Gill Sans MT")) +
       scale_colour_manual(breaks = bks1, 
@@ -1293,17 +1459,19 @@ plottrends = function(trends,selectspecies,leg = T)
       scale_fill_manual(breaks = bks1, 
                         labels = lbs1,
                         values = cols1) +
-      scale_x_continuous(breaks = xbreaks, labels = lbreaks) +
-      scale_y_continuous(breaks = c(0,50,75,100,133,200), 
+      scale_x_continuous(breaks = xbreaks1, labels = lbreaks1) +
+      scale_y_continuous(breaks = c(0,25,50,75,100,125), 
                          #limits = c(liml,limu),
-                         labels = c("-100%","-50%","-25%","0%",
-                                    "+33%","+100%")
-      )
-    #theme(legend.position = "none")
+                         labels = c("-100%","-75%","-50%","-25%","0%",
+                                    "+25%")
+      ) +
+    theme(legend.position = "bottom")
     
     ggpx = ggp +
-      theme(axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 10),
-            axis.title.y = element_text(angle = 90, size = 16), axis.text.y = element_text(size = 14)) +
+      theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
+            axis.title.y = element_blank(), 
+            axis.text.y = element_text(size = 14, colour = "#56697B", face = "italic"),
+            axis.ticks.y = element_blank()) +
       theme(legend.title = element_blank(), legend.text = element_text(size = 12)) +
       theme(text=element_text(family="Gill Sans MT")) +
       scale_colour_manual(breaks = bks1, 
@@ -1312,35 +1480,40 @@ plottrends = function(trends,selectspecies,leg = T)
       scale_fill_manual(breaks = bks1, 
                         labels = lbs1,
                         values = cols1) +
-      scale_x_continuous(breaks = xbreaks, labels = lbreaks) +
-      scale_y_continuous(breaks = c(0,50,75,100,133,200), 
+      scale_x_continuous(breaks = xbreaks1, labels = lbreaks1) +
+      scale_y_continuous(breaks = c(0,25,50,75,100,125), 
                          #limits = c(liml,limu),
-                         labels = c("-100%","-50%","-25%","0%",
-                                    "+33%","+100%")
+                         labels = c("-100%","-75%","-50%","-25%","0%",
+                                    "+25%")
       ) +
     theme(legend.position = "none")
     
-    require(gridExtra)
-    require(grid)
+    ggpz = ggp +
+      theme(axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 12),
+            axis.title.y = element_text(angle = 90, size = 16), 
+            axis.text.y = element_text(size = 14, colour = "#56697B", face = "italic"),
+            axis.ticks.y = element_blank()) +
+      theme(legend.title = element_blank(), legend.text = element_text(size = 12)) +
+      theme(text=element_text(family="Gill Sans MT")) +
+      scale_colour_manual(breaks = bks1, 
+                          labels = lbs1,
+                          values = cols1) +
+      scale_fill_manual(breaks = bks1, 
+                        labels = lbs1,
+                        values = cols1) +
+      scale_x_continuous(breaks = xbreaksl, labels = lbreaksl) +
+      scale_y_continuous(breaks = c(0,25,50,75,100,125), 
+                         #limits = c(liml,limu),
+                         labels = c("-100%","-75%","-50%","-25%","0%",
+                                    "+25%")
+      ) +
+      theme(legend.position = "none")
     
-    grid_arrange_shared_legend <- function(...) {
-      plots <- list(...)
-      g <- ggplotGrob(plots[[1]] + theme(legend.position="bottom",legend.justification="left"))$grobs
-      legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
-      lheight <- sum(legend$height)
-      grid.arrange(
-        do.call(arrangeGrob, c(lapply(plots, function(x)
-          x + theme(legend.position="none")), list(nrow = 1))),
-        legend,
-        ncol = 1,
-        heights = unit.c(unit(1, "npc") - lheight, lheight))
-    }
-    
-    p1 = grid_arrange_shared_legend(ggp1)
+    p1 = ggp1
     require(cowplot)
     sepleg = get_legend(p1)
     
-    gg = list(ggpx,sepleg)
+    gg = list(ggpx,sepleg,ggpz)
     return(gg)
   }
 }
@@ -1352,8 +1525,8 @@ plottrends = function(trends,selectspecies,leg = T)
 
 # plot composite trends
 
-plotcompositetrends = function(trends,specieslist,g1=NA,g2=NA,g3=NA,g4=NA,g5=NA,g6=NA,g7=NA,g8=NA,
-                               n1=NA,n2=NA,n3=NA,n4=NA,n5=NA,n6=NA,
+plotcompositetrends = function(trends,specieslist,name="composite",g1=NA,g2=NA,g3=NA,g4=NA,g5=NA,g6=NA,
+                               g7=NA,g8=NA,n1=NA,n2=NA,n3=NA,n4=NA,n5=NA,n6=NA,
                                n7=NA,n8=NA)
 {
   require(tidyverse)
@@ -1379,14 +1552,51 @@ plotcompositetrends = function(trends,specieslist,g1=NA,g2=NA,g3=NA,g4=NA,g5=NA,
   
   speciesl = unique(speciesl)
   
-  tsl = calculatetrendslope(trends, speciesl[1], specieslist, composite = F)
-  for (i in 2:length(speciesl))
-  {
-    tsl1 = calculatetrendslope(trends, speciesl[i], specieslist, composite = F)
-    tsl = rbind(tsl,tsl1)
-  }
+  glmr = read.csv("glmr.csv")
   
-  trendscat = tsl
+  glmr$mintrend = glmr$trend - glmr$trendci
+  glmr$maxtrend = glmr$trend + glmr$trendci
+  glmr$minslope = glmr$slope - glmr$slopeci
+  glmr$maxslope = glmr$slope + glmr$slopeci
+  
+  glmr$mintrend[glmr$mintrend < -100] = -100
+  
+  trendscat = glmr %>%
+    mutate(longcat = 
+             case_when(is.na(trend) ~ "Data Deficient",
+                       trendci > 50 ~ "Uncertain",
+                       maxtrend <= -50 ~ "Strong Decline",
+                       maxtrend <= -25 ~ "Moderate Decline",
+                       mintrend >= 50 ~ "Strong Increase",
+                       mintrend >= 25 ~ "Moderate Increase",
+                       trendci > 30 & mintrend > -(0.5*trendci) ~ "Uncertain",
+                       trendci > 30 & maxtrend < (0.5*trendci) ~ "Uncertain",
+                       TRUE ~ "Stable")
+    ) %>%
+    mutate(shortcat = 
+             case_when(is.na(slope) ~ "Data Deficient",
+                       slopeci > 20 ~ "Uncertain",
+                       maxslope <= -2.7 ~ "Strong Decline",
+                       maxslope <= -1.1 ~ "Moderate Decline",
+                       minslope >= 1.6 ~ "Strong Increase",
+                       minslope >= 0.9 ~ "Moderate Increase",
+                       TRUE ~ "Stable")
+    ) %>%
+    select(species,trend,trendci,mintrend,maxtrend,slope,slopeci,minslope,maxslope,longcat,shortcat)
+  
+  trendscat$longcat[trendscat$species %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
+                                             "Taiga Flycatcher","Chestnut Munia")] = NA
+  trendscat$shortcat[trendscat$species %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
+                                              "Taiga Flycatcher","Chestnut Munia")] = NA
+  
+  trendscat$longcat = factor(trendscat$longcat, levels = c("Strong Increase","Moderate Increase",
+                                                           "Stable","Uncertain","Data Deficient",
+                                                           "Moderate Decline","Strong Decline"))
+  trendscat$shortcat = factor(trendscat$shortcat, levels = c("Strong Increase","Moderate Increase",
+                                                             "Stable","Uncertain","Data Deficient",
+                                                             "Moderate Decline","Strong Decline"))
+  
+  trendscat = trendscat %>% filter(species %in% speciesl)
   
   for (i in 1:l)
   {
@@ -1406,12 +1616,14 @@ plotcompositetrends = function(trends,specieslist,g1=NA,g2=NA,g3=NA,g4=NA,g5=NA,
   }
   
   forbarlong = temp1 %>%
+    filter(!longcat == "Uncertain") %>%
     group_by(name) %>% mutate(specs = n()) %>%
     group_by(name,longcat) %>% summarize(perc = n()*100/max(specs))
   names(forbarlong)[2] = "cat"
   forbarlong$type = "Long-term Trend"
   
   forbarshort = temp1 %>%
+    filter(!shortcat == "Uncertain") %>%
     group_by(name) %>% mutate(specs = n()) %>%
     group_by(name,shortcat) %>% summarize(perc = n()*100/max(specs))
   names(forbarshort)[2] = "cat"
@@ -1421,8 +1633,11 @@ plotcompositetrends = function(trends,specieslist,g1=NA,g2=NA,g3=NA,g4=NA,g5=NA,
   
   forbar$type = factor(forbar$type, levels = c("Long-term Trend","Current Annual Change"))
   
+  theme_set(theme_tufte())
+  
   ggpt = plottrends(gp1, n, leg = F)
   ggp1 = ggpt[[1]]
+  ggpz = ggpt[[3]]
   
   require(extrafont)
   #loadfonts(device = "win")
@@ -1433,8 +1648,21 @@ plotcompositetrends = function(trends,specieslist,g1=NA,g2=NA,g3=NA,g4=NA,g5=NA,
     'Current Annual Change'="Current\nChange"
   )
   
+  forbar$cat = as.character(forbar$cat)
+  forbar = forbar %>% filter(!cat == "Uncertain")
+  forbar$cat = factor(forbar$cat, levels = c("Strong Increase","Moderate Increase","Stable",
+                                             "Moderate Decline","Strong Decline"))
+  #forbar$cat = factor(forbar$cat, levels = c("Strong Decline","Moderate Decline","Stable",
+  #                                           "Moderate Increase","Strong Increase"))
   ord = sort(unique(forbar$cat))
-  catcols = c("#FF3399","#FF9999","#66CC33","#99CCFF","#3399FF")
+  #ord = factor(ord, levels = c("Strong Decline","Moderate Decline","Stable","Moderate Increase",
+  #                             "Strong Increase"))
+  catcols = c("#378AB1","#8AC8A4","#E4EBB8","#CCA5BB","#B02A83")
+  #catcols = c("#B02A83","#CCA5BB","#E4EBB8","#8AC8A4","#378AB1")
+  
+  
+  theme_set(theme_tufte())
+
   
   ggp = ggplot(forbar, aes(x=name, y=perc, fill=cat)) + 
     facet_wrap(~type, nrow = 1, ncol = 2, labeller = as_labeller(t_names)) +
@@ -1443,54 +1671,73 @@ plotcompositetrends = function(trends,specieslist,g1=NA,g2=NA,g3=NA,g4=NA,g5=NA,
     ylab("percentage of species")
   
   ggp2 = ggp +
-    theme(axis.title.x = element_blank(), axis.text.x = element_text(size = 8),
-          axis.title.y = element_text(angle = 90, size = 12), axis.text.y = element_text(size = 8)) +
-    theme(legend.title = element_blank(), legend.text = element_text(size = 10)) +
-    theme(strip.text.x = element_text(size = 8, face = "bold")) +
+    theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+          axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
+    theme(legend.title = element_blank(), legend.text = element_text(size = 8)) +
+    #theme(strip.text.x = element_text(size = 8, face = "bold")) +
+    theme(strip.text.x = element_blank()) +
     theme(text=element_text(family="Gill Sans MT")) +
-    scale_fill_manual(breaks = c("Strong Decline","Moderate Decline","Stable",
-                                 "Moderate Increase","Strong Increase"), 
-                      labels = c("Strong\nDecline","Moderate\nDecline","Stable",
-                                 "Moderate\nIncrease","Strong\nIncrease"),
-                      values = catcols[ord])
+    scale_fill_manual(breaks = c("Strong Increase","Moderate Increase","Stable","Moderate Decline",
+                                 "Strong Decline"), 
+                      labels = c("Strong\nIncrease","Moderate\nIncrease","Stable","Moderate\nDecline",
+                                 "Strong\nDecline"),
+                      values = catcols[ord]) +
+    theme(legend.position = c("bottom"))
   
   ggpy = ggp +
-    theme(axis.title.x = element_blank(), axis.text.x = element_text(size = 8),
-          axis.title.y = element_text(angle = 90, size = 12), axis.text.y = element_text(size = 8)) +
+    theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+          axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
     theme(legend.title = element_blank(), legend.text = element_text(size = 5)) +
-    theme(strip.text.x = element_text(size = 8, face = "bold")) +
+    #theme(strip.text.x = element_text(size = 8, face = "bold")) +
+    theme(strip.text.x = element_blank()) +
     theme(text=element_text(family="Gill Sans MT")) +
-    scale_fill_manual(breaks = c("Strong Decline","Moderate Decline","Stable",
-                                 "Moderate Increase","Strong Increase"), 
-                      labels = c("Strong\nDecline","Moderate\nDecline","Stable",
-                                 "Moderate\nIncrease","Strong\nIncrease"),
+    scale_fill_manual(breaks = c("Strong Increase","Moderate Increase","Stable","Moderate Decline",
+                                 "Strong Decline"), 
+                      labels = c("Strong\nIncrease","Moderate\nIncrease","Stable","Moderate\nDecline",
+                                 "Strong\nDecline"),
                       values = catcols[ord]) +
     theme(legend.position = "none")
   
-  #http://www.sthda.com/english/wiki/colors-in-r
-  
-  require(gridExtra)
-  require(grid)
-  
-  grid_arrange_shared_legend <- function(...) {
-    plots <- list(...)
-    g <- ggplotGrob(plots[[1]] + theme(legend.position="bottom",legend.justification="right"))$grobs
-    legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
-    lheight <- sum(legend$height)
-    grid.arrange(
-      do.call(arrangeGrob, c(lapply(plots, function(x)
-        x + theme(legend.position="none")), list(nrow = 1))),
-      legend,
-      ncol = 1,
-      heights = unit.c(unit(1, "npc") - lheight, lheight))
+  ext = c("z1","z2","z3","z4","z5")
+  ext = ext[1:(5-l)]
+  lims = rev(unique(forbar$name))
+  if (l != 5)
+  {
+    lims = rev(c(unique(forbar$name),ext))
   }
   
-  #p1 = grid_arrange_shared_legend(ggp1)
-  #p2 = grid_arrange_shared_legend(ggpy)
-  p3 = grid_arrange_shared_legend(ggp2)
+  ggpp1 = ggplot(forbar, aes(x=name, y=perc, fill=cat, width = .5)) + 
+    facet_wrap(~type, nrow = 2, ncol = 1, labeller = as_labeller(t_names)) +
+    geom_bar(stat = 'identity') +
+    scale_x_discrete(limits = lims) +
+    xlab("groups") +
+    ylab("percentage of species")
+  
+  #spacebar = ((7.2*(72.27-11))/(2*l+2.5))
+  #print((2*spacebar)/((2*l+2.5)*spacebar+11))
+  
+  ggpp = ggpp1 +
+    theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+          axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
+    theme(legend.title = element_blank(), legend.text = element_text(size = 5)) +
+    #theme(strip.text.x = element_text(size = 8, face = "bold")) +
+    theme(strip.text.x = element_blank()) +
+    theme(text=element_text(family="Gill Sans MT")) +
+    scale_fill_manual(breaks = c("Strong Increase","Moderate Increase","Stable","Moderate Decline",
+                                 "Strong Decline"), 
+                      labels = c("Strong\nIncrease","Moderate\nIncrease","Stable","Moderate\nDecline",
+                                 "Strong\nDecline"),
+                      values = catcols[ord]) +
+    theme(legend.position = "none") +
+    coord_flip() +
+    theme(panel.spacing = unit(100, "pt"))
+  
+  #http://www.sthda.com/english/wiki/colors-in-r
+  
+  p3 = ggp2
   
   require(cowplot)
-  g1 = plot_grid(ggp1,ggpy,nrow=1,ncol=2,rel_widths = c(4/5, 1/5))
+  g1 = plot_grid(ggpz,ggpy,nrow=1,ncol=2,rel_widths = c(4/5, 1/5))
   
   sepleg1 = ggpt[[2]]
   sepleg2 = get_legend(p3)
@@ -1499,15 +1746,30 @@ plotcompositetrends = function(trends,specieslist,g1=NA,g2=NA,g3=NA,g4=NA,g5=NA,
   
   g = plot_grid(g1,g2,align = "v",nrow=2,ncol=1,rel_heights = c(7/8, 1/8))
   
-  tiff('plot2.tiff', units="in", width=10, height=7, res=1000)
+  theme_set(theme_tufte())
+  
+  #n1 = paste(name,".tiff",sep="")
+  n2 = paste(name,".png",sep="")
+  n3 = paste(name,"_composite.svg",sep="")
+  n4 = paste(name,"_speciestrends.svg",sep="")
+
+  #tiff(n1, units="in", width=10, height=7, res=1000)
+  #grid::grid.draw(g)
+  #dev.off()
+  
+  png(n2, units="in", width=10, height=7, res=1000)
   grid::grid.draw(g)
   dev.off()
   
-  png('plot2.png', units="in", width=10, height=7, res=1000)
-  grid::grid.draw(g)
-  dev.off()
+  #png(n2, units="in", width=10, height=7.2, res=1000)
+  #print(ggpp)
+  #dev.off()
   
-  ggsave(file="composite.svg", plot=g, units="in", width=10, height=7)
+  print(ggpt[[1]])
+  ggsave(file=n3, units="in", width=11, height=7)
+  
+  print(ggpp)
+  ggsave(file=n4, units="in", width=10, height=7.2)
   
   #theme(legend.position = "none")
   
@@ -1577,47 +1839,7 @@ calculatetrendslope = function(trends, species, specieslist, composite = F)
   
   trends = corr
   
-  trends$mintrend = trends$trend - trends$trendci
-  trends$maxtrend = trends$trend + trends$trendci
-  trends$minslope = trends$slope - trends$slopeci
-  trends$maxslope = trends$slope + trends$slopeci
-  
-  trendscat = trends %>%
-    mutate(longcat = 
-             case_when(is.na(trend) ~ "Data Deficient",
-                       trendci > 33 & abs(trendci/trend) > 0.5 ~ "Uncertain",
-                       maxtrend <= -50 ~ "Strong Decline",
-                       maxtrend <= -25 ~ "Moderate Decline",
-                       mintrend >= 100 ~ "Strong Increase",
-                       mintrend >= 33 ~ "Moderate Increase",
-                       TRUE ~ "Stable")
-    ) %>%
-    mutate(shortcat = 
-             case_when(is.na(slope) ~ "Data Deficient",
-                       slopeci > 20 & abs(slopeci/slope) > 0.9 ~ "Uncertain",
-                       maxslope <= -2 ~ "Strong Decline",
-                       maxslope <= -1 ~ "Moderate Decline",
-                       minslope >= 2 ~ "Strong Increase",
-                       minslope >= 1 ~ "Moderate Increase",
-                       TRUE ~ "Stable")
-    ) %>%
-    select(species,trend,trendci,mintrend,maxtrend,slope,slopeci,minslope,maxslope,longcat,shortcat)
-  
-  trendscat$longcat[trendscat$species %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
-                                             "Taiga Flycatcher","Chestnut Munia")] = NA
-  trendscat$shortcat[trendscat$species %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
-                                             "Taiga Flycatcher","Chestnut Munia")] = NA
-  
-  trendscat$mintrend[trendscat$mintrend < -100] = -100
-  
-  trendscat$longcat = factor(trendscat$longcat, levels = c("Strong Decline","Moderate Decline",
-                                                           "Data Deficient","Uncertain","Stable",
-                                                           "Moderate Increase","Strong Increase"))
-  trendscat$shortcat = factor(trendscat$shortcat, levels = c("Strong Decline","Moderate Decline",
-                                                             "Data Deficient","Uncertain","Stable",
-                                                             "Moderate Increase","Strong Increase"))
-  
-  return(trendscat)
+  return(trends)
 }
 
 
@@ -1652,14 +1874,14 @@ occufreq = function(data, species, areag, rerun = F, datatofill)
   
   migstatus$mig[migstatus$eBird.English.Name %in% c("Himalayan Cuckoo","Common Cuckoo",
                                                     "Watercock")] = "S"
+  
   migstatus$mig[migstatus$eBird.English.Name %in% c("Indian Skimmer","Black-bellied Tern",
                                                     "Black-capped Kingfisher",
-                                                    "Mountain Chiffchaff","Red-rumped Swallow")] = "R"
+                                                    "Mountain Chiffchaff","Red-rumped Swallow",
+                                                    "Fire-capped Tit")] = "R"
   
   migstatus$mig[migstatus$eBird.English.Name %in% c("Smoky Warbler","Wallcreeper",
                                                     "Long-billed Pipit")] = "W/P"
-  
-  migstatus$mig[migstatus$eBird.English.Name %in% c("Saker Falcon")] = "LM"
   
   if(rerun)
   {
@@ -2197,10 +2419,11 @@ freqtrendsr = function(data,species,specieslist,
 #######################################################################################
 
 freqtrendsrestricted = function(data,species,specieslist,
-                      databins=c(1993,2004,2009,2012,2013,2014,2015,2016,2017,2018))
+                      databins=c(1993,2004,2009,2012,2013,2014,2015,2016,2017,2018),nsim=1000)
 {
   require(tidyverse)
   require(VGAM)
+  require(lme4)
 
   data$gridg1 = as.factor(data$gridg1)
   data$gridg2 = as.factor(data$gridg2)
@@ -2280,13 +2503,22 @@ freqtrendsrestricted = function(data,species,specieslist,
   ## expand dataframe to include absences as well
   
   ed = expandbyspecies(data,species)
+  
+  ed$month = as.numeric(ed$month)
+  ed$month[ed$month %in% c(11,12,1,2)] = "Win"
+  ed$month[ed$month %in% c(3,4,5,6)] = "Sum"
+  ed$month[ed$month %in% c(7,8,9,10)] = "Mon"
+  
+  ed$month = as.factor(ed$month)
+  ed$gridg1 = as.factor(ed$gridg1)
+  
   tm = unique(data$timegroups)
   #rm(data, pos = ".GlobalEnv")
   
   ## the model
   
-  m1 = glm(OBSERVATION.COUNT ~ month + log(no.sp) + timegroups, data = ed, 
-             family=binomial(link = 'cloglog'))
+  m1 = glmer(OBSERVATION.COUNT ~ month + month:log(no.sp) + timegroups + (1|gridg1), data = ed, 
+             family=binomial(link = 'cloglog'), nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
   
   ## prepare a new data file to predict
   
@@ -2303,14 +2535,38 @@ freqtrendsrestricted = function(data,species,specieslist,
   f2$se = numeric(length(ltemp$no.sp))
   f2$timegroups = ltemp$timegroups
   
-  fx = predict(m1, ltemp, se.fit = T, "response")
-  f2$freq = fx$fit
-  f2$se = fx$se.fit
+  ## bootstrap to get errors
   
-  f2 = f2 %>%
-    group_by(timegroups) %>% summarize(freq = mean(freq), se = sqrt(sum(se^2)/n())) 
+
+  predFun = function(m1) {
+    predict(m1,ltemp, re.form = NA, allow.new.levels=TRUE)
+  }
   
-  f1 = left_join(f1,f2)
+  cr = max(1, detectCores() - 4)
+  cl = makeCluster(cr)
+  clusterEvalQ(cl, library(lme4))
+  
+  pred = bootMer(m1, nsim = nsim, FUN = predFun, parallel = "snow", seed = 1000,
+                 use.u = FALSE, type = "parametric", ncpus = cr, cl = cl)
+  
+  stopCluster(cl)
+  
+  for (i in 1:length(ltemp$no.sp))
+  {
+    f2$freq[i] = median(na.omit(pred$t[,i]))
+    f2$se[i] = sd(na.omit(pred$t[,i]))
+  }
+  
+  f2$freqt = cloglog(f2$freq,inverse = T)
+  f2$cl = cloglog((f2$freq-f2$se),inverse = T)
+  f2$set = f2$freqt-f2$cl
+  
+  fx = f2 %>%
+    filter(!is.na(freqt) & !is.na(set)) %>%
+    group_by(timegroups) %>% summarize(freq = mean(freqt), se = sqrt(sum(set^2)/n())) 
+  
+  f1 = left_join(f1,fx)
+
   
   
   f1$timegroups = factor(f1$timegroups, levels = c("before 2000","2000-2006","2007-2010",

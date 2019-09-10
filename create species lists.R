@@ -4,8 +4,7 @@ map = read.csv("Map to Other Lists - map.csv")
 
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
 library(tidyverse)
-load("dataforanalyses.RData")
-rm(data)
+load("specieslists.RData")
 
 check1 = restrictedspecieslist$COMMON.NAME[!is.na(restrictedspecieslist$ht)]
 check2 = restrictedspecieslist$COMMON.NAME[!is.na(restrictedspecieslist$rt)]
@@ -18,8 +17,6 @@ habitat = read.csv("Habitat - Habitat.csv")
 migration = read.csv("Migratory Status - Migratory Status.csv")
 endemism = read.csv("Endemicity - Endemicity.csv")
 diet = read.csv("Diet - Food Type.csv")
-
-setdiff(migration$eBird.English.Name,habitat$eBird.English.Name)
 
 taxgroups = taxgroups %>%
   filter(category == "species", English.name %in% specieslist$COMMON.NAME) %>%
@@ -34,7 +31,8 @@ ltset = ltset$COMMON.NAME
 
 cats = names(habitat)[3:41]
 
-tropcats = c("Tropical.Rainforest","Bamboo.Forest","Shola.Forest","Moist.Deciduous","Forest.Swamp")
+tropcats = c("Tropical.Rainforest","Bamboo.Forest","Shola.Forest","Moist.Deciduous","Forest.Swamp",
+             "Mangrove.Swamps")
 temp1 = habitat %>% select(tropcats) %>% replace(is.na(.), 0) %>% 
   mutate(sum = rowSums(.[1:length(tropcats)])) %>% mutate(sum = replace(sum,sum>1,1))
 temp2 = habitat %>% select(setdiff(cats,tropcats)) %>% replace(is.na(.), 0) %>% 
@@ -51,9 +49,30 @@ temp2 = habitat %>% select(setdiff(cats,tempcats)) %>% replace(is.na(.), 0) %>%
 habitat$tempspecialist = temp1$sum - temp2$sum
 habitat$tempspecialist[habitat$tempspecialist < 0] = 0
 
+forcats = c("Tropical.Rainforest","Bamboo.Forest","Shola.Forest","Moist.Deciduous","Forest.Swamp",
+            "Mangrove.Swamps","Subtropical.Montane.Forest","Mixed.Forest","Oak.Forest",
+            "Coniferous.Forest","High.Shrubbery","High.Alpine","Dry.Deciduous")
+temp1 = habitat %>% select(forcats) %>% replace(is.na(.), 0) %>% 
+  mutate(sum = rowSums(.[1:length(forcats)])) %>% mutate(sum = replace(sum,sum>1,1))
+temp2 = habitat %>% select(setdiff(cats,forcats)) %>% replace(is.na(.), 0) %>% 
+  mutate(sum = rowSums(.[1:length(setdiff(cats,forcats))])) %>% mutate(sum = replace(sum,sum>1,1))
+habitat$forspecialist = temp1$sum - temp2$sum
+habitat$forspecialist[habitat$forspecialist < 0] = 0
+
+woodcats = c("Tropical.Rainforest","Bamboo.Forest","Shola.Forest","Moist.Deciduous","Forest.Swamp",
+             "Subtropical.Montane.Forest","Mixed.Forest","Oak.Forest","Coniferous.Forest",
+             "High.Shrubbery","High.Alpine","Groves.Gardens.and.Plantations",
+             "Dry.Deciduous","Thorny.Scrub","Rocky.Scrub","Mangrove.Swamps")
+temp1 = habitat %>% select(woodcats) %>% replace(is.na(.), 0) %>% 
+  mutate(sum = rowSums(.[1:length(woodcats)])) %>% mutate(sum = replace(sum,sum>1,1))
+temp2 = habitat %>% select(setdiff(cats,woodcats)) %>% replace(is.na(.), 0) %>% 
+  mutate(sum = rowSums(.[1:length(setdiff(cats,woodcats))])) %>% mutate(sum = replace(sum,sum>1,1))
+habitat$woodspecialist = temp1$sum - temp2$sum
+habitat$woodspecialist[habitat$woodspecialist < 0] = 0
+
 grasscats = c("Wet.Paddy.fields","Open.Areas","Dry.Grassland","Hill.Grassland","Wet.Grassland",
               "High.Altitude.Grassland","Reeds","Forest.Swamp","Short.Grass.Marshes","High.Alpine",
-              "Hot.Desert","Semi.Desert")
+              "Hot.Desert","Semi.Desert","Salt.Pans")
 temp1 = habitat %>% select(grasscats) %>% replace(is.na(.), 0) %>% 
   mutate(sum = rowSums(.[1:length(grasscats)])) %>% mutate(sum = replace(sum,sum>1,1))
 temp2 = habitat %>% select(setdiff(cats,grasscats)) %>% replace(is.na(.), 0) %>% 
@@ -63,7 +82,7 @@ habitat$grassspecialist[habitat$grassspecialist < 0] = 0
 
 wetcats = c("Wet.Paddy.fields","Wet.Grassland","Reeds","Forest.Swamp","Short.Grass.Marshes","Inland.Water",
             "Inland.Mudflats","Coastal.Mudflats","Beaches","Pelagic.Waters","Mangrove.Swamps",
-            "Salt.Pans","Lagoons","Rivers","High.Altitude.Lakes","Brackish.Backwaters")
+            "Salt.Pans","Lagoons","Rivers","High.Altitude.Lakes","Brackish.Backwaters","Habitation")
 temp1 = habitat %>% select(wetcats) %>% replace(is.na(.), 0) %>% 
   mutate(sum = rowSums(.[1:length(wetcats)])) %>% mutate(sum = replace(sum,sum>1,1))
 temp2 = habitat %>% select(setdiff(cats,wetcats)) %>% replace(is.na(.), 0) %>% 
@@ -79,6 +98,30 @@ temp2 = habitat %>% select(setdiff(cats,scrubcats)) %>% replace(is.na(.), 0) %>%
   mutate(sum = rowSums(.[1:length(setdiff(cats,scrubcats))])) %>% mutate(sum = replace(sum,sum>1,1))
 habitat$scrubspecialist = temp1$sum - temp2$sum
 habitat$scrubspecialist[habitat$scrubspecialist < 0] = 0
+
+grubcats = c("Wet.Paddy.fields","Open.Areas","Dry.Grassland","Hill.Grassland","Wet.Grassland",
+             "High.Altitude.Grassland","Reeds","Forest.Swamp","Short.Grass.Marshes","High.Alpine",
+             "Hot.Desert","Semi.Desert","Salt.Pans","Dry.Deciduous",
+             "Hill.Shrubland","Thorny.Scrub","Rocky.Scrub","Bamboo.Forest","High.Shrubbery")
+temp1 = habitat %>% select(grubcats) %>% replace(is.na(.), 0) %>% 
+  mutate(sum = rowSums(.[1:length(grubcats)])) %>% mutate(sum = replace(sum,sum>1,1))
+temp2 = habitat %>% select(setdiff(cats,grubcats)) %>% replace(is.na(.), 0) %>% 
+  mutate(sum = rowSums(.[1:length(setdiff(cats,grubcats))])) %>% mutate(sum = replace(sum,sum>1,1))
+habitat$grubspecialist = temp1$sum - temp2$sum
+habitat$grubspecialist[habitat$grubspecialist < 0] = 0
+
+opencats = c("Wet.Paddy.fields","Wet.Grassland","Reeds","Forest.Swamp","Short.Grass.Marshes",
+             "Inland.Water","Inland.Mudflats","Coastal.Mudflats","Beaches","Pelagic.Waters",
+             "Mangrove.Swamps","Salt.Pans","Lagoons","Rivers","High.Altitude.Lakes","Brackish.Backwaters",
+             "Open.Areas","Dry.Grassland","Hill.Grassland","High.Altitude.Grassland",
+             "High.Alpine","Hot.Desert","Semi.Desert","Dry.Deciduous","Hill.Shrubland","Thorny.Scrub",
+             "Rocky.Scrub","Bamboo.Forest","High.Shrubbery")
+temp1 = habitat %>% select(opencats) %>% replace(is.na(.), 0) %>% 
+  mutate(sum = rowSums(.[1:length(opencats)])) %>% mutate(sum = replace(sum,sum>1,1))
+temp2 = habitat %>% select(setdiff(cats,opencats)) %>% replace(is.na(.), 0) %>% 
+  mutate(sum = rowSums(.[1:length(setdiff(cats,opencats))])) %>% mutate(sum = replace(sum,sum>1,1))
+habitat$openspecialist = temp1$sum - temp2$sum
+habitat$openspecialist[habitat$openspecialist < 0] = 0
 
 
 ############ Migrants
@@ -100,13 +143,6 @@ migrant = as.character(migration$eBird.English.Name[migration$mig == "M"])
 
 
 
-########### Diet groups
-
-frne = as.character(diet$eBird.English.Name[diet$Diet.5Cat == "FruiNect"])
-invt = as.character(diet$eBird.English.Name[diet$Diet.5Cat == "Invertebrate"])
-omni = as.character(diet$eBird.English.Name[diet$Diet.5Cat == "Omnivore"])
-seed = as.character(diet$eBird.English.Name[diet$Diet.5Cat == "PlantSeed"])
-carn = as.character(diet$eBird.English.Name[diet$Diet.5Cat == "VertFishScav"])
 
 
 
@@ -138,6 +174,23 @@ sub = as.character(endemism$eBird.English.Name[!is.na(endemism$Subcontinent) &
 
 
 
+
+###################### Waterbirds
+
+waterspecs = habitat %>% filter(wetspecialist == 1)
+waterspecs = as.character(waterspecs$eBird.English.Name)
+
+waterbirdfilter = taxgroups %>%
+  filter(order %in% c("Pelecaniformes","Suliformes","Ciconiiformes","Charadriiformes","Gruiformes",
+                      "Podicipediformes","Phoenicopteriformes","Anseriformes","Coraciiformes"),
+         English.name %in% waterspecs)
+
+waterbirdfilter = as.character(waterbirdfilter$English.name)
+
+
+
+
+
 ####################### Raptors
 
 taxset1 = taxgroups %>%
@@ -151,41 +204,34 @@ raptorset4 = taxset1 %>% filter(English.name %in% scav) %>%
 raptorset4 = as.character(raptorset4$eBird.English.Name.2019)
 
 
-# Commensals
-raptorset1 = habitat %>% filter(Habitation == 1, eBird.English.Name %in% taxset1$English.name) %>% 
-  left_join(map,by = c("eBird.English.Name" = "eBird.English.Name.2018")) %>% 
-  select(eBird.English.Name.2019)
-raptorset1 = as.character(raptorset1$eBird.English.Name.2019)
-
 # Wooded habitat
-raptorset2 = habitat %>% filter(Groves.Gardens.and.Plantations == 1 | Tropical.Rainforest == 1 |
-                             Shola.Forest == 1 | Moist.Deciduous == 1 | Dry.Deciduous == 1 |
-                             Subtropical.Montane.Forest | Mixed.Forest == 1 | Oak.Forest == 1 |
-                             Coniferous.Forest == 1 | Forest.Swamp == 1 | Rivers == 1,
+raptorset2 = habitat %>% filter(woodspecialist == 1,
                              eBird.English.Name %in% taxset1$English.name,
                              !eBird.English.Name %in% raptorset4) %>% 
   left_join(map,by = c("eBird.English.Name" = "eBird.English.Name.2018")) %>% 
   select(eBird.English.Name.2019)
 raptorset2 = as.character(raptorset2$eBird.English.Name.2019)
 
-# Open habitat
-raptorset3 = habitat %>% filter(Wet.Paddy.fields == 1 | Open.Areas == 1 |
-                             Dry.Grassland == 1 | Hill.Grassland == 1 | Wet.Grassland |
-                             High.Altitude.Grassland | Reeds == 1 |
-                             Hill.Shrubland == 1 | Thorny.Scrub == 1 | Rocky.Scrub == 1 |
-                             Short.Grass.Marshes == 1 | High.Shrubbery == 1 | High.Alpine == 1 |
-                             Inland.Water == 1 | Inland.Mudflats == 1 | Coastal.Mudflats == 1 |
-                             Beaches == 1 |Hot.Desert == 1 | Semi.Desert == 1 | Cold.Desert == 1 |
-                             Mangrove.Swamps == 1 | Salt.Pans == 1 | Lagoons == 1 |
-                             High.Altitude.Lakes == 1,
+# Open habitat including scrub and wetlands
+raptorset3 = habitat %>% filter(openspecialist == 1, 
                              eBird.English.Name %in% taxset1$English.name,
                              !eBird.English.Name %in% raptorset4) %>% 
   left_join(map,by = c("eBird.English.Name" = "eBird.English.Name.2018")) %>% 
   select(eBird.English.Name.2019)
 raptorset3 = as.character(raptorset3$eBird.English.Name.2019)
 
+# Generalists
+
+raptorset1 = data.frame(eBird.English.Name = taxset1$English.name) %>%
+  left_join(map,by = c("eBird.English.Name" = "eBird.English.Name.2018")) %>% 
+  select(eBird.English.Name.2019)
+raptorset1 = as.character(raptorset1$eBird.English.Name.2019)
+raptorset1 = c(setdiff(raptorset1,unique(c(raptorset2,raptorset3,raptorset4))),"Black Kite")
+
 raptors = list(raptorset1,raptorset2,raptorset3,raptorset4)
-names(raptors) = c("Commensals","Habitat-Wooded","Habitat-Open","Scavengers")
+names(raptors) = c("Generalists","Habitat-Wooded","Habitat-Open","Scavengers")
+
+
 
 
 
@@ -197,51 +243,53 @@ names(raptors) = c("Commensals","Habitat-Wooded","Habitat-Open","Scavengers")
 #- migratory waterbirds (shorebirds)
 #- migratory waterbirds (other)
 
-waterbirds = habitat %>% filter(wetspecialist == 1)
-waterbirds = as.character(waterbirds$eBird.English.Name)
-
 taxset2res = taxgroups %>%
-  filter(order %in% c("Pelecaniformes","Suliformes","Ciconiiformes","Charadriiformes","Gruiformes",
-                      "Podicipediformes","Phoenicopteriformes","Anseriformes") | 
-                      English.name %in% waterbirds, English.name %in% ltset, 
-                      English.name %in% resident)
+  filter(English.name %in% waterbirdfilter, English.name %in% ltset,
+         English.name %in% resident)
 
 taxset2mig = taxgroups %>%
-  filter(order %in% c("Pelecaniformes","Suliformes","Ciconiiformes","Charadriiformes","Gruiformes",
-                      "Podicipediformes","Phoenicopteriformes","Anseriformes") | 
-           English.name %in% waterbirds, English.name %in% ltset, 
+  filter(English.name %in% waterbirdfilter, English.name %in% ltset, 
          English.name %in% migrant | English.name %in% localmigrant)
 
 
-waterset1 = taxset2res %>% filter(eBird.species.group %in% c("Waterfowl","Grebes")) %>% 
+waterset1 = taxset2res %>% filter(eBird.species.group %in% c("Waterfowl")) %>% 
   left_join(map,by = c("English.name" = "eBird.English.Name.2018")) %>% 
   select(eBird.English.Name.2019)
 waterset1 = as.character(waterset1$eBird.English.Name.2019)
 
-waterset2 = taxset2res %>% filter(!English.name %in% waterset1,English.name %in% waterbirds) %>% 
+waterset1a = taxset2mig %>% filter(eBird.species.group %in% c("Waterfowl")) %>% 
+  left_join(map,by = c("English.name" = "eBird.English.Name.2018")) %>% 
+  select(eBird.English.Name.2019)
+waterset1a = as.character(waterset1a$eBird.English.Name.2019)
+
+waterset1 = c(waterset1,waterset1a)
+
+waterset2 = taxset2res %>% filter(family %in% c("Laridae (Gulls, Terns, and Skimmers)")) %>% 
   left_join(map,by = c("English.name" = "eBird.English.Name.2018")) %>% 
   select(eBird.English.Name.2019)
 waterset2 = as.character(waterset2$eBird.English.Name.2019)
 
-waterset3 = taxset2mig %>% filter(eBird.species.group %in% c("Waterfowl","Grebes")) %>% 
+waterset2a = taxset2mig %>% filter(family %in% c("Laridae (Gulls, Terns, and Skimmers)")) %>% 
+  left_join(map,by = c("English.name" = "eBird.English.Name.2018")) %>% 
+  select(eBird.English.Name.2019)
+waterset2a = as.character(waterset2a$eBird.English.Name.2019)
+
+waterset2 = c(waterset2,waterset2a)
+
+waterset3 = taxset2mig %>% filter(eBird.species.group %in% c("Shorebirds")) %>% 
   left_join(map,by = c("English.name" = "eBird.English.Name.2018")) %>% 
   select(eBird.English.Name.2019)
 waterset3 = as.character(waterset3$eBird.English.Name.2019)
 
-waterset4 = taxset2mig %>% filter(eBird.species.group %in% c("Shorebirds")) %>% 
+waterset4 = taxset2res %>% filter(!English.name %in% c(waterset1,waterset2)) %>% 
   left_join(map,by = c("English.name" = "eBird.English.Name.2018")) %>% 
   select(eBird.English.Name.2019)
 waterset4 = as.character(waterset4$eBird.English.Name.2019)
 
-waterset5 = taxset2mig %>% filter(!English.name %in% c(waterset3,waterset4),English.name %in% 
-                                    waterbirds) %>% 
-  left_join(map,by = c("English.name" = "eBird.English.Name.2018")) %>% 
-  select(eBird.English.Name.2019)
-waterset5 = as.character(waterset5$eBird.English.Name.2019)
 
-waterbirds = list(waterset1,waterset2,waterset3,waterset4,waterset5)
-names(waterbirds) = c("Waterfowl-Resident","Others-Resident","Waterfowl-Migratory","Shorebirds-Migratory",
-                      "Others-Migratory")
+
+waterbirds = list(waterset1,waterset2,waterset3,waterset4)
+names(waterbirds) = c("Waterfowl","Gulls and Terns","Shorebirds-Migratory","Others-Resident")
 
 
 
@@ -254,39 +302,29 @@ names(waterbirds) = c("Waterfowl-Resident","Others-Resident","Waterfowl-Migrator
 # scrub
 # generalists
 
-habitatset1 = habitat %>% filter(tropspecialist == 1, eBird.English.Name %in% ltset) %>% 
+habitatset1 = habitat %>% filter(forspecialist == 1, eBird.English.Name %in% ltset) %>% 
   left_join(map,by = c("eBird.English.Name" = "eBird.English.Name.2018")) %>% 
   select(eBird.English.Name.2019)
 habitatset1 = as.character(habitatset1$eBird.English.Name.2019)
 
-habitatset2 = habitat %>% filter(tempspecialist == 1, eBird.English.Name %in% ltset) %>% 
+habitatset2 = habitat %>% filter(grubspecialist == 1, eBird.English.Name %in% ltset) %>% 
   left_join(map,by = c("eBird.English.Name" = "eBird.English.Name.2018")) %>% 
   select(eBird.English.Name.2019)
 habitatset2 = as.character(habitatset2$eBird.English.Name.2019)
 
-habitatset3 = habitat %>% filter(grassspecialist == 1, eBird.English.Name %in% ltset) %>% 
+habitatset3 = habitat %>% filter(wetspecialist == 1, eBird.English.Name %in% ltset) %>% 
   left_join(map,by = c("eBird.English.Name" = "eBird.English.Name.2018")) %>% 
   select(eBird.English.Name.2019)
 habitatset3 = as.character(habitatset3$eBird.English.Name.2019)
 
-habitatset4 = habitat %>% filter(wetspecialist == 1, eBird.English.Name %in% ltset) %>% 
+habitatset4 = data.frame(eBird.English.Name = ltset) %>% 
   left_join(map,by = c("eBird.English.Name" = "eBird.English.Name.2018")) %>% 
   select(eBird.English.Name.2019)
 habitatset4 = as.character(habitatset4$eBird.English.Name.2019)
+habitatset4 = setdiff(habitatset4,unique(c(habitatset1,habitatset2,habitatset3)))
 
-habitatset5 = habitat %>% filter(scrubspecialist == 1, eBird.English.Name %in% ltset) %>% 
-  left_join(map,by = c("eBird.English.Name" = "eBird.English.Name.2018")) %>% 
-  select(eBird.English.Name.2019)
-habitatset5 = as.character(habitatset5$eBird.English.Name.2019)
-
-habitatset6 = data.frame(eBird.English.Name = ltset) %>% 
-  left_join(map,by = c("eBird.English.Name" = "eBird.English.Name.2018")) %>% 
-  select(eBird.English.Name.2019)
-habitatset6 = as.character(habitatset6$eBird.English.Name.2019)
-habitatset6 = setdiff(habitatset6,unique(c(habitatset1,habitatset2,habitatset3,habitatset4,habitatset5)))
-
-habitats = list(habitatset1,habitatset2,habitatset3,habitatset4,habitatset5,habitatset6)
-names(habitats) = c("Forests-Tropical","Forests-Temperate","Grassland","Wetlands","Scrub","Generalists")
+habitats = list(habitatset1,habitatset2,habitatset3,habitatset4)
+names(habitats) = c("Forests","Grassland/Scrub","Wetlands","Generalists")
 
 
 
@@ -331,7 +369,23 @@ endemics = list(endemicset1,endemicset2)
 names(endemics) = c("Western-Ghats","Others-Subcontinent")
 
 
+
+
 ########## Diet
+
+
+########### Diet groups
+
+frne = as.character(diet$eBird.English.Name[diet$Diet.5Cat == "FruiNect" &
+                                              !diet$eBird.English.Name %in% waterbirdfilter])
+invt = as.character(diet$eBird.English.Name[diet$Diet.5Cat == "Invertebrate" &
+                                              !diet$eBird.English.Name %in% waterbirdfilter])
+omni = as.character(diet$eBird.English.Name[diet$Diet.5Cat == "Omnivore" &
+                                              !diet$eBird.English.Name %in% waterbirdfilter])
+seed = as.character(diet$eBird.English.Name[diet$Diet.5Cat == "PlantSeed" &
+                                              !diet$eBird.English.Name %in% waterbirdfilter])
+carn = as.character(diet$eBird.English.Name[diet$Diet.5Cat == "VertFishScav" &
+                                              !diet$eBird.English.Name %in% waterbirdfilter])
 
 dietset1 = data.frame(eBird.English.Name = frne[frne %in% ltset]) %>% 
   left_join(map,by = c("eBird.English.Name" = "eBird.English.Name.2018")) %>% 
@@ -388,9 +442,57 @@ compositespecieslist = rbind(diets,endemics,habitats,migrants,raptors,waterbirds
   select(composite,groups,species)
 
 status = read.csv("stateofindiasbirds.csv")
-status = status %>% filter(Long.Term.Status == "Uncertain")
-status = as.character(status$eBird.English.Name)
+uncertain = status %>% filter(Long.Term.Status == "Uncertain")
+uncertain = as.character(uncertain$eBird.English.Name)
+status = status %>%
+  select(eBird.English.Name,Long.Term.Status,Current.Status)
+names(status)[1] = "species"
 
-compositespecieslist = compositespecieslist %>% filter(!species %in% status)
+compositespecieslist = compositespecieslist %>% filter(!species %in% uncertain)
 
 write.csv(compositespecieslist,"compositespecieslist.csv",row.names = F)
+
+compositesummary = left_join(compositespecieslist,status)
+
+
+
+temp1 = compositesummary %>%
+  group_by(composite,groups,Long.Term.Status) %>% summarize(count = n())
+temp1$Long.Term.Status = factor(temp1$Long.Term.Status, 
+                                           levels = c("Strong Decline","Moderate Decline","Stable",
+                                                      "Moderate Increase","Strong Increase"))
+
+temp2 = compositesummary %>%
+  filter(!Current.Status == "Uncertain") %>%
+  group_by(composite,groups,Current.Status) %>% summarize(count = n())
+temp2$Current.Status = factor(temp2$Current.Status, 
+                                         levels = c("Strong Decline","Moderate Decline","Stable",
+                                                    "Moderate Increase","Strong Increase"))
+
+total1 = compositesummary %>%
+  group_by(composite) %>% summarize(compositetotal = n_distinct(species))
+total2 = compositesummary %>%
+  group_by(composite,groups) %>% summarize(grouptotal = n_distinct(species))
+
+library(reshape)
+longtermcompositesummary = cast(temp1, composite + groups ~ Long.Term.Status, fill=F)
+longtermcompositesummary = longtermcompositesummary %>% left_join(total1) %>% left_join(total2)
+currentcompositesummary = cast(temp2, composite + groups ~ Current.Status, fill=F)
+currentcompositesummary = currentcompositesummary %>% left_join(total1) %>% left_join(total2)
+
+longtermcompositesummary$composite = paste(longtermcompositesummary$composite," (",
+                                           longtermcompositesummary$compositetotal,")",sep="")
+longtermcompositesummary$groups = paste(longtermcompositesummary$groups," (",
+                                           longtermcompositesummary$grouptotal,")",sep="")
+longtermcompositesummary = longtermcompositesummary %>%
+  select(-compositetotal,-grouptotal)
+
+currentcompositesummary$composite = paste(currentcompositesummary$composite," (",
+                                           currentcompositesummary$compositetotal,")",sep="")
+currentcompositesummary$groups = paste(currentcompositesummary$groups," (",
+                                        currentcompositesummary$grouptotal,")",sep="")
+currentcompositesummary = currentcompositesummary %>%
+  select(-compositetotal,-grouptotal)
+
+write.csv(longtermcompositesummary,"longtermcompositesummary.csv",row.names = F)
+write.csv(currentcompositesummary,"currentcompositesummary.csv",row.names = F)

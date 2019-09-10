@@ -83,11 +83,11 @@ source('~/GitHub/state-of-indias-birds/SoIB functions.R')
 load("dataforanalyses.RData")
 species = "Indian Peafowl"
 start = Sys.time()
-tre <- freqtrends(data,species,specieslist,error=T,nsim=100)
+tre <- freqtrends(data,species,specieslist,error=T,nsim=3)
 end = Sys.time()
 print(end-start)
 
-tre <- freqtrendsrestricted(data,species,restrictedspecieslist,nsim=1000)
+tre = freqtrendsrestricted(data,species,restrictedspecieslist)
 
 ## this has to be run for all species in specieslist
 
@@ -106,7 +106,35 @@ tre <- freqtrendsrestricted(data,species,restrictedspecieslist,nsim=1000)
 #  }
 #}
 
+source('~/GitHub/state-of-indias-birds/SoIB functions.R')
+load("dataforanalyses.RData")
+#load("finaloccupancy.RData")
 
+#occ = SoIBoccupancy(data,species = specieslist$COMMON.NAME[1],areag = areag1)
+
+occ = read.csv("occ.csv")
+speciesleft = setdiff(specieslist$COMMON.NAME,occ$species)
+
+#for (i in 2:length(specieslist$COMMON.NAME))
+for (i in 1:length(speciesleft))
+{
+  #occ1 = SoIBoccupancy(data,species = specieslist$COMMON.NAME[i],areag = areag1)
+  occ1 = SoIBoccupancy(data,species = speciesleft[i],areag = areag1)
+  occ = rbind(occ,occ1)
+  write.csv(occ,"occ.csv",row.names=FALSE)
+}
+
+for (i in 1:length(restrictedspecieslist$COMMON.NAME))
+{
+  species = restrictedspecieslist$COMMON.NAME[i]
+  start = Sys.time()
+  tre <- freqtrendsrestricted(data,species,specieslist = restrictedspecieslist,nsim = 1000)
+  #tre <- freqtrends(data,species,specieslist = restrictedspecieslist)
+  name = paste(species,".RData",sep="")
+  save(tre,file = name)
+  end = Sys.time()
+  print(end-start)
+}
 
 
 
@@ -141,8 +169,50 @@ source('~/GitHub/state-of-indias-birds/SoIB functions.R')
 ## MUST HAVE a dataframe called trends which has trends for all species in 'specieslist'
 ## ensure that selectspecies has a maximum of 8 species
 
+library(tidyverse)
+#map = map %>%
+#  select(eBird.English.Name.2018,eBird.English.Name.2019,eBird.Scientific.Name.2019,IUCN,Schedule)
+
+init = "./All Trends"
+nms = list.files(path = init)
+
+load(paste(init,"/",nms[1], sep = ""))
+trends = tre
+
+for (i in 2:length(nms))
+{
+  load(paste(init,"/",nms[i], sep = ""))
+  trends = rbind(trends,tre)
+}
+
+rm(list=setdiff(ls(envir = .GlobalEnv), c("trends")), pos = ".GlobalEnv")
+save.image("AllTrends.RData")
+#rm(list = ls(all.names = TRUE))
+
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
-trendslope = calculatetrendslope(trends, species, specieslist, composite = F)
+load("dataforanalyses.RData")
+load("AllTrends.RData")
+
+check1 = restrictedspecieslist$COMMON.NAME[!is.na(restrictedspecieslist$ht)]
+check2 = restrictedspecieslist$COMMON.NAME[!is.na(restrictedspecieslist$rt)]
+
+specieslist$rt[specieslist$COMMON.NAME %in% check2] = 1
+specieslist$ht[specieslist$COMMON.NAME %in% check1] = 1
+trends = trends %>% filter(species %in% specieslist$COMMON.NAME)
+
+specs = unique(trends$species)
+temp = calculatetrendslope(trends,specs[1],specieslist)
+
+for(i in 2:length(specs))
+{
+  print(specs[i])
+  temp1 = calculatetrendslope(trends,specs[i],specieslist)
+  temp = rbind(temp,temp1)
+}
+
+glmr = temp
+
+write.csv(glmr,"glmr.csv",row.names = F)
 
 ## this has to be run for all species in specieslist
 

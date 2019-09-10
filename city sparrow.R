@@ -352,7 +352,7 @@ sparrow = sparrow %>%
 
 rm(list=setdiff(ls(envir = .GlobalEnv), c("sparrow","metros")), pos = ".GlobalEnv")
 
-plottrends = function(trends,selectspecies,lim,off,colour)
+plottrendssparrow = function(trends,selectspecies,lim,off,colour)
 {
   require(tidyverse)
   require(ggthemes)

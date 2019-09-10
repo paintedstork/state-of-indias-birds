@@ -1,52 +1,55 @@
 ## assign categories to trends and occupancy
 
 library(tidyverse)
-map = read.csv("Map to Other Lists - map.csv")
-#map = map %>%
-#  select(eBird.English.Name.2018,eBird.English.Name.2019,eBird.Scientific.Name.2019,IUCN,Schedule)
-
-#init = "./All Trends"
-#nms = list.files(path = init)
-
-#load(paste(init,"/",nms[1], sep = ""))
-#trends = tre
-
-#for (i in 2:length(nms))
-#{
-#  load(paste(init,"/",nms[i], sep = ""))
-#  trends = rbind(trends,tre)
-#}
-
-#rm(list=setdiff(ls(envir = .GlobalEnv), c("trends")), pos = ".GlobalEnv")
-#save.image("AllTrends.RData")
-#rm(list = ls(all.names = TRUE))
-
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
-load("dataforanalyses.RData")
-load("AllTrends.RData")
-load("sortedspecieslist3.RData")
-
 migstatus = read.csv("Migratory Status - Migratory Status.csv")
+load("specieslists.RData")
+allspecies = specieslist$COMMON.NAME
 
-check1 = restrictedspecieslist$COMMON.NAME[!is.na(restrictedspecieslist$ht)]
-check2 = restrictedspecieslist$COMMON.NAME[!is.na(restrictedspecieslist$rt)]
+glmr = read.csv("glmr.csv")
 
-specieslist$rt[specieslist$COMMON.NAME %in% check2] = 1
-specieslist$ht[specieslist$COMMON.NAME %in% check1] = 1
-trends = trends %>% filter(species %in% specieslist$COMMON.NAME, !species %in% srt)
+glmr$mintrend = glmr$trend - glmr$trendci
+glmr$maxtrend = glmr$trend + glmr$trendci
+glmr$minslope = glmr$slope - glmr$slopeci
+glmr$maxslope = glmr$slope + glmr$slopeci
 
-specs = unique(trends$species)
-temp = calculatetrendslope(trends,specs[1],specieslist)
+glmr$mintrend[glmr$mintrend < -100] = -100
 
-for(i in 2:length(specs))
-{
-  print(specs[i])
-  temp1 = calculatetrendslope(trends,specs[i],specieslist)
-  temp = rbind(temp,temp1)
-}
+trendscat = glmr %>%
+  mutate(longcat = 
+           case_when(is.na(trend) ~ "Data Deficient",
+                     maxtrend <= -50 ~ "Strong Decline",
+                     maxtrend <= -25 ~ "Moderate Decline",
+                     mintrend >= 50 ~ "Strong Increase",
+                     mintrend >= 25 ~ "Moderate Increase",
+                     trendci > 25 ~ "Uncertain",
+                     TRUE ~ "Stable")
+  ) %>%
+  mutate(shortcat = 
+           case_when(is.na(slope) ~ "Data Deficient",
+                     maxslope <= -2.7 ~ "Strong Decline",
+                     maxslope <= -1.1 ~ "Moderate Decline",
+                     minslope >= 1.6 ~ "Strong Increase",
+                     minslope >= 0.9 ~ "Moderate Increase",
+                     slopeci > 2 ~ "Uncertain",
+                     TRUE ~ "Stable")
+  ) %>%
+  select(species,trend,trendci,mintrend,maxtrend,slope,slopeci,minslope,maxslope,longcat,shortcat)
 
-trendcats = data.frame(species = specieslist$COMMON.NAME)
-trendcats = left_join(trendcats,temp)
+trendscat$longcat[trendscat$species %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
+                                           "Taiga Flycatcher","Chestnut Munia")] = NA
+trendscat$shortcat[trendscat$species %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
+                                            "Taiga Flycatcher","Chestnut Munia")] = NA
+
+trendscat$longcat = factor(trendscat$longcat, levels = c("Strong Decline","Moderate Decline",
+                                                         "Data Deficient","Uncertain","Stable",
+                                                         "Moderate Increase","Strong Increase"))
+trendscat$shortcat = factor(trendscat$shortcat, levels = c("Strong Decline","Moderate Decline",
+                                                           "Data Deficient","Uncertain","Stable",
+                                                           "Moderate Increase","Strong Increase"))
+
+
+
 
 ## occupancy
 
@@ -132,10 +135,10 @@ for (i in 1:length(occuse$species))
 occuse = occuse %>%
   mutate(occcat = 
            case_when(is.na(range) ~ "Data Deficient",
-                     maxrange < 0.4 ~ "Very Restricted",
-                     maxrange < 2 ~ "Restricted",
+                     maxrange < 0.75 ~ "Very Restricted",
+                     maxrange < 4.25 ~ "Restricted",
                      minrange > 100 ~ "Very Large",
-                     minrange > 10 ~ "Large",
+                     minrange > 25 ~ "Large",
                      TRUE ~ "Moderate")
   )
 
@@ -160,29 +163,45 @@ occuse = occuse %>%
                                TRUE ~ as.character(rangefull))
          )
 
-trendcats = trendcats %>%
+trendscat = trendscat %>%
   mutate(trendfull = "NA") %>%
   mutate(trendfull = case_when(!is.na(trendci) ~ paste(round(trend,2),"±",round(trendci,2),sep=""),
                                TRUE ~ "NA")
   )
-trendcats$trendfull[trendcats$trendfull == "NA"] = NA
+trendscat$trendfull[trendscat$trendfull == "NA"] = NA
 
-trendcats = trendcats %>%
+trendscat = trendscat %>%
   mutate(slopefull = "NA") %>%
   mutate(slopefull = case_when(!is.na(slopeci) ~ paste(round(slope,2),"±",round(slopeci,2),sep=""),
                                TRUE ~ "NA")
   )
-trendcats$slopefull[trendcats$slopefull == "NA"] = NA
+trendscat$slopefull[trendscat$slopefull == "NA"] = NA
 
-soib = trendcats %>% left_join(occuse) %>%
-  left_join(map,by = c("species" = "eBird.English.Name.2018")) %>%
+map = read.csv("Map to Other Lists - map.csv")
+
+species2018 = read.csv("eBird-Clements-v2018-integrated-checklist-August-2018.csv")
+species2018 = species2018 %>%
+  filter(category == "species") %>%
+  distinct(English.name) %>%
+  filter(English.name %in% allspecies)
+names(species2018) = "species"
+
+
+soib = trendscat %>% left_join(occuse) %>%
+  dplyr::left_join(map,by = c("species" = "eBird.English.Name.2018"))
+soib = left_join(species2018,soib)
+
+soib = soib %>%
   select(eBird.English.Name.2019,eBird.Scientific.Name.2019,migstatus,IUCN,Schedule,trendfull,
          slopefull,rangefull,longcat,shortcat,occcat)
 
-soibfull = trendcats %>% left_join(occuse) %>%
-  left_join(map,by = c("species" = "eBird.English.Name.2018")) %>%
-  select(eBird.English.Name.2019,eBird.Scientific.Name.2019,migstatus,IUCN,Schedule,trend,CITES.Appendix,
-         CMS.Appendix,mintrend,maxtrend,trendfull,slope,minslope,maxslope,
+soibfull = trendscat %>% left_join(occuse) %>%
+  left_join(map,by = c("species" = "eBird.English.Name.2018")) 
+soibfull = left_join(species2018,soibfull)
+
+soibfull = soibfull %>%
+  select(eBird.English.Name.2019,eBird.Scientific.Name.2019,migstatus,IUCN,Schedule,CITES.Appendix,
+         CMS.Appendix,trend,mintrend,maxtrend,trendfull,slope,minslope,maxslope,
          slopefull,range,minrange,maxrange,rangefull,longcat,shortcat,occcat)
 
 names(soib) = c("eBird.English.Name","eBird.Scientific.Name","Migratory.Status","IUCN","WLPA.Schedule",
@@ -197,9 +216,71 @@ names(soibfull) = c("eBird.English.Name","eBird.Scientific.Name","Migratory.Stat
                     "Range.Size.Lower","Range.Size.Upper","Range.Size","Long.Term.Status",
                     "Current.Status","Range.Status")
 
-concerncats = read.csv("concernclassification.csv")
+concerncats = read.csv("concernclassification - concernclassification.csv")
 soib = left_join(soib,concerncats)
 soibfull = left_join(soibfull,concerncats)
 
+downlist = c("Data Deficient","Uncertain")
+rrange = c("Very Restricted","Restricted")
+decl = c("Moderate Decline","Strong Decline")
+soib = soib %>%
+  mutate(Concern.Status = as.character(Concern.Status)) %>%
+  mutate(Concern.Status = 
+           case_when(Long.Term.Status %in% downlist & Current.Status %in% downlist &
+                       IUCN %in% c("Endangered","Critically Endangered") ~ "High",
+                     Long.Term.Status %in% decl & Current.Status %in% decl &
+                       IUCN %in% c("Endangered","Critically Endangered") ~ "High",
+                     Long.Term.Status %in% downlist & Current.Status %in% downlist &
+                       Range.Status %in% rrange &
+                       IUCN %in% c("Vulnerable") ~ "High",
+                     Long.Term.Status %in% downlist & Current.Status %in% downlist &
+                       IUCN %in% c("Near Threatened","Vulnerable") & Concern.Status == "Low" ~ "Moderate",
+                     TRUE ~ Concern.Status))
+
+soibfull = soibfull %>%
+  mutate(Concern.Status = as.character(Concern.Status)) %>%
+  mutate(Concern.Status = 
+           case_when(Long.Term.Status %in% downlist & Current.Status %in% downlist &
+                       IUCN %in% c("Endangered","Critically Endangered") ~ "High",
+                     Long.Term.Status %in% decl & Current.Status %in% decl &
+                       IUCN %in% c("Endangered","Critically Endangered") ~ "High",
+                     Long.Term.Status %in% downlist & Current.Status %in% downlist &
+                       Range.Status %in% rrange &
+                       IUCN %in% c("Vulnerable") ~ "High",
+                     Long.Term.Status %in% downlist & Current.Status %in% downlist &
+                       IUCN %in% c("Near Threatened","Vulnerable") & Concern.Status == "Low" ~ "Moderate",
+                     TRUE ~ Concern.Status))
+
 write.csv(soib,"stateofindiasbirds.csv",row.names=FALSE,na="")
 write.csv(soibfull,"stateofindiasbirdsfull.csv",row.names=FALSE,na="")
+
+soib = soib %>% filter(!is.na(Long.Term.Status),!is.na(Current.Status))
+
+soib$Concern.Status = factor(soib$Concern.Status, 
+                              levels = c("Low","Moderate","High"))
+soib$Long.Term.Status = factor(soib$Long.Term.Status, 
+                               levels = c("Strong Decline","Moderate Decline","Data Deficient",
+                                          "Uncertain","Stable","Moderate Increase","Strong Increase"))
+soib$Current.Status = factor(soib$Current.Status, 
+                             levels = c("Strong Decline","Moderate Decline","Data Deficient",
+                                        "Uncertain","Stable","Moderate Increase","Strong Increase"))
+soib$Range.Status = factor(soib$Range.Status, 
+                             levels = c("Data Deficient","Very Restricted","Restricted","Moderate",
+                                        "Large","Very Large"))
+
+print(table(soib$Concern.Status))
+length(soib$Concern.Status[soib$Concern.Status == "High" &
+                             soib$Long.Term.Status %in% downlist &
+                             soib$Current.Status %in% downlist])
+print(table(soib$Long.Term.Status))
+print(table(soib$Current.Status))
+print(table(soib$Range.Status))
+
+
+soib = read.csv("stateofindiasbirds.csv")
+soib = soib %>%
+  filter(Concern.Status == "High") %>%
+  select(-Migratory.Status,-Long.Term.Trend,-Current.Annual.Change,-Range.Size)
+write.csv(soib,"highconcern.csv",row.names=FALSE,na="")
+
+#write(paste(soib$eBird.English.Name, collapse = ', '), 'test.txt')
