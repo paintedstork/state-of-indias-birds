@@ -87,18 +87,18 @@ for(i in c("trivial","null","nosp","nosptime","nb","nosptimenb"))
   print(end-start)
 }
 
-plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Common Myna", "district",
+plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Pied Cuckoo", "g4",
             level = "species", 
             season = "year round",
-            smooth = F, 
-            rich = T, add = "unique lists", h = 1.2, cutoff = 5, baseyear = 1900, endyear = 2018, 
-            showempty = F, states = c("Delhi"))
+            smooth = T, 
+            rich = F, add = "unique lists", h = 1.2, cutoff = 5, baseyear = 1900, endyear = 2018, 
+            showempty = F, states = "none")
 
-plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Rufous Babbler", "g2", 
+plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Pied Cuckoo", "g3", 
             level = "species", 
             season = "year round",
             smooth = F, 
-            rich = F, add = "frequency", h = 1.4, cutoff = 5, baseyear = 1900, endyear = 2018, 
+            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 2018, 
             showempty = F, states = c("none"))
 
 

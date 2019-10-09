@@ -220,6 +220,9 @@ concerncats = read.csv("concernclassification - concernclassification.csv")
 soib = left_join(soib,concerncats)
 soibfull = left_join(soibfull,concerncats)
 
+print(table(soib$Concern.Status))
+print(table(soib$Range.Status[soib$Range.Status == "Very Restricted"]))
+
 downlist = c("Data Deficient","Uncertain")
 rrange = c("Very Restricted","Restricted")
 decl = c("Moderate Decline","Strong Decline")

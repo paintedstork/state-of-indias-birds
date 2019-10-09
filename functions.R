@@ -1645,9 +1645,9 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
     {if(smooth & resolution != "state" & resolution != "district" & rich)stat_density2d(data = datar, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), h = h, n = 100, geom = "polygon")} +
     {if(!isTRUE(smooth) | resolution == "state" | resolution == "district")geom_polygon(data = plotdf, aes(x = long, y = lat, group = group, fill = freq1))} +
     {if(switch & showempty)geom_polygon(data = emptydf, aes(x = long, y = lat, group = group, col = cl), fill = "grey30")} +
-    #{if(resolution != "state" & resolution != "district")geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'white', fill = 'white')}+
-    {if(resolution == "state" | resolution == "district")geom_path(data = filterdistrict, aes(x = long, y = lat, group = group), col = 'darkolivegreen', size = 0.5)}+
-    geom_path(data = filterdistrict, aes(x = long, y = lat, group = group), col = 'black', size = 1) +
+    {if(resolution != "state" & resolution != "district")geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'white', fill = 'white')}+
+    #{if(resolution == "state" | resolution == "district")geom_path(data = filterdistrict, aes(x = long, y = lat, group = group), col = 'darkolivegreen', size = 0.5)}+
+    geom_path(data = filterstate, aes(x = long, y = lat, group = group), col = 'black', size = 1) +
     {if(smooth & resolution != "state" & resolution != "district")scale_fill_gradient2(low = muted("blue"),
                          high = "white", space = "Lab", na.value = "grey50", trans = 'reverse',
                          breaks = breaks, labels = labels)} +

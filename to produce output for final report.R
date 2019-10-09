@@ -48,13 +48,13 @@ list5 = as.character(temp$species[temp$groups == gps[5]])
 
 
 plotcompositetrends(trends, specieslist = specieslist, name = cgps[1],
-                    g1 = list3, 
-                    g2 = list4,
+                    g1 = list4, 
+                    g2 = list3,
                     g3 = list1, 
                     g4 = list2,
                     g5 = list5, 
-                    n1 = gps[3],
-                    n2 = gps[4],
+                    n1 = gps[4],
+                    n2 = gps[3],
                     n3 = gps[1],
                     n4 = gps[2],
                     n5 = gps[5]
@@ -74,10 +74,10 @@ list2 = as.character(temp$species[temp$groups == gps[2]])
 
 
 plotcompositetrends(trends, specieslist = specieslist, name = cgps[2],
-                    g1 = list1, 
-                    g2 = list2,
-                    n1 = gps[1],
-                    n2 = gps[2]
+                    g1 = list2, 
+                    g2 = list1,
+                    n1 = gps[2],
+                    n2 = gps[1]
 )
 
 
@@ -98,12 +98,12 @@ list4 = as.character(temp$species[temp$groups == gps[4]])
 
 
 plotcompositetrends(trends, specieslist = specieslist, name = cgps[3],
-                    g1 = list3, 
-                    g2 = list4,
+                    g1 = list4, 
+                    g2 = list3,
                     g3 = list2, 
                     g4 = list1,
-                    n1 = gps[3],
-                    n2 = gps[4],
+                    n1 = gps[4],
+                    n2 = gps[3],
                     n3 = gps[2],
                     n4 = gps[1]
 )
@@ -124,11 +124,11 @@ list3 = as.character(temp$species[temp$groups == gps[3]])
 
 
 plotcompositetrends(trends, specieslist = specieslist, name = cgps[4],
-                    g1 = list2, 
-                    g2 = list1,
+                    g1 = list1, 
+                    g2 = list2,
                     g3 = list3, 
-                    n1 = gps[2],
-                    n2 = gps[1],
+                    n1 = gps[1],
+                    n2 = gps[2],
                     n3 = gps[3]
 )
 
@@ -150,12 +150,12 @@ list4 = as.character(temp$species[temp$groups == gps[4]])
 
 
 plotcompositetrends(trends, specieslist = specieslist, name = cgps[5],
-                    g1 = list1, 
-                    g2 = list2,
+                    g1 = list2, 
+                    g2 = list1,
                     g3 = list3, 
                     g4 = list4,
-                    n1 = gps[1],
-                    n2 = gps[2],
+                    n1 = gps[2],
+                    n2 = gps[1],
                     n3 = gps[3],
                     n4 = gps[4]
 )
@@ -178,12 +178,12 @@ list4 = as.character(temp$species[temp$groups == gps[4]])
 
 
 plotcompositetrends(trends, specieslist = specieslist, name = cgps[6],
-                    g1 = list1, 
-                    g2 = list4,
+                    g1 = list4, 
+                    g2 = list1,
                     g3 = list2, 
                     g4 = list3, 
-                    n1 = gps[1],
-                    n2 = gps[4],
+                    n1 = gps[4],
+                    n2 = gps[1],
                     n3 = gps[2],
                     n4 = gps[3]
 )
@@ -205,7 +205,7 @@ check2 = restrictedspecieslist$COMMON.NAME[!is.na(restrictedspecieslist$rt)]
 specieslist$rt[specieslist$COMMON.NAME %in% check2] = 1
 specieslist$ht[specieslist$COMMON.NAME %in% check1] = 1
 
-list = c("Eurasian Griffon","Egyptian Vulture","Red-headed Vulture",
+list = c("Egyptian Vulture","Eurasian Griffon","Red-headed Vulture",
          "Indian Vulture","White-rumped Vulture")
 
 vuls = plottrends(trends, list, leg = F)

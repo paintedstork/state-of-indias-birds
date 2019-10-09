@@ -43,9 +43,6 @@ sesp$LAST.EDITED.DATE = paste(stdformat$year,"-",stdformat$month,"-",stdformat$d
 ebirdindia = rbind(ebirdindia,sesp)
 
 ebirdindia = ebirdindia %>%
-  filter(!COMMON.NAME %in% c("Western Orphean Warbler"))
-
-ebirdindia = ebirdindia %>%
   mutate(group.id = ifelse(is.na(GROUP.IDENTIFIER), SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER))
 
 nrow(ebirdindia)
@@ -169,10 +166,6 @@ x.grob = textGrob("year of upload", gp = gpar(fontface = "bold", fontsize = 20,
                                               fontfamily = "Gill Sans MT"))
 
 ymet2f = grid.arrange(arrangeGrob(ymet2, bottom = x.grob))
-
-tiff('Fig. 1.tiff', units="in", width=10, height=7, res=1000)
-grid::grid.draw(ymet2f)
-dev.off()
 
 png('Fig. 1.png', units="in", width=10, height=7, res=1000)
 grid::grid.draw(ymet2f)
@@ -305,11 +298,7 @@ x.grob = textGrob("year of observation", gp = gpar(fontface = "bold", fontsize =
 
 ymet1f = grid.arrange(arrangeGrob(ymet1, bottom = x.grob))
 
-tiff('Fig. 5.tiff', units="in", width=10, height=7, res=1000)
-grid::grid.draw(ymet1f)
-dev.off()
-
-png('Fig. 5.png', units="in", width=10, height=7, res=1000)
+png('Fig. 7.png', units="in", width=10, height=7, res=1000)
 grid::grid.draw(ymet1f)
 dev.off()
 
@@ -332,7 +321,7 @@ length(ebirdindia[ebirdindia$cyear < 2014,]$OBSERVER.ID)
 
 
 
-## figure 3 ## load dataforanalyses
+## figure 5 ## load dataforanalyses
 
 library(tidyverse)
 load("listforfig3.RData")
@@ -370,11 +359,7 @@ fhist1 = fhist+
   )+
   theme(strip.text.y = element_text(size = 20, vjust = 1.7, angle = -90))
 
-tiff('Fig. 3.tiff', units="in", width=10, height=7, res=1000)
-grid::grid.draw(fhist1)
-dev.off()
-
-png('Fig. 3.png', units="in", width=10, height=7, res=1000)
+png('Fig. 5.png', units="in", width=10, height=7, res=1000)
 grid::grid.draw(fhist1)
 dev.off()
 
@@ -409,10 +394,6 @@ y.grob = textGrob("frequency of reporting", gp = gpar(fontface = "bold", fontsiz
                                            fontfamily = "Gill Sans MT"), rot = 90)
 
 g1 = grid.arrange(arrangeGrob(g, bottom = x.grob, left = y.grob))
-
-tiff('plot1.tiff', units="in", width=10, height=7, res=1000)
-grid::grid.draw(g1)
-dev.off()
 
 png('plot1.png', units="in", width=10, height=7, res=1000)
 grid::grid.draw(g1)
@@ -503,11 +484,7 @@ grid_arrange_shared_legend <- function(...) {
     heights = unit.c(unit(1, "npc") - lheight, lheight))
 }
 
-tiff('Data Loss.tiff', units="in", width=10, height=7, res=1000)
-grid_arrange_shared_legend(ggp1,ggp2)
-dev.off()
-
-png('Data Loss.png', units="in", width=10, height=7, res=1000)
+png('Fig. 3.png', units="in", width=10, height=7, res=1000)
 grid_arrange_shared_legend(ggp1,ggp2)
 dev.off()
 
@@ -566,11 +543,7 @@ full = function() {
 
 full()
 
-tiff('Model Comparison.tiff', units="in", width=10, height=7, res=1000)
-full()
-dev.off()
-
-png('Model Comparison.png', units="in", width=10, height=7, res=1000)
+png('Fig. 2.png', units="in", width=10, height=7, res=1000)
 full()
 dev.off()
 
@@ -647,9 +620,6 @@ ggp1 = ggp +
         ##panel.background = theme_blank()
   )
 
-tiff('atlas1.tiff', units="in", width=10, height=7, res=1000)
-grid::grid.draw(ggp1)
-dev.off()
 
 png('atlas1.png', units="in", width=10, height=7, res=1000)
 grid::grid.draw(ggp1)
@@ -733,9 +703,6 @@ ggp1 = ggp +
         ##panel.background = theme_blank()
   )
 
-tiff('atlas2.tiff', units="in", width=10, height=7, res=1000)
-grid::grid.draw(ggp1)
-dev.off()
 
 png('atlas2.png', units="in", width=10, height=7, res=1000)
 grid::grid.draw(ggp1)
@@ -765,9 +732,6 @@ ggp1 = ggp +
         ##panel.background = theme_blank()
   )
 
-tiff('atlas3.tiff', units="in", width=10, height=7, res=1000)
-grid::grid.draw(ggp1)
-dev.off()
 
 png('atlas3.png', units="in", width=10, height=7, res=1000)
 grid::grid.draw(ggp1)

@@ -233,6 +233,10 @@ write.csv(glmr,"glmr.csv",row.names = F)
 
 
 ## to plot trends for up to 8 species
-plottrends(trends, selectspecies)
+load("AllTrends.RData")
+source('~/GitHub/state-of-indias-birds/SoIB functions.R')
+library(tidyverse)
+
+plottrends(trends, selectspecies = c("Ashy Prinia","House Sparrow","Red-necked Falcon"))
 
 

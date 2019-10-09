@@ -1308,7 +1308,7 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
     recenttrends = stdtrends(recenttrends)
   }
   
-  cols = c("#E49B36", "#869B27", "#A13E2B", "#78CAE0", "#B69AC9", "#EA5599", "#31954E", "#493F3D",
+  cols = c("#869B27", "#E49B36", "#A13E2B", "#78CAE0", "#B69AC9", "#EA5599", "#31954E", "#493F3D",
            "#CC6666", "#9999CC", "#000000", "#66CC99")
   
   ns = length(selectspecies)
@@ -1360,12 +1360,12 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
         #position = pd,
         size = 1.5) +
       #geom_line(aes(group = species),size = 1.5) +
+      geom_hline(yintercept = 200, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 150, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 125, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 100, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 75, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 50, linetype = "dotted", size = 0.5) +
-      geom_hline(yintercept = 25, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 0, linetype = "dotted", size = 0.5) +
       geom_ribbon(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
                       ymax = (nmfreqbyspec + nmsebyspec*1.96), fill = species), colour = NA, alpha = 0.1) +
@@ -1390,10 +1390,10 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
       scale_x_continuous(breaks = xbreaks,
                          #limits = c(1993,2018),
                          labels = lbreaks) +
-      scale_y_continuous(breaks = c(0,25,50,75,100,125,150), 
+      scale_y_continuous(breaks = c(0,50,75,100,125,150,200), 
                          #limits = c(liml,limu),
-                         labels = c("-100%","-75","-50%","-25%","0%",
-                                    "+25%","+50%")
+                         labels = c("-100%","-50%","-25%","0%",
+                                    "+25%","+50%","+100%")
       )
     #theme(legend.position = "none")
     
