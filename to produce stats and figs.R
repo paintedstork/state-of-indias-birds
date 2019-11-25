@@ -69,7 +69,7 @@ ebirdindia = ebirdindia %>%
 
 tr2 = ebirdindia %>%
   group_by(ecyear) %>% summarize(rec2 = n(),obs2 = n_distinct(OBSERVER.ID),
-                                 uqli2 = n_distinct(SAMPLING.EVENT.IDENTIFIER))
+                                 uqli2 = n_distinct(group.id))
 
 
 editdate1 = data.frame(year = tr2$ecyear)
@@ -318,9 +318,6 @@ length(unique(ebirdindia[ebirdindia$cyear < 2014,]$SAMPLING.EVENT.IDENTIFIER))
 length(ebirdindia[ebirdindia$cyear < 2014,]$OBSERVER.ID)
 
 
-
-
-
 ## figure 5 ## load dataforanalyses
 
 library(tidyverse)
@@ -359,7 +356,7 @@ fhist1 = fhist+
   )+
   theme(strip.text.y = element_text(size = 20, vjust = 1.7, angle = -90))
 
-png('Fig. 5.png', units="in", width=10, height=7, res=1000)
+png('Fig. 7.png', units="in", width=10, height=7, res=1000)
 grid::grid.draw(fhist1)
 dev.off()
 
@@ -484,7 +481,7 @@ grid_arrange_shared_legend <- function(...) {
     heights = unit.c(unit(1, "npc") - lheight, lheight))
 }
 
-png('Fig. 3.png', units="in", width=10, height=7, res=1000)
+png('Fig. 5.png', units="in", width=10, height=7, res=1000)
 grid_arrange_shared_legend(ggp1,ggp2)
 dev.off()
 
@@ -543,7 +540,7 @@ full = function() {
 
 full()
 
-png('Fig. 2.png', units="in", width=10, height=7, res=1000)
+png('Fig. 4.png', units="in", width=10, height=7, res=1000)
 full()
 dev.off()
 
@@ -575,7 +572,7 @@ comp$sqdev = ((comp$freq-comp$fit))^2
 fit = comp %>%
   group_by(type) %>% summarize(rsq = summary(lm(freq~atlas))$r.squared,
                                ssd = sum(na.omit(sqdev)))
-fit$ssd = 1/fit$ssd
+fit$ssd = log(fit$ssd)
 fit$type = factor(fit$type, levels = c("trivial","grid","onlyfixeddis","onlyfixeddur",
                                        "onlyfixedlla","onlyrandom","logitdis",
                                        "logitdur","logitlla","dis","dur","lla","lla1"))
@@ -594,9 +591,10 @@ fit3 = rbind(fit1,fit2)
 ggp = ggplot(fit3, aes(x=type, y=ssd)) + 
   facet_wrap(. ~ gp, scale="free", ncol = 1) +
   #geom_abline(intercept = 0, slope = 1, col = "blue") + 
-  geom_point(size = 6, col = "dark green") +
+  geom_point(size = 4, col = "dark green") +
+  geom_hline(yintercept = -3.44, linetype = "dotted", size = 0.5) +
   xlab("model type") +
-  ylab("inverse sum sq. deviance from best fit line\n(eBird vs. Atlas frequencies)")
+  ylab("log sum sq. deviance from best fit line\n(eBird vs. Atlas frequencies)")
 
 ggp1 = ggp +
   theme(axis.title.x = element_blank(), axis.text.x = element_text(size = 10),
@@ -612,7 +610,7 @@ ggp1 = ggp +
                                  "list length\n(no. of species)","mixed effects\n(cloglog-link)")) +
   theme(text=element_text(family="Gill Sans MT", face = 'bold')) +
   #theme(legend.position = "none")+
-  theme(strip.text.x = element_text(size = 14, colour = "black", face = 'italic')) +
+  theme(strip.text.x = element_text(size = 12, colour = "black", face = 'italic')) +
   #guides(size=guide_legend(title="R sq. (eBird vs. atlas)")) +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank()
@@ -621,7 +619,7 @@ ggp1 = ggp +
   )
 
 
-png('atlas1.png', units="in", width=10, height=7, res=1000)
+png('Fig. 2.png', units="in", width=10, height=7, res=1000)
 grid::grid.draw(ggp1)
 dev.off()
 
@@ -735,4 +733,330 @@ ggp1 = ggp +
 
 png('atlas3.png', units="in", width=10, height=7, res=1000)
 grid::grid.draw(ggp1)
+dev.off
+
+
+
+
+########### Relationship between covariates
+
+rm(list = ls(all.names = TRUE))
+require(tidyverse)
+load("data.RData")
+library(ggthemes)
+
+theme_set(theme_tufte())
+require(extrafont)
+library(cowplot)
+
+data1 = data %>% filter(!is.na(region)) %>% group_by(group.id) %>% slice(1) %>% ungroup %>%
+  group_by(region,no.sp,DURATION.MINUTES) %>% slice(1) %>% ungroup
+
+data1$no.sp = as.numeric(data1$no.sp)
+data1$DURATION.MINUTES = as.numeric(data1$DURATION.MINUTES)/60
+
+ggp = ggplot(data1, aes(x=DURATION.MINUTES, y=no.sp)) + 
+  facet_wrap(. ~ region, scale="free", ncol = 4) +
+  #geom_abline(intercept = 0, slope = 1, col = "blue") + 
+  geom_point(size = 0.5) +
+  geom_smooth(method = "loess") +
+  xlab("duration (hours)") +
+  ylab("list length (number of species)")
+
+ggp1 = ggp +
+  theme(axis.title.x = element_text(size = 14), axis.text.x = element_text(size = 8),
+        axis.title.y = element_blank(), axis.text.y = element_text(size = 8)) +
+  theme(text=element_text(family="Gill Sans MT", face = 'bold')) +
+  theme(strip.text.x = element_text(size = 14, colour = "black", face = 'italic')) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+        ##panel.border = theme_blank(),
+        ##panel.background = theme_blank()
+  )
+
+data2 = data %>% filter(!is.na(region)) %>% group_by(group.id) %>% slice(1) %>% ungroup %>%
+  group_by(region,no.sp,EFFORT.DISTANCE.KM) %>% slice(1) %>% ungroup
+
+data2$no.sp = as.numeric(data2$no.sp)
+data2$EFFORT.DISTANCE.KM = as.numeric(data2$EFFORT.DISTANCE.KM)
+
+ggp = ggplot(data2, aes(x=EFFORT.DISTANCE.KM, y=no.sp)) + 
+  facet_wrap(. ~ region, scale="free", ncol = 4) +
+  #geom_abline(intercept = 0, slope = 1, col = "blue") + 
+  geom_point(size = 0.5) +
+  geom_smooth(method = "loess") +
+  xlab("distance (km)") +
+  ylab("list length (number of species)")
+
+ggp2 = ggp +
+  theme(axis.title.x = element_text(size = 14), axis.text.x = element_text(size = 8),
+        axis.title.y = element_blank(), axis.text.y = element_text(size = 8)) +
+  theme(text=element_text(family="Gill Sans MT", face = 'bold')) +
+  theme(strip.text.x = element_text(size = 14, colour = "black", face = 'italic')) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+        ##panel.border = theme_blank(),
+        ##panel.background = theme_blank()
+  )
+
+ggpp = plot_grid(ggp1,ggp2,nrow=2,ncol=1,rel_widths = c(1/2, 1/2))
+
+require(grid)
+require(gridExtra)
+
+y.grob = textGrob("list length (number of species)", gp = gpar(fontface = "bold", fontsize = 16,
+                                              fontfamily = "Gill Sans MT"), rot = 90)
+
+ggpp1 = grid.arrange(arrangeGrob(ggpp, left = y.grob))
+
+png('Fig. 4.png', units="in", width=10, height=7, res=1000)
+grid::grid.draw(ggpp1)
 dev.off()
+
+
+
+
+########### relationship between detectability and list length
+
+
+load("dataforanalyses.RData")
+library(tidyverse)
+library(ggthemes)
+
+theme_set(theme_tufte())
+require(extrafont)
+
+spec = "Cotton Pygmy-Goose"
+
+temp = data %>%
+  filter(COMMON.NAME == spec) %>%
+  distinct(gridg3,month)
+data1 = temp %>% left_join(data)
+data1 = data1 %>%
+  group_by(region,no.sp) %>% mutate(lists = n_distinct(group.id)) %>% ungroup %>%
+  filter(COMMON.NAME == spec, region %in% c("Coast","Plains","WGhats")) %>%
+  group_by(region,no.sp) %>% summarize(perc = n()/max(lists))
+
+
+ggp = ggplot(data1, aes(x=no.sp, y = perc)) + 
+  ggtitle(spec) +
+  facet_wrap(. ~ region, scale="free_y", ncol = 3) +
+  #geom_abline(intercept = 0, slope = 1, col = "blue") + 
+  geom_point() +
+  xlab("list length (number of species)") +
+  ylab("probability of detection")
+
+ggp1 = ggp +
+  theme(axis.title.x = element_text(size = 14), axis.text.x = element_text(size = 8),
+        axis.title.y = element_text(size = 14, angle = 90), axis.text.y = element_text(size = 8)) +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = 'bold')) +
+  theme(text=element_text(family="Gill Sans MT", face = 'bold')) +
+  theme(strip.text.x = element_text(size = 10, colour = "black", face = 'italic')) +
+  scale_x_continuous(limits = c(0,100)) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+        ##panel.border = theme_blank(),
+        ##panel.background = theme_blank()
+  )
+
+name = paste(spec,".png",sep="")
+
+png(name, units="in", width=10, height=7, res=1000)
+grid::grid.draw(ggp1)
+dev.off()
+
+
+
+
+########### tightness of relationship between detectability and effort
+
+
+load("data.RData")
+library(tidyverse)
+library(ggthemes)
+library(cowplot)
+
+theme_set(theme_tufte())
+require(extrafont)
+
+spec = "Jungle Babbler"
+
+temp = data %>%
+  filter(COMMON.NAME == spec) %>%
+  distinct(gridg3,month)
+data1 = temp %>% left_join(data)
+
+data1$DURATION.MINUTES = data1$DURATION.MINUTES/60
+
+data1$dur = ceiling(data1$DURATION.MINUTES*10)/10
+
+data1$dis = ceiling(data1$EFFORT.DISTANCE.KM*5)/5
+
+
+# lla
+
+datal = data1 %>%
+  group_by(no.sp) %>% mutate(lists = n_distinct(group.id)) %>% ungroup %>%
+  filter(COMMON.NAME == spec) %>%
+  group_by(no.sp) %>% summarize(perc = n()/max(lists))
+names(datal)[1] = "effort"
+datal$type = "List Length"
+
+datal = datal %>% filter(effort <= 100)
+
+# dur
+
+datar = data1 %>%
+  group_by(dur) %>% mutate(lists = n_distinct(group.id)) %>% ungroup %>%
+  filter(COMMON.NAME == spec) %>%
+  group_by(dur) %>% summarize(perc = n()/max(lists))
+names(datar)[1] = "effort"
+datar$type = "Duration (hours)"
+
+datar = datar %>% filter(effort <= 10)
+
+# distance
+
+datad = data1 %>%
+  group_by(dis) %>% mutate(lists = n_distinct(group.id)) %>% ungroup %>%
+  filter(COMMON.NAME == spec) %>%
+  group_by(dis) %>% summarize(perc = n()/max(lists))
+names(datad)[1] = "effort"
+datad$type = "Distance (kms)"
+
+datad = datad %>% filter(effort <= 20)
+
+datat = rbind(datal,datar,datad)
+
+datat$type = factor(datat$type, levels = c("List Length","Duration (hours)","Distance (kms)"))
+
+ggp = ggplot(datat, aes(x=effort, y = perc)) + 
+  facet_wrap(. ~ type, scale="free", nrow = 3, strip.position="right") +
+  #geom_abline(intercept = 0, slope = 1, col = "blue") + 
+  geom_point() +
+  xlab("effort") +
+  ylab("probability of detection")
+
+ggp1 = ggp +
+  ggtitle("Jungle Babbler") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_text(size = 8),
+        axis.title.y = element_blank(), axis.text.y = element_text(size = 8)) +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = 'bold')) +
+  theme(text=element_text(family="Gill Sans MT", face = 'bold')) +
+  theme(strip.text.y = element_text(size = 14, colour = "white", face = 'italic')) +
+  #scale_x_continuous(limits = c(0,100)) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+        ##panel.border = theme_blank(),
+        ##panel.background = theme_blank()
+  )
+
+
+
+
+spec = "Black-winged Kite"
+
+temp = data %>%
+  filter(COMMON.NAME == spec) %>%
+  distinct(gridg3,month)
+data1 = temp %>% left_join(data)
+
+data1$DURATION.MINUTES = data1$DURATION.MINUTES/60
+
+data1$dur = ceiling(data1$DURATION.MINUTES*10)/10
+
+data1$dis = ceiling(data1$EFFORT.DISTANCE.KM*10)/10
+
+
+# lla
+
+datal = data1 %>%
+  group_by(no.sp) %>% mutate(lists = n_distinct(group.id)) %>% ungroup %>%
+  filter(COMMON.NAME == spec) %>%
+  group_by(no.sp) %>% summarize(perc = n()/max(lists))
+names(datal)[1] = "effort"
+datal$type = "list length"
+
+datal = datal %>% filter(effort <= 100)
+
+# dur
+
+datar = data1 %>%
+  group_by(dur) %>% mutate(lists = n_distinct(group.id)) %>% ungroup %>%
+  filter(COMMON.NAME == spec) %>%
+  group_by(dur) %>% summarize(perc = n()/max(lists))
+names(datar)[1] = "effort"
+datar$type = "duration (hours)"
+
+datar = datar %>% filter(effort <= 10)
+
+# distance
+
+datad = data1 %>%
+  group_by(dis) %>% mutate(lists = n_distinct(group.id)) %>% ungroup %>%
+  filter(COMMON.NAME == spec) %>%
+  group_by(dis) %>% summarize(perc = n()/max(lists))
+names(datad)[1] = "effort"
+datad$type = "distance (kms)"
+
+datad = datad %>% filter(effort <= 20)
+
+datat = rbind(datal,datar,datad)
+
+datat$type = factor(datat$type, levels = c("list length","duration (hours)","distance (kms)"))
+
+ggp = ggplot(datat, aes(x=effort, y = perc)) + 
+  facet_wrap(. ~ type, scale="free", nrow = 3, strip.position="right") +
+  #geom_abline(intercept = 0, slope = 1, col = "blue") + 
+  geom_point() +
+  xlab("effort") +
+  ylab("probability of detection")
+
+ggp2 = ggp +
+  ggtitle("Black-winged Kite") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_text(size = 8),
+        axis.title.y = element_blank(), axis.text.y = element_text(size = 8)) +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = 'bold')) +
+  theme(text=element_text(family="Gill Sans MT", face = 'bold')) +
+  theme(strip.text.y = element_text(size = 14, colour = "black", face = 'italic')) +
+  #scale_x_continuous(limits = c(0,100)) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+        ##panel.border = theme_blank(),
+        ##panel.background = theme_blank()
+  )
+
+ggpp = plot_grid(ggp1,ggp2,nrow=1,ncol=2,rel_widths = c(1/2, 1/2))
+
+require(grid)
+require(gridExtra)
+
+x.grob = textGrob("effort", gp = gpar(fontface = "bold", fontsize = 16,
+                                      fontfamily = "Gill Sans MT"))
+
+y.grob = textGrob("probability of detection", gp = gpar(fontface = "bold", fontsize = 16,
+                                                        fontfamily = "Gill Sans MT"), rot = 90)
+
+ggpp1 = grid.arrange(arrangeGrob(ggpp, bottom = x.grob, left = y.grob))
+
+png('Fig. 5.png', units="in", width=10, height=7, res=1000)
+grid::grid.draw(ggpp1)
+dev.off()
+
+
+
+
+#################################
+
+# median list length over time
+
+load("dataforanalyses.RData")
+llaovertime = data %>%
+  group_by(group.id) %>% slice(1) %>% ungroup %>%
+  group_by(timegroups,gridg1) %>% summarize(med = median(no.sp)) %>% ungroup %>%
+  group_by(timegroups) %>% summarize(med = round(mean(med)))
+
+#llaovertime$timegroups = factor(llaovertime$timegroups, levels = c("before 2000","2000-2006","2007-2010",
+#                                                                   "2011-2012","2013","2014","2015","2016","2017","2018"))
+
+

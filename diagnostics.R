@@ -779,3 +779,61 @@ for (i in (round(length(comp[comp$freq != 0,]$freq)/12)+1):length(specieslist))
 }
 
 rm(list=setdiff(ls(envir = .GlobalEnv), c("comp")), pos = ".GlobalEnv")
+
+
+
+
+
+############### Check for site bias
+
+library(tidyverse)
+load("data.RData")
+
+
+locs = data %>%
+  filter(!is.na(gridg1)) %>%
+  group_by(gridg1,LOCALITY.ID) %>% summarize(lists = n_distinct(group.id))
+
+locs1 = data %>%
+  filter(!is.na(gridg1)) %>%
+  group_by(gridg1) %>% summarize(lists = n_distinct(LOCALITY.ID))
+
+singleloc = locs1 %>% filter(lists <= 1)
+locs2 = locs %>% filter(!gridg1 %in% singleloc$gridg1) %>%
+  group_by(gridg1) %>% summarize(var = sd(lists))
+
+numloc = locs1 %>% filter(lists <= 1)
+length(numloc$lists)/length(locs1$lists)
+
+x = c(locs2$var,rep(0,length(singleloc$lists)))
+
+length(x[x<=4])/length(locs1$lists)
+
+locs3 = locs %>% 
+  filter(lists <= 2) %>% 
+  group_by(gridg1) %>% summarize(ls = n_distinct(LOCALITY.ID)) %>% ungroup
+
+locs4 = left_join(locs1,locs3)
+locs4[is.na(locs4$ls),]$ls = 0
+locs4$perc = locs4$ls/locs4$lists
+
+y = locs4$perc
+
+length(y[y>=0.8])/length(y)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

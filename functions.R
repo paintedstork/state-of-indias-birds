@@ -3,7 +3,7 @@
 ## read and clean raw data and add important columns like group id, seaonality variables
 ## place raw txt file (India download) in working directory 
 
-readcleanrawdata = function(rawpath = "ebd_IN_relApr-2019.txt", KL = F, klpath = "kllists.csv")
+readcleanrawdata = function(rawpath = "ebd_IN_relMay-2019.txt", KL = F, klpath = "kllists.csv")
 {
   require(lubridate)
   require(tidyverse)
@@ -627,6 +627,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
   
   load(mappath)
   
+  filtercountry = fortify(indiamap)
   filterstate = fortify(statemap)
   
   if (states == "none")
@@ -647,7 +648,7 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
   
   
   plotindiamap = ggplot() +
-    geom_polygon(data = filterstate, aes(x=long, y=lat, group=group), colour = 'black', fill = "white")+  
+    geom_polygon(data = filtercountry, aes(x=long, y=lat, group=group), colour = 'black', fill = "white")+  
     scale_x_continuous(expand = c(0,0)) +
     scale_y_continuous(expand = c(0,0)) +
     theme_bw()+
@@ -1635,22 +1636,28 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
   
   l = length(sm$freq1)
   vals = c("#99CCFF","#6699CC","#336699","#003399")
+  #vals = c("#6699CC","#6699CC","#6699CC","#6699CC")
+
   
   data = data %>%
     filter(COMMON.NAME == taxonname) %>%
     group_by(LOCALITY.ID) %>% slice(1)
   
+  require(extrafont)
+  
   plot = plotindiamap +
     {if(smooth & resolution != "state" & resolution != "district" & !isTRUE(rich))stat_density2d(data = data1, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), h = h, n = 100, geom = "polygon")} +
+    #{if(smooth & resolution != "state" & resolution != "district" & !isTRUE(rich))stat_density2d(data = data1, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), fill = "#9380FF", h = h, n = 100, geom = "polygon")} +
     {if(smooth & resolution != "state" & resolution != "district" & rich)stat_density2d(data = datar, aes(x = LONGITUDE, y = LATITUDE, fill = stat(level)), h = h, n = 100, geom = "polygon")} +
     {if(!isTRUE(smooth) | resolution == "state" | resolution == "district")geom_polygon(data = plotdf, aes(x = long, y = lat, group = group, fill = freq1))} +
     {if(switch & showempty)geom_polygon(data = emptydf, aes(x = long, y = lat, group = group, col = cl), fill = "grey30")} +
     {if(resolution != "state" & resolution != "district")geom_polygon(data = mask, aes(x = long, y = lat, group = group), col = 'white', fill = 'white')}+
     #{if(resolution == "state" | resolution == "district")geom_path(data = filterdistrict, aes(x = long, y = lat, group = group), col = 'darkolivegreen', size = 0.5)}+
-    geom_path(data = filterstate, aes(x = long, y = lat, group = group), col = 'black', size = 1) +
-    {if(smooth & resolution != "state" & resolution != "district")scale_fill_gradient2(low = muted("blue"),
-                         high = "white", space = "Lab", na.value = "grey50", trans = 'reverse',
-                         breaks = breaks, labels = labels)} +
+    geom_path(data = filtercountry, aes(x = long, y = lat, group = group), col = 'black', size = 1) +
+    theme(text=element_text(family="Gill Sans MT")) +
+    #{if(smooth & resolution != "state" & resolution != "district")scale_fill_gradient2(low = muted("blue"),
+    #                     high = "white", space = "Lab", na.value = "grey50", trans = 'reverse',
+    #                     breaks = breaks, labels = labels)} +
     {if(!isTRUE(smooth) & l <= 2)scale_fill_manual(values = vals[1:l],
                                breaks = sm$freq1, labels = sm$freq1)} +
     {if(!isTRUE(smooth) & l == 3)scale_fill_manual(values = vals[1:l],
@@ -1660,11 +1667,11 @@ plotfreqmap = function(data, taxonname, resolution, level = "species", season = 
                                  paste(sm$min[3]," - ",sm$max[3]),paste(">",sm$min[4])))} +
     {if(switch)scale_colour_manual(values = cols)} +
     #theme(legend.justification=c(1,1), legend.position=c(0.99,0.99)) +
-    theme(legend.text = element_text(size = 12)) +
-    {if(!isTRUE(rich) | level != "species")ggtitle(taxonname)} +
-    {if(!isTRUE(rich) | level != "species")theme(plot.title = element_text(hjust = 0.5, vjust = 0.1, size = 20))} +
-    guides(fill = guide_legend(title = add, reverse = TRUE, override.aes = list(size=10)))
-    #theme(legend.position = "none")+
+    #{if(!isTRUE(rich) | level != "species")ggtitle(taxonname)} +
+    #{if(!isTRUE(rich) | level != "species")theme(plot.title = element_text(hjust = 0.5, vjust = 0.1, size = 20))} +
+    guides(fill = guide_legend(title = add, reverse = TRUE, override.aes = list(size=10))) +
+    theme(legend.position = "bottom", legend.title = element_text(size = 10), 
+          legend.text = element_text(size = 10))
     #ggtitle(endyear)
     #geom_point(data = datax, aes(x = LONGITUDE, y = LATITUDE), col = "red", alpha = 0.1)
   

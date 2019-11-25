@@ -36,7 +36,7 @@ readcleanrawdata = function(rawpath = "ebd_IN_relMay-2019.txt",
   # read data from certain columns only
   data = read.delim(rawpath, colClasses = nms, sep = "\t", header = T, quote = "", 
                     stringsAsFactors = F, na.strings = c(""," ",NA))
-  
+
   # read sensitive species data
   nms = nms[-47]
   sesp = read.csv(sensitivepath, colClasses = nms, stringsAsFactors = F)
@@ -1343,7 +1343,7 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
   limu = limu+5
   
   #liml = 0
-  #limu = 150
+  #limu = 125
   
   #liml = 1
   #limu = 149
@@ -1360,8 +1360,8 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
         #position = pd,
         size = 1.5) +
       #geom_line(aes(group = species),size = 1.5) +
-      geom_hline(yintercept = 200, linetype = "dotted", size = 0.5) +
-      geom_hline(yintercept = 150, linetype = "dotted", size = 0.5) +
+      #geom_hline(yintercept = 200, linetype = "dotted", size = 0.5) +
+      #geom_hline(yintercept = 150, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 125, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 100, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 75, linetype = "dotted", size = 0.5) +
@@ -1390,10 +1390,10 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
       scale_x_continuous(breaks = xbreaks,
                          #limits = c(1993,2018),
                          labels = lbreaks) +
-      scale_y_continuous(breaks = c(0,50,75,100,125,150,200), 
+      scale_y_continuous(breaks = c(0,50,75,100,125), 
                          #limits = c(liml,limu),
                          labels = c("-100%","-50%","-25%","0%",
-                                    "+25%","+50%","+100%")
+                                    "+25%")
       )
     #theme(legend.position = "none")
     

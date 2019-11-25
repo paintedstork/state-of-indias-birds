@@ -183,7 +183,7 @@ plotcompositetrends(trends, specieslist = specieslist, name = cgps[6],
                     g3 = list2, 
                     g4 = list3, 
                     n1 = gps[4],
-                    n2 = gps[1],
+                    n2 = "Ducks and Geese",
                     n3 = gps[2],
                     n4 = gps[3]
 )

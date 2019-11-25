@@ -87,20 +87,73 @@ for(i in c("trivial","null","nosp","nosptime","nb","nosptimenb"))
   print(end-start)
 }
 
-plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Pied Cuckoo", "g4",
-            level = "species", 
-            season = "year round",
-            smooth = T, 
-            rich = F, add = "unique lists", h = 1.2, cutoff = 5, baseyear = 1900, endyear = 2018, 
-            showempty = F, states = "none")
+source('~/GitHub/state-of-indias-birds/functions.R')
 
-plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Pied Cuckoo", "g3", 
+load("data.RData")
+data1 = data
+data1[data1$ST_NM == "Andhra Pradesh" & data1$DISTRICT == "Nizamabad" & !is.na(data1$ST_NM),]$ST_NM = "Telangana"
+unique(na.omit(data1[data1$ST_NM == "Telangana",]$DISTRICT))
+
+plotfreqmap(data1[data1$CATEGORY == "species" & !is.na(data1$group.id),], "Pied Cuckoo", "g2",
             level = "species", 
             season = "year round",
             smooth = F, 
-            rich = F, add = "frequency", h = 2, cutoff = 5, baseyear = 1900, endyear = 2018, 
+            rich = T, add = "species", h = 1.2, cutoff = 5, baseyear = 1900, endyear = 2018, 
+            showempty = F, states = "Andhra Pradesh")
+
+plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Purple Heron", "g3", 
+            level = "species", 
+            season = "year round",
+            smooth = T, 
+            rich = F, add = "frequency", h = 2.2, cutoff = 5, baseyear = 1900, endyear = 2018, 
             showempty = F, states = c("none"))
 
+load("data.RData")
+source('~/GitHub/state-of-indias-birds/functions.R')
+library(tidyverse)
+
+ggp1 = plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Curlew Sandpiper", "g3", 
+                   level = "species", 
+                   season = "year round",
+                   smooth = F, 
+                   rich = F, add = "frequency", h = 2.2, cutoff = 0, baseyear = 1900, endyear = 2018, 
+                   showempty = F, states = c("none"))
+
+
+temp = data %>% 
+  filter(COMMON.NAME == "Curlew Sandpiper")
+
+
+ggp2 = plotfreqmap(temp, "Curlew Sandpiper", "g3", 
+                   level = "species", 
+                   season = "year round",
+                   smooth = F, 
+                   rich = T, add = "unique lists", h = 2.2, cutoff = 0, baseyear = 1900, endyear = 2018, 
+                   showempty = F, states = c("none"))
+
+temp = data %>%
+  filter(COMMON.NAME == "Curlew Sandpiper") %>%
+  distinct(gridg3)
+data1 = temp %>% left_join(data)
+
+ggp3 = plotfreqmap(data1, "Curlew Sandpiper", "g3", 
+                   level = "species", 
+                   season = "year round",
+                   smooth = F, 
+                   rich = T, add = "unique lists", h = 2.2, cutoff = 0, baseyear = 1900, endyear = 2018, 
+                   showempty = F, states = c("none"))
+
+png("Curlew Sandpiper frequencies.png", units="in", width=10, height=7, res=1000)
+print(ggp1)
+dev.off()
+
+png("Curlew Sandpiper observations.png", units="in", width=10, height=7, res=1000)
+print(ggp2)
+dev.off()
+
+png("Curlew Sandpiper sampling.png", units="in", width=10, height=7, res=1000)
+print(ggp3)
+dev.off()
 
 
 #, states = c("Karnataka","Tamil Nadu","Kerala","Andhra Pradesh","Telangana")
