@@ -665,6 +665,12 @@ dataspeciesfilter = function(datapath = "data.RData",
     mutate(timegroups = ifelse(year == 2017, "2017", timegroups)) %>%
     mutate(timegroups = ifelse(year == 2018, "2018", timegroups))
   
+  data = data %>%
+    mutate(timegroups1 = as.character(year)) %>%
+    mutate(timegroups1 = ifelse(year <= 2006, "before 2006", timegroups1)) %>%
+    mutate(timegroups1 = ifelse(year > 2006 & year <= 2013, "2007-2013", timegroups1)) %>%
+    mutate(timegroups1 = ifelse(year > 2013, "2014-2018", timegroups1))
+  
   data = removevagrants(data)
 
   x3 = paste(nrow(data),"filter 1 observations")
@@ -689,7 +695,7 @@ dataspeciesfilter = function(datapath = "data.RData",
     group_by(timegroups) %>% summarize(lists = n_distinct(group.id), year = round(median(year)))
   
   data1 = data
-  data1 = data1 %>% select(-CATEGORY,-LOCALITY.ID,-ST_NM,-DISTRICT,-REVIEWED,-APPROVED,
+  data1 = data1 %>% select(-CATEGORY,-LOCALITY.ID,-DISTRICT,-REVIEWED,-APPROVED,
                            -LATITUDE,-LONGITUDE,-TIME.OBSERVATIONS.STARTED,-PROTOCOL.TYPE,
                            -DURATION.MINUTES,-EFFORT.DISTANCE.KM,-day,-cyear)
   
@@ -928,6 +934,7 @@ dataspeciesfilter = function(datapath = "data.RData",
      areag1, areag2, areag3, areag4, stats, restrictedspecieslist, pos = ".GlobalEnv")
 }
 
+
 ######################################################################################
 ################################################################
 
@@ -952,9 +959,12 @@ expandbyspecies = function(data, species)
   
   checklistinfo = data %>%
     distinct(gridg1,gridg2,gridg3,gridg4,
-             ALL.SPECIES.REPORTED,OBSERVER.ID,city,
+             ALL.SPECIES.REPORTED,OBSERVER.ID,
+             #city,
              #DURATION.MINUTES,EFFORT.DISTANCE.KM,
-             group.id,month,year,no.sp,timegroups,region)
+             group.id,month,year,no.sp,timegroups,
+             timegroups1,
+             region)
   
   checklistinfo = checklistinfo %>%
     filter(ALL.SPECIES.REPORTED == 1) %>%
@@ -1336,14 +1346,14 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
   maxci = temp$nmfreqbyspec + temp$nmsebyspec*1.96
   minci = temp$nmfreqbyspec - temp$nmsebyspec*1.96
   
-  liml = round(min(minci))
-  liml = liml-5
+  #liml = round(min(minci))
+  #liml = liml-5
 
-  limu = round(max(maxci))
-  limu = limu+5
+  #limu = round(max(maxci))
+  #limu = limu+5
   
-  #liml = 0
-  #limu = 125
+  liml = 0
+  limu = 270
   
   #liml = 1
   #limu = 149
@@ -1387,13 +1397,13 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
       scale_fill_manual(breaks = bks1, 
                         labels = lbs1,
                         values = cols1) +
-      scale_x_continuous(breaks = xbreaks,
+      scale_x_continuous(breaks = xbreaksl,
                          #limits = c(1993,2018),
-                         labels = lbreaks) +
+                         labels = lbreaksl) +
       scale_y_continuous(breaks = c(0,50,75,100,125), 
                          #limits = c(liml,limu),
-                         labels = c("-100%","-50%","-25%","0%",
-                                    "+25%")
+                         labels = c("-100%","-50%","-25%",
+                                    "0%","+25%")
       )
     #theme(legend.position = "none")
     
@@ -1447,8 +1457,8 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
     lbreaks1 = temp$timegroupsf[1:10]
     
     ggp1 = ggp +
-      theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
-            axis.title.y = element_blank(), 
+      theme(axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 12),
+            axis.title.y = element_text(angle = 90, size = 16), 
             axis.text.y = element_text(size = 14, colour = "#56697B", face = "italic"),
             axis.ticks.y = element_blank()) +
       theme(legend.title = element_blank(), legend.text = element_text(size = 12)) +
@@ -1459,7 +1469,7 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
       scale_fill_manual(breaks = bks1, 
                         labels = lbs1,
                         values = cols1) +
-      scale_x_continuous(breaks = xbreaks1, labels = lbreaks1) +
+      scale_x_continuous(breaks = xbreaksl, labels = lbreaksl) +
       scale_y_continuous(breaks = c(0,25,50,75,100,125), 
                          #limits = c(liml,limu),
                          labels = c("-100%","-75%","-50%","-25%","0%",
@@ -1488,32 +1498,11 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
       ) +
     theme(legend.position = "none")
     
-    ggpz = ggp +
-      theme(axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 12),
-            axis.title.y = element_text(angle = 90, size = 16), 
-            axis.text.y = element_text(size = 14, colour = "#56697B", face = "italic"),
-            axis.ticks.y = element_blank()) +
-      theme(legend.title = element_blank(), legend.text = element_text(size = 12)) +
-      theme(text=element_text(family="Gill Sans MT")) +
-      scale_colour_manual(breaks = bks1, 
-                          labels = lbs1,
-                          values = cols1) +
-      scale_fill_manual(breaks = bks1, 
-                        labels = lbs1,
-                        values = cols1) +
-      scale_x_continuous(breaks = xbreaksl, labels = lbreaksl) +
-      scale_y_continuous(breaks = c(0,25,50,75,100,125), 
-                         #limits = c(liml,limu),
-                         labels = c("-100%","-75%","-50%","-25%","0%",
-                                    "+25%")
-      ) +
-      theme(legend.position = "none")
-    
     p1 = ggp1
     require(cowplot)
     sepleg = get_legend(p1)
     
-    gg = list(ggpx,sepleg,ggpz)
+    gg = list(ggpx,sepleg,ggp1)
     return(gg)
   }
 }
@@ -1746,12 +1735,15 @@ plotcompositetrends = function(trends,specieslist,name="composite",g1=NA,g2=NA,g
   
   g = plot_grid(g1,g2,align = "v",nrow=2,ncol=1,rel_heights = c(7/8, 1/8))
   
+  gtemp = plot_grid(ggpz,sepleg1,align = "v",nrow=2,ncol=1,rel_heights = c(7/8, 1/8))
+  
   theme_set(theme_tufte())
   
   #n1 = paste(name,".tiff",sep="")
   n2 = paste(name,".png",sep="")
   n3 = paste(name,"_composite.svg",sep="")
   n4 = paste(name,"_speciestrends.svg",sep="")
+  ntemp = paste(name,"_no_bars.png",sep="")
 
   #tiff(n1, units="in", width=10, height=7, res=1000)
   #grid::grid.draw(g)
@@ -1759,6 +1751,10 @@ plotcompositetrends = function(trends,specieslist,name="composite",g1=NA,g2=NA,g
   
   png(n2, units="in", width=10, height=7, res=1000)
   grid::grid.draw(g)
+  dev.off()
+  
+  png(ntemp, units="in", width=10, height=7, res=1000)
+  grid::grid.draw(gtemp)
   dev.off()
   
   #png(n2, units="in", width=10, height=7.2, res=1000)
@@ -2587,3 +2583,185 @@ freqtrendsrestricted = function(data,species,specieslist,
   return(f1)
 }
 
+
+
+
+
+#######################################################################################
+
+freqtrendssparrow = function(data,species,specieslist,
+                      databins=c(1999,2012,2017),
+                      error=T,nsim = 1000)
+{
+  require(tidyverse)
+  require(lme4)
+  require(VGAM)
+  require(parallel)
+  
+  data$gridg1 = as.factor(data$gridg1)
+  data$gridg2 = as.factor(data$gridg2)
+  data$gridg3 = as.factor(data$gridg3)
+  data$gridg4 = as.factor(data$gridg4)
+  data$region = as.factor(data$region)
+  
+  specieslist = specieslist %>%
+    filter(COMMON.NAME == species)
+  
+  ## filters data based on whether the species has been selected for long-term trends (ht) 
+  ## or short-term trends (rt) 
+  
+  if (is.na(specieslist$ht) & !is.na(specieslist$rt))
+  {
+    g1 = data.frame(timegroups1 = unique(data$timegroups1))
+    g1$se = g1$freq = NA
+    g1$timegroups1 = factor(g1$timegroups1, levels = c("before 2006","2007-2013",
+                                                       "2014-2018"))
+    g1 = g1[order(g1$timegroups1),]
+    names(g1)[1] = "timegroupsf"
+    mp = data.frame(timegroupsf = c("before 2006","2007-2013",
+                                    "2014-2018"), 
+                    timegroups1 = as.numeric(databins))
+    g1 = left_join(g1,mp)
+    g1$species = species
+    g1 = g1 %>%
+      filter(timegroups1 < 2014)
+    
+    data = data %>%
+      filter(year >= 2014)
+  }
+  
+  if (is.na(specieslist$ht) & is.na(specieslist$rt))
+  {
+    f1 = data.frame(timegroups1 = unique(data$timegroups1))
+    f1$se = f1$freq = NA
+    f1$timegroups1 = factor(f1$timegroups1, levels = c("before 2006","2007-2013",
+                                                       "2014-2018"))
+    f1 = f1[order(f1$timegroups1),]
+    names(f1)[1] = "timegroupsf"
+    mp = data.frame(timegroupsf = c("before 2006","2007-2013",
+                                    "2014-2018"), 
+                    timegroups1 = as.numeric(databins))
+    f1 = left_join(f1,mp)
+    f1$species = species
+    f1 = f1 %>% filter(!is.na(f1$timegroups1))
+    return(f1)
+  }
+  
+  ## errors for wrong parameter values
+  
+  ## considers only complete lists
+  
+  data = data %>%
+    filter(ALL.SPECIES.REPORTED == 1)
+  
+  data$month = as.factor(data$month)
+  
+  if (!species %in% unique(data$COMMON.NAME))
+    return(paste(species,"is not a valid species name for the region selected"))
+  
+  
+  data$timegroups1 = as.factor(data$timegroups1)
+  data$gridg = data$gridg3
+  temp = data %>%
+    filter(COMMON.NAME == species) %>%
+    distinct(gridg3,month)
+  data = temp %>% left_join(data)
+  
+  ## calculate a median list length to use to predict
+  
+  datay = data %>%
+    group_by(gridg3,gridg1,group.id) %>% slice(1) %>% ungroup %>%
+    group_by(gridg3,gridg1) %>% summarize(medianlla = median(no.sp)) %>%
+    group_by(gridg3) %>% summarize(medianlla = mean(medianlla)) %>%
+    summarize(medianlla = round(mean(medianlla)))
+  
+  medianlla = datay$medianlla
+  
+  ## expand dataframe to include absences as well
+  
+  ed = expandbyspecies(data,species)
+  tm = unique(data$timegroups1)
+  #rm(data, pos = ".GlobalEnv")
+  
+  ## the model
+  
+  m1 = glmer(OBSERVATION.COUNT ~ month + month:log(no.sp) + timegroups1 + (1|gridg3/gridg1), data = ed, 
+             family=binomial(link = 'cloglog'), nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  
+  ## prepare a new data file to predict
+  
+  f = data.frame(unique(tm))
+  f = do.call("rbind", replicate(length(unique(ed$month)),f,simplify=F))
+  names(f) = "timegroups1"
+  f$month = rep(unique(ed$month), each = length(f$timegroups1)/length(unique(ed$month)))
+  ltemp = data.frame(timegroups1 = f$timegroups1,
+                     no.sp = medianlla, month = f$month)
+  
+  f1 = data.frame(timegroups1 = tm)
+  
+  f2 = data.frame(freq = numeric(length(ltemp$no.sp)))
+  f2$se = numeric(length(ltemp$no.sp))
+  f2$timegroups1 = ltemp$timegroups1
+  
+  ## bootstrap to get errors
+  
+  if (error)
+  {
+    predFun = function(m1) {
+      predict(m1,ltemp, re.form = NA, allow.new.levels=TRUE)
+    }
+    
+    cr = max(1, detectCores() - 4)
+    cl = makeCluster(cr)
+    clusterEvalQ(cl, library(lme4))
+    
+    pred = bootMer(m1, nsim = nsim, FUN = predFun, parallel = "snow", seed = 1000,
+                   use.u = FALSE, type = "parametric", ncpus = cr, cl = cl)
+    
+    stopCluster(cl)
+    
+    for (i in 1:length(ltemp$no.sp))
+    {
+      f2$freq[i] = median(na.omit(pred$t[,i]))
+      f2$se[i] = sd(na.omit(pred$t[,i]))
+    }
+    
+    f2$freqt = cloglog(f2$freq,inverse = T)
+    f2$cl = cloglog((f2$freq-f2$se),inverse = T)
+    f2$set = f2$freqt-f2$cl
+    
+    fx = f2 %>%
+      filter(!is.na(freqt) & !is.na(set)) %>%
+      group_by(timegroups1) %>% summarize(freq = mean(freqt), se = sqrt(sum(set^2)/n())) 
+    
+    f1 = left_join(f1,fx)
+  }
+  
+  if(!isTRUE(error))
+  {
+    f2$freq = predict(m1, newdata = ltemp,
+                      type="response", re.form = NA)
+    f1 = f2 %>%
+      filter(!is.na(freq)) %>%
+      group_by(timegroups1) %>% summarize(freq = mean(freq))
+    f1$se = NA
+  }
+  
+  
+  f1$timegroups1 = factor(f1$timegroups1, levels = c("before 2006","2007-2013",
+                                                     "2014-2018"))
+  f1 = f1[order(f1$timegroups1),]
+  names(f1)[1] = "timegroupsf"
+  mp = data.frame(timegroupsf = c("before 2006","2007-2013",
+                                  "2014-2018"), 
+                  timegroups = as.numeric(databins))
+  f1 = left_join(f1,mp)
+  f1$species = species
+  
+  if (is.na(specieslist$ht) & !is.na(specieslist$rt))
+  {
+    f1 = rbind(g1,f1)
+  }
+  
+  return(f1)
+}

@@ -81,11 +81,15 @@ occ = SoIBoccupancy(data,species,areag=areag1)
 
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
 load("dataforanalyses.RData")
-species = "Indian Peafowl"
+species = "House Sparrow"
 start = Sys.time()
-tre <- freqtrends(data,species,specieslist,error=T,nsim=3)
+trends = freqtrendssparrow(data,species,specieslist,error=T,nsim=300)
 end = Sys.time()
 print(end-start)
+
+save(trends,file = "SparrowTrends.RData")
+
+tre = freqtrends(data,species,specieslist,error=T,nsim=2)
 
 tre = freqtrendsrestricted(data,species,restrictedspecieslist)
 

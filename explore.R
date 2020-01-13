@@ -31,6 +31,17 @@ meadianlla = dlist$medianlla
 
 write.csv(appendix1, "appendix1.csv")
 
+#################################
+
+load("AllTrends.RData")
+source('~/GitHub/state-of-indias-birds/SoIB functions.R')
+load("specieslists.RData")
+library(tidyverse)
+
+plottrends(trends,c("Black-rumped Flameback"))
+
+#################################
+
 
 
 data1 = data %>% filter(month %in% c(10,11,12,1,2,3))
@@ -99,20 +110,20 @@ plotfreqmap(data1[data1$CATEGORY == "species" & !is.na(data1$group.id),], "Pied 
             season = "year round",
             smooth = F, 
             rich = T, add = "species", h = 1.2, cutoff = 5, baseyear = 1900, endyear = 2018, 
-            showempty = F, states = "Andhra Pradesh")
+            showempty = F, states = "Tamil Nadu")
 
 plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Purple Heron", "g3", 
             level = "species", 
             season = "year round",
-            smooth = T, 
-            rich = F, add = "frequency", h = 2.2, cutoff = 5, baseyear = 1900, endyear = 2018, 
-            showempty = F, states = c("none"))
+            smooth = F, 
+            rich = T, add = "unique locations", h = 2.2, cutoff = 5, baseyear = 1900, endyear = 2018, 
+            showempty = F, states = "Tamil Nadu")
 
 load("data.RData")
 source('~/GitHub/state-of-indias-birds/functions.R')
 library(tidyverse)
 
-ggp1 = plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Curlew Sandpiper", "g3", 
+ggp1 = plotfreqmap(data[data$CATEGORY == "species" & !is.na(data$group.id),], "Rufous Babbler", "g1", 
                    level = "species", 
                    season = "year round",
                    smooth = F, 
@@ -155,6 +166,9 @@ png("Curlew Sandpiper sampling.png", units="in", width=10, height=7, res=1000)
 print(ggp3)
 dev.off()
 
+png("Rufous Babbler frequencies.png", units="in", width=10, height=7, res=1000)
+print(ggp1)
+dev.off()
 
 #, states = c("Karnataka","Tamil Nadu","Kerala","Andhra Pradesh","Telangana")
 

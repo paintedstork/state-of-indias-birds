@@ -211,6 +211,7 @@ list = c("Egyptian Vulture","Eurasian Griffon","Red-headed Vulture",
 vuls = plottrends(trends, list, leg = F)
 n1 = "vultures.svg"
 n2 = "vulturelegends.png"
+n3 = "vultures.png"
 
 print(vuls[[1]])
 ggsave(file=n1, units="in", width=11, height=7)
@@ -219,13 +220,19 @@ png(n2, units="in", width=10, height=2, res=1000)
 grid::grid.draw(vuls[[2]])
 dev.off()
 
+png(n3, units="in", width=10, height=7, res=1000)
+grid::grid.draw(vuls[[3]])
+dev.off()
+
+
+
 
 
 
 ########################################################
 ## House Sparrow
 
-load("AllTrends.RData")
+load("SparrowTrends.RData")
 load("specieslists.RData")
 load("metros.RData")
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
@@ -243,36 +250,33 @@ kol = sparrow %>% filter(species == "Kolkata")
 del = sparrow %>% filter(species == "Delhi")
 mum = sparrow %>% filter(species == "Mumbai")
 hyd = sparrow %>% filter(species == "Hyderabad")
-spar = trends %>% filter(species == "House Sparrow")
+spar = trends
 
 cityplot = rbind(bng,kol,del,mum)
-cities = composite(cityplot, "Big Cities")
-cities$timegroups = c(2006,2013,2018)
+cities = composite(cityplot, "Metropolitan Cities")
+cities$timegroups = c(1999,2012,2017)
 
 spar1 = cities
 spar1$species = "House Sparrow"
 names(spar1)[2:3] = c("freq","se")
-spar1$freq[1] = mean(spar$freq[1:2])
-spar1$se[1] = erroradd(spar$se[1:2])/sqrt(2)
-spar1$freq[2] = mean(spar$freq[3:5])
-spar1$se[2] = erroradd(spar$se[3:5])/sqrt(2)
-spar1$freq[3] = mean(spar$freq[6:10])
-spar1$se[3] = erroradd(spar$se[6:10])/sqrt(2)
+spar1$freq = spar$freq
+spar1$se = spar$se
 
 
-spars = composite(spar1, "India")
+spars = composite(spar1, "Across India")
 
 spartoplot = rbind(cities,spars)
-n = unique(spartoplot$species)
+
+spartoplot$species = factor(spartoplot$species, levels = c("Across India","Metropolitan Cities"))
+n = sort(unique(spartoplot$species))
 
 require(ggthemes)
 
 theme_set(theme_tufte())
 
-recenttrends = spartoplot %>%
-  filter(species %in% unique(spartoplot$species))
+recenttrends = spartoplot
 
-cols = c("#E49B36", "#869B27", "#A13E2B", "#78CAE0", "#B69AC9", "#EA5599", "#31954E", "#493F3D",
+cols = c("#869B27", "#E49B36", "#A13E2B", "#78CAE0", "#B69AC9", "#EA5599", "#31954E", "#493F3D",
          "#CC6666", "#9999CC", "#000000", "#66CC99")
 
 ns = length(n)
@@ -298,6 +302,8 @@ ggp = ggplot(temp, aes(x=timegroups, y=nmfreqbyspec, colour=species)) +
   geom_hline(yintercept = 100, linetype = "dotted", size = 0.5) +
   geom_hline(yintercept = 75, linetype = "dotted", size = 0.5) +
   geom_hline(yintercept = 50, linetype = "dotted", size = 0.5) +
+  geom_hline(yintercept = 25, linetype = "dotted", size = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dotted", size = 0.5) +
   geom_ribbon(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
                   ymax = (nmfreqbyspec + nmsebyspec*1.96), fill = species), colour = NA, alpha = 0.1) +
   #geom_errorbar(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
@@ -308,8 +314,8 @@ ggp = ggplot(temp, aes(x=timegroups, y=nmfreqbyspec, colour=species)) +
 xbreaks1 = unique(temp$timegroups)
 
 ggp1 = ggp +
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
-        axis.title.y = element_blank(), 
+  theme(axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 12),
+        axis.title.y = element_text(angle = 90, size = 16), 
         axis.text.y = element_text(size = 14, colour = "#56697B", face = "italic"),
         axis.ticks.y = element_blank()) +
   theme(legend.title = element_blank(), legend.text = element_text(size = 12)) +
@@ -321,9 +327,9 @@ ggp1 = ggp +
                     labels = lbs1,
                     values = cols1) +
   scale_x_continuous(breaks = xbreaks1) +
-  scale_y_continuous(breaks = c(50,75,100,125), 
+  scale_y_continuous(breaks = c(0,25,50,75,100,125), 
                      #limits = c(liml,limu),
-                     labels = c("-50%","-25%","0%",
+                     labels = c("-100%","-75%","-50%","-25%","0%",
                                 "+25%")
   ) +
   theme(legend.position = "bottom")
@@ -342,9 +348,9 @@ ggpx = ggp +
                     labels = lbs1,
                     values = cols1) +
   scale_x_continuous(breaks = xbreaks1) +
-  scale_y_continuous(breaks = c(50,75,100,125), 
+  scale_y_continuous(breaks = c(0,25,50,75,100,125), 
                      #limits = c(liml,limu),
-                     labels = c("-50%","-25%","0%",
+                     labels = c("-100%","-75%","-50%","-25%","0%",
                                 "+25%")
   ) +
   theme(legend.position = "none")
@@ -360,11 +366,17 @@ n1 = "sparrow.svg"
 print(gg[[1]])
 ggsave(file=n1, units="in", width=11, height=7)
 
-#n2 = "sparrow.png"
+n2 = "sparrowlegends.png"
 
-#png(n2, units="in", width=10, height=8, res=1000)
-#grid::grid.draw(gg[[1]])
-#dev.off()
+png(n2, units="in", width=10, height=2, res=1000)
+grid::grid.draw(gg[[2]])
+dev.off()
+
+n3 = "sparrow.png"
+
+png(n3, units="in", width=10, height=7, res=1000)
+ggp1
+dev.off()
 
 
 
@@ -397,6 +409,11 @@ lbs1 = n
 recenttrends$species = factor(recenttrends$species, levels = n)
 
 temp = recenttrends
+xbreaks = temp$timegroups[c(1:4,6,8,10)]
+lbreaks = temp$timegroupsf[c(1:4,6,8,10)]
+
+xbreaksl = temp$timegroups[c(1:3,6,8,10)]
+lbreaksl = temp$timegroupsf[c(1:3,6,8,10)]
 
 require(extrafont)
 
@@ -416,6 +433,26 @@ ggp = ggplot(temp, aes(x=timegroups, y=nmfreqbyspec, colour=species)) +
   ylab("change in frequency of reporting")
 
 xbreaks1 = unique(temp$timegroups)
+
+ggp1 = ggp +
+  theme(axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 12),
+        axis.title.y = element_text(angle = 90, size = 16), 
+        axis.text.y = element_text(size = 14, colour = "#56697B", face = "italic"),
+        axis.ticks.y = element_blank()) +
+  theme(legend.title = element_blank(), legend.text = element_text(size = 12)) +
+  theme(text=element_text(family="Gill Sans MT")) +
+  scale_colour_manual(breaks = bks1, 
+                      labels = lbs1,
+                      values = cols1) +
+  scale_fill_manual(breaks = bks1, 
+                    labels = lbs1,
+                    values = cols1) +
+  scale_x_continuous(breaks = xbreaksl, labels = lbreaksl) +
+  scale_y_continuous(breaks = c(100,150,200), 
+                     #limits = c(liml,limu),
+                     labels = c("0%","+50%","+100%")
+  ) +
+  theme(legend.position = "none")
 
 ggpx = ggp +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
@@ -441,3 +478,110 @@ n1 = "peafowl.svg"
 
 print(ggpx)
 ggsave(file=n1, units="in", width=11, height=7)
+
+n2 = "peafowl.png"
+png(n2, units="in", width=10, height=7, res=1000)
+ggp1
+dev.off()
+
+
+
+###################################################################
+## State summaries
+
+require(tidyverse)
+load("data.RData")
+datax = data
+datax = datax %>% filter(!is.na(ST_NM))
+datax$ST_NM = as.character(datax$ST_NM)
+datax = datax %>%
+  mutate(ST_NM = replace(ST_NM, ST_NM == "Arunanchal Pradesh", "Arunachal Pradesh"))
+load("dataforanalyses.RData")
+source('~/GitHub/state-of-indias-birds/SoIB functions.R')
+data = data %>% filter(year>2013, !is.na(ST_NM))
+data$ST_NM = as.character(data$ST_NM)
+data = data %>%
+  mutate(ST_NM = replace(ST_NM, ST_NM == "Arunanchal Pradesh", "Arunachal Pradesh"))
+
+
+map = read.csv("Map to Other Lists - map.csv")
+map = map %>%
+  filter(!eBird.English.Name.2018 %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
+                                         "Taiga Flycatcher","Chestnut Munia","Desert Whitethroat",
+                                         "Hume's Whitethroat","Changeable Hawk-Eagle")) %>%
+  select(eBird.English.Name.2018,eBird.English.Name.2019)
+
+lists = read.csv("highconcern.csv")
+lists = left_join(lists,map,by = c("eBird.English.Name" = "eBird.English.Name.2019"))
+lists = lists %>% select(-eBird.English.Name) %>% mutate(species = eBird.English.Name.2018) %>% 
+  select(-eBird.English.Name.2018) %>% filter(!is.na(species))
+
+temp = data %>%
+  distinct(ST_NM,COMMON.NAME,gridg1) %>%
+  group_by(COMMON.NAME,ST_NM) %>% summarize(totalgrids = n_distinct(gridg1)) %>% ungroup %>%
+  group_by(COMMON.NAME) %>% summarize(totalgrids = sum(totalgrids))
+
+data1 = left_join(data,temp)
+data1 = data1 %>% distinct(ST_NM,COMMON.NAME,gridg1,totalgrids)
+
+tempx = datax %>%
+  distinct(ST_NM,COMMON.NAME,gridg1) %>%
+  group_by(COMMON.NAME,ST_NM) %>% summarize(totalgrids = n_distinct(gridg1)) %>% ungroup %>%
+  filter(!is.na(totalgrids)) %>%
+  group_by(COMMON.NAME) %>% summarize(totalgrids = sum(totalgrids))
+
+datax = left_join(datax,tempx)
+datax = datax %>% distinct(ST_NM,COMMON.NAME,gridg1,totalgrids)
+
+t1 = data1 %>%
+  group_by(ST_NM,COMMON.NAME) %>% summarize(perc = 100*n_distinct(gridg1)/max(totalgrids)) %>% ungroup %>%
+  filter(COMMON.NAME %in% lists$species)
+
+spec0 = setdiff(lists$species,t1$COMMON.NAME)
+
+tx = datax %>%
+  group_by(ST_NM,COMMON.NAME) %>% summarize(perc = 100*n_distinct(gridg1)/max(totalgrids)) %>% ungroup %>%
+  filter(COMMON.NAME %in% spec0) %>%
+  group_by(COMMON.NAME) %>% arrange(desc(perc), .by_group = T) %>% ungroup %>%
+  group_by(COMMON.NAME) %>% slice(1) %>% ungroup
+
+t2 = t1 %>%
+  group_by(ST_NM) %>% arrange(desc(perc), .by_group = T) %>% ungroup %>%
+  group_by(ST_NM) %>% slice(1:5) %>% ungroup
+
+## subset species found in 3 or less states
+
+t3 = data1 %>%
+  filter(COMMON.NAME %in% lists$species) %>%
+  group_by(COMMON.NAME) %>% summarize(st = n_distinct(ST_NM)) %>% ungroup %>%
+  filter(st <= 2 | (COMMON.NAME %in% lists$species[lists$IUCN == "Critically Endangered"] & 
+                      !COMMON.NAME %in% t2$COMMON.NAME))
+
+t2 = t2 %>%
+  filter(!COMMON.NAME %in% t3$COMMON.NAME)
+
+t4 = t1 %>%
+  filter(COMMON.NAME %in% t3$COMMON.NAME)
+
+tx$perc = 0
+## added Cachar Bulbul to the Tripura list as it had one less
+
+ta = data.frame(ST_NM = "Tripura", COMMON.NAME = "Cachar Bulbul", perc = 0)
+
+t = rbind(t2,t4,tx,ta)
+
+
+# include Critically Endangered species
+# include species with 0 range in the last 5 years based on overall range
+
+t = t %>%
+  group_by(ST_NM) %>% arrange(desc(perc), .by_group = T) %>% ungroup
+
+names(t) = c("state","eBird.English.Name","percentage")
+
+map = read.csv("Map to Other Lists - map.csv")
+tf = left_join(t,map,by = c("eBird.English.Name" = "eBird.English.Name.2018"))
+tf = tf %>% select(state,eBird.English.Name.2019,percentage)
+
+write.csv(t,"statesummaries.csv",row.names = F)
+
