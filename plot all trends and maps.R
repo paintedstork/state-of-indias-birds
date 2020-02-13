@@ -11,10 +11,10 @@ map = map %>%
   filter(!eBird.English.Name.2018 %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
                                          "Taiga Flycatcher","Chestnut Munia","Desert Whitethroat",
                                          "Hume's Whitethroat","Changeable Hawk-Eagle")) %>%
-  select(eBird.English.Name.2018,eBird.English.Name.2019)
+  select(eBird.English.Name.2018,India.Checklist.Name)
 
 lists = read.csv("stateofindiasbirds.csv")
-lists = left_join(lists,map,by = c("eBird.English.Name" = "eBird.English.Name.2019"))
+lists = left_join(lists,map,by = c("eBird.English.Name" = "India.Checklist.Name"))
 lists = lists %>% select(-eBird.English.Name) %>% mutate(species = eBird.English.Name.2018) %>% 
   select(-eBird.English.Name.2018) %>% filter(!is.na(species))
 
@@ -57,10 +57,10 @@ map = map %>%
   filter(!eBird.English.Name.2018 %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
                                          "Taiga Flycatcher","Chestnut Munia","Desert Whitethroat",
                                          "Hume's Whitethroat","Changeable Hawk-Eagle")) %>%
-  select(eBird.English.Name.2018,eBird.English.Name.2019)
+  select(eBird.English.Name.2018,India.Checklist.Name)
 
 lists = read.csv("stateofindiasbirds.csv")
-lists = left_join(lists,map,by = c("eBird.English.Name" = "eBird.English.Name.2019"))
+lists = left_join(lists,map,by = c("eBird.English.Name" = "India.Checklist.Name"))
 lists = lists %>% select(-eBird.English.Name) %>% mutate(species = eBird.English.Name.2018) %>% 
   select(-eBird.English.Name.2018) %>% filter(!is.na(species))
 

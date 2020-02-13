@@ -695,7 +695,7 @@ dataspeciesfilter = function(datapath = "data.RData",
     group_by(timegroups) %>% summarize(lists = n_distinct(group.id), year = round(median(year)))
   
   data1 = data
-  data1 = data1 %>% select(-CATEGORY,-LOCALITY.ID,-DISTRICT,-REVIEWED,-APPROVED,
+  data1 = data1 %>% select(-CATEGORY,-LOCALITY.ID,-REVIEWED,-APPROVED,
                            -LATITUDE,-LONGITUDE,-TIME.OBSERVATIONS.STARTED,-PROTOCOL.TYPE,
                            -DURATION.MINUTES,-EFFORT.DISTANCE.KM,-day,-cyear)
   
@@ -867,58 +867,35 @@ dataspeciesfilter = function(datapath = "data.RData",
   dataf[is.na(dataf)] = ""
   dataf[dataf == 1] = "X"
   
-  species2018 = read.csv("eBird-Clements-v2018-integrated-checklist-August-2018.csv")
-  species2018 = species2018 %>%
-    filter(category == "species") %>%
-    distinct(English.name,scientific.name) %>%
-    filter(English.name %in% dataf$COMMON.NAME)
-  names(species2018)[1] = "name2018"
+  dataf$'Long-term Analysis'[dataf$'COMMON.NAME' %in% check1] = "X"
+  dataf$'Current change Analysis'[dataf$'COMMON.NAME' %in% check2] = "X"
   
-  species2019 = read.csv("eBird-Clements-v2019-integrated-checklist-August-2019.csv")
-  species2019 = species2019 %>%
-    filter(category == "species") %>%
-    distinct(English.name,scientific.name)
+  map = read.csv("Map to Other Lists - map.csv")
   
-  change = species2019 %>% filter(English.name %in% c("Spoon-billed Sandpiper","Ludlow's Fulvetta",
-                                                      "Slaty-backed Flycatcher","Brown Rock Chat",
-                                                      "Yellow-bellied Flowerpecker",
-                                                      "Yellow-throated Sparrow"))
-  change$name2018 = c("Spoon-billed Sandpiper","Ludlow's Fulvetta",
-                      "Slaty-backed Flycatcher","Indian Chat",
-                      "Yellow-bellied Flowerpecker",
-                      "Chestnut-shouldered Petronia")
+  dataf = dataf %>% filter(!COMMON.NAME %in% c("Desert Whitethroat","Hume's Whitethroat","Crested Hawk-Eagle"))
   
-  species2018$scientific.name = as.character(species2018$scientific.name)
-  species2018[species2018$name2018 %in% change$name2018,]$scientific.name = 
-    as.character(change$scientific.name)
+  dataf = left_join(dataf,map,by = c("COMMON.NAME" = "eBird.English.Name.2018"))
+  dataf = dataf %>% select("India.Checklist.Name","India.Scientific.Name","Long-term Analysis","Current change Analysis",
+                           "Subcontinental Endemics",
+                           "Himalayan/NE Near-Endemics","Significant - Indian Context",
+                           "Not Relevant - Indian Context","Diurnal","Selected - SOIB")
   
-  dataf$SCIENTIFIC.NAME = as.character(dataf$SCIENTIFIC.NAME)
-  dataf[dataf$COMMON.NAME %in% change$name2018,]$SCIENTIFIC.NAME = 
-    as.character(change$scientific.name)
+  dataf$India.Checklist.Name = as.character(dataf$India.Checklist.Name)
+  dataf$India.Scientific.Name = as.character(dataf$India.Scientific.Name)
   
-  map1819 = left_join(species2018,species2019)
-  map1819 = map1819[!is.na(map1819$English.name),]
-  map1819 = map1819 %>% select(-name2018)
-  
-  dataf = left_join(dataf,map1819,by = c("SCIENTIFIC.NAME" = "scientific.name"))
-  dataf = dataf[!is.na(dataf$English.name),]
-  dataf$COMMON.NAME = dataf$English.name
-  dataf = dataf %>% select(-English.name)
-  
-  pos = match("Indian Roller",dataf$COMMON.NAME)
+  pos = match("Indian Roller",dataf$India.Checklist.Name)
   toadd = dataf[pos,]
-  toadd$COMMON.NAME = "Indochinese Roller"
-  toadd$SCIENTIFIC.NAME = "Coracias affinis"
+  toadd$India.Checklist.Name = "Indochinese Roller"
+  toadd$India.Scientific.Name = "Coracias affinis"
   toadd$`Long-term Analysis` = toadd$`Current change Analysis` = toadd$`Subcontinental Endemics` =
     toadd$`Significant - Indian Context` = toadd$`Selected - SOIB` = ""
   
   dataf = InsertRow(dataf,toadd,pos+1)
   
-  names(dataf)[1] = "eBird English Name"
-  names(dataf)[2] = "eBird Scientific Name"
+  names(dataf)[1] = "Common Name"
+  names(dataf)[2] = "Scientific Name"
   
-  dataf$'Long-term Analysis'[dataf$'eBird English Name' %in% check1] = "X"
-  dataf$'Current change Analysis'[dataf$'eBird English Name' %in% check2] = "X"
+  
   write.csv(dataf,"fullspecieslist.csv",row.names = F)
   
   rm(list=setdiff(ls(envir = .GlobalEnv), c("data","specieslist","databins",
@@ -1248,15 +1225,18 @@ composite = function(trends, name = "unnamed group")
   tg = trends %>%
     distinct(timegroups,timegroupsf)
   
+
+  modtrends$freq1 = modtrends$nmfreqbyspec/10
   compositetrends = modtrends %>%
-    group_by(timegroups) %>% mutate(tempfreq = prod(nmfreqbyspec)) %>% ungroup %>%
+    group_by(timegroups) %>% mutate(tempfreq = prod(freq1)) %>% ungroup %>%
     group_by(timegroups) %>% mutate(tempse = max(tempfreq)*sqrt(sum((nmsebyspec/nmfreqbyspec)^2))) %>% 
     ungroup %>%
     group_by(timegroups) %>% summarize(nmfreqbyspec = exp(mean(log(nmfreqbyspec))),
                                        nmsebyspec = (1/length(unique(species)))*
-                                         nmfreqbyspec*max(tempse)/max(tempfreq)) %>%
+                                         (nmfreqbyspec*max(tempse))/max(tempfreq)) %>%
     ungroup %>%
     mutate(species = name)
+  
   
   compositetrends = left_join(compositetrends,tg)
   
@@ -1276,7 +1256,7 @@ composite = function(trends, name = "unnamed group")
 
 
 
-plottrends = function(trends,selectspecies,leg = T,rem = F)
+plottrends = function(trends,selectspecies,leg = T,rem = F,al = 0.3,deft = T)
 {
   require(tidyverse)
   require(ggthemes)
@@ -1293,11 +1273,11 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
       filter(!eBird.English.Name.2018 %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
                                              "Taiga Flycatcher","Chestnut Munia","Desert Whitethroat",
                                              "Hume's Whitethroat","Changeable Hawk-Eagle")) %>%
-      select(eBird.English.Name.2018,eBird.English.Name.2019)
+      select(eBird.English.Name.2018,India.Checklist.Name)
     
     lists = read.csv("stateofindiasbirds.csv")
-    lists = left_join(lists,map,by = c("eBird.English.Name" = "eBird.English.Name.2019"))
-    lists = lists %>% select(-eBird.English.Name) %>% mutate(species = eBird.English.Name.2018) %>% 
+    lists = left_join(lists,map,by = c("Common.Name" = "India.Checklist.Name"))
+    lists = lists %>% select(-Common.Name) %>% mutate(species = eBird.English.Name.2018) %>% 
       select(-eBird.English.Name.2018) %>% filter(!is.na(species))
     
     
@@ -1320,6 +1300,7 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
   
   cols = c("#869B27", "#E49B36", "#A13E2B", "#78CAE0", "#B69AC9", "#EA5599", "#31954E", "#493F3D",
            "#CC6666", "#9999CC", "#000000", "#66CC99")
+  #cols = c("#41726c","#2d809b","#e0d27b","#8cc48c","#55bfaf")
   
   ns = length(selectspecies)
   
@@ -1350,10 +1331,10 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
   #liml = liml-5
 
   #limu = round(max(maxci))
-  #limu = limu+5
+  #limu = limu*1.05
   
-  liml = 0
-  limu = 270
+  #liml = 0
+  #limu = 270
   
   #liml = 1
   #limu = 149
@@ -1370,15 +1351,13 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
         #position = pd,
         size = 1.5) +
       #geom_line(aes(group = species),size = 1.5) +
-      #geom_hline(yintercept = 200, linetype = "dotted", size = 0.5) +
-      #geom_hline(yintercept = 150, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 125, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 100, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 75, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 50, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 0, linetype = "dotted", size = 0.5) +
       geom_ribbon(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
-                      ymax = (nmfreqbyspec + nmsebyspec*1.96), fill = species), colour = NA, alpha = 0.1) +
+                      ymax = (nmfreqbyspec + nmsebyspec*1.96), fill = species), colour = NA, alpha = al) +
       #geom_errorbar(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
       #ymax = (nmfreqbyspec + nmsebyspec*1.96)), width = 0.2,
       #position = pd,
@@ -1400,10 +1379,10 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
       scale_x_continuous(breaks = xbreaksl,
                          #limits = c(1993,2018),
                          labels = lbreaksl) +
-      scale_y_continuous(breaks = c(0,50,75,100,125), 
+      scale_y_continuous(breaks = c(0,25,50,75,100,125), 
                          #limits = c(liml,limu),
-                         labels = c("-100%","-50%","-25%",
-                                    "0%","+25%")
+                         labels = c("-100%","-75%","-50%",
+                                    "-25%","0%","+25%")
       )
     #theme(legend.position = "none")
     
@@ -1439,15 +1418,19 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
       geom_point(size = 3) +
       geom_line(size = 1.5) +
       #geom_line(aes(group = species),size = 1.5) +
-      #geom_hline(yintercept = 150, linetype = "dotted", size = 0.5) +
-      geom_hline(yintercept = 125, linetype = "dotted", size = 0.5) +
+      {if(!isTRUE(deft))geom_hline(yintercept = 350, linetype = "dotted", size = 0.5)} +
+      {if(!isTRUE(deft))geom_hline(yintercept = 300, linetype = "dotted", size = 0.5)} +
+      {if(!isTRUE(deft))geom_hline(yintercept = 250, linetype = "dotted", size = 0.5)} +
+      {if(!isTRUE(deft))geom_hline(yintercept = 200, linetype = "dotted", size = 0.5)} +
+      {if(!isTRUE(deft))geom_hline(yintercept = 150, linetype = "dotted", size = 0.5)} +
+      {if(deft)geom_hline(yintercept = 125, linetype = "dotted", size = 0.5)} +
       geom_hline(yintercept = 100, linetype = "dotted", size = 0.5) +
-      geom_hline(yintercept = 75, linetype = "dotted", size = 0.5) +
+      {if(deft)geom_hline(yintercept = 75, linetype = "dotted", size = 0.5)} +
       geom_hline(yintercept = 50, linetype = "dotted", size = 0.5) +
-      geom_hline(yintercept = 25, linetype = "dotted", size = 0.5) +
-      geom_hline(yintercept = 0, linetype = "dotted", size = 0.5) +
+      {if(deft)geom_hline(yintercept = 25, linetype = "dotted", size = 0.5)} +
+      {if(deft)geom_hline(yintercept = 0, linetype = "dotted", size = 0.5)} +
       geom_ribbon(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
-                      ymax = (nmfreqbyspec + nmsebyspec*1.96), fill = species), colour = NA, alpha = 0.1) +
+                      ymax = (nmfreqbyspec + nmsebyspec*1.96), fill = species), colour = NA, alpha = al) +
       #geom_errorbar(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
       #ymax = (nmfreqbyspec + nmsebyspec*1.96)), width = 0.1, size = 0.1, position = pd) +
       xlab("years") +
@@ -1455,6 +1438,7 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
     
     xbreaks1 = temp$timegroups[1:10]
     lbreaks1 = temp$timegroupsf[1:10]
+    lbreaks1[c(5,7,9)] = ""
     
     ggp1 = ggp +
       theme(axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 12),
@@ -1470,16 +1454,20 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
                         labels = lbs1,
                         values = cols1) +
       scale_x_continuous(breaks = xbreaksl, labels = lbreaksl) +
-      scale_y_continuous(breaks = c(0,25,50,75,100,125), 
-                         #limits = c(liml,limu),
-                         labels = c("-100%","-75%","-50%","-25%","0%",
-                                    "+25%")
-      ) +
+      {if(!isTRUE(deft))scale_y_continuous(breaks = c(50,100,150,200,250,300,350), 
+                                           #limits = c(liml,limu),
+                                           labels = c("-50%","0%","+50%",
+                                                      "+100%","+150%","+200%","+250%"))} +
+      {if(deft)scale_y_continuous(breaks = c(0,25,50,75,100,125), 
+                                  #limits = c(liml,limu),
+                                  labels = c("-100%","-75%","-50%",
+                                             "-25%","0%","+25%")
+      )} +
     theme(legend.position = "bottom")
     
-    ggpx = ggp +
-      theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
-            axis.title.y = element_blank(), 
+    ggpz = ggp +
+      theme(axis.title.x = element_text(size = 16), axis.text.x = element_text(size = 12),
+            axis.title.y = element_text(angle = 90, size = 16), 
             axis.text.y = element_text(size = 14, colour = "#56697B", face = "italic"),
             axis.ticks.y = element_blank()) +
       theme(legend.title = element_blank(), legend.text = element_text(size = 12)) +
@@ -1490,19 +1478,55 @@ plottrends = function(trends,selectspecies,leg = T,rem = F)
       scale_fill_manual(breaks = bks1, 
                         labels = lbs1,
                         values = cols1) +
-      scale_x_continuous(breaks = xbreaks1, labels = lbreaks1) +
-      scale_y_continuous(breaks = c(0,25,50,75,100,125), 
+      scale_x_continuous(breaks = xbreaksl, labels = lbreaksl) +
+      {if(!isTRUE(deft))scale_y_continuous(breaks = c(50,100,150,200,250,300,350), 
+                                           #limits = c(liml,limu),
+                                           labels = c("-50%","0%","+50%",
+                                                      "+100%","+150%","+200%","+250%"))} +
+      {if(deft)scale_y_continuous(breaks = c(0,25,50,75,100,125), 
                          #limits = c(liml,limu),
-                         labels = c("-100%","-75%","-50%","-25%","0%",
-                                    "+25%")
-      ) +
-    theme(legend.position = "none")
+                         labels = c("-100%","-75%","-50%",
+                                    "-25%","0%","+25%")
+      )} +
+      theme(legend.position = "none")
+    
+    ggpx = ggp +
+      theme(axis.title.x = element_blank(), 
+            axis.text.x = element_text(size = 15, colour = "#56697B", vjust = -4, 
+                                        margin = margin(0, 0, 0.8, 0, 'cm')),
+            axis.title.y = element_blank(), axis.ticks.x = element_line(size = 0.7, colour = "#56697B"), 
+            axis.ticks.length=unit(.4, "cm"),
+            axis.text.y = element_text(size = 20, colour = "#56697B", vjust = -0.4, hjust = 1, 
+                                       margin = margin(0, -0.8, 0, 0, 'cm')),
+            axis.ticks.y = element_blank(), 
+            axis.line.x = element_line(size = 0.7, colour = "#56697B")) +
+      theme(legend.title = element_blank(), legend.text = element_text(size = 12)) +
+      theme(text=element_text(family="Gill Sans MT")) +
+      scale_colour_manual(breaks = bks1, 
+                          labels = lbs1,
+                          values = cols1) +
+      scale_fill_manual(breaks = bks1, 
+                        labels = lbs1,
+                        values = cols1) +
+      scale_x_continuous(breaks = xbreaks1, labels = lbreaks1) +
+      {if(!isTRUE(deft))scale_y_continuous(breaks = c(50,100,150,200,250,300,350), 
+                                           #limits = c(-30,limu),
+                                           labels = c("-50%","0%","+50%",
+                                                      "+100%","+150%","+200%","+250%"))} +
+      {if(deft)scale_y_continuous(breaks = c(0,25,50,75,100,125), 
+                                  #limits = c(-12.5,limu),
+                                  labels = c("-100%","-75%","-50%",
+                                             "-25%","0%","+25%")
+      )} +
+      {if(!isTRUE(deft))expand_limits(y=20)} +
+      {if(deft)expand_limits(y=-12.5)} +
+      theme(legend.position = "none")
     
     p1 = ggp1
     require(cowplot)
     sepleg = get_legend(p1)
     
-    gg = list(ggpx,sepleg,ggp1)
+    gg = list(ggpx,sepleg,ggp1,ggpz)
     return(gg)
   }
 }
@@ -1626,7 +1650,7 @@ plotcompositetrends = function(trends,specieslist,name="composite",g1=NA,g2=NA,g
   
   ggpt = plottrends(gp1, n, leg = F)
   ggp1 = ggpt[[1]]
-  ggpz = ggpt[[3]]
+  ggpz = ggpt[[4]]
   
   require(extrafont)
   #loadfonts(device = "win")
@@ -1743,6 +1767,7 @@ plotcompositetrends = function(trends,specieslist,name="composite",g1=NA,g2=NA,g
   n2 = paste(name,".png",sep="")
   n3 = paste(name,"_composite.svg",sep="")
   n4 = paste(name,"_speciestrends.svg",sep="")
+  n5 = paste(name,".svg",sep="")
   ntemp = paste(name,"_no_bars.png",sep="")
 
   #tiff(n1, units="in", width=10, height=7, res=1000)
@@ -1762,10 +1787,14 @@ plotcompositetrends = function(trends,specieslist,name="composite",g1=NA,g2=NA,g
   #dev.off()
   
   print(ggpt[[1]])
-  ggsave(file=n3, units="in", width=11, height=7)
+  ggsave(file=n3, units="in", width=11, height=8)
   
   print(ggpp)
   ggsave(file=n4, units="in", width=10, height=7.2)
+  
+  print(grid::grid.draw(g))
+  ggsave(file=n5, units="in", width=10, height=7)
+
   
   #theme(legend.position = "none")
   

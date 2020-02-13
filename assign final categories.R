@@ -178,37 +178,28 @@ trendscat = trendscat %>%
 trendscat$slopefull[trendscat$slopefull == "NA"] = NA
 
 map = read.csv("Map to Other Lists - map.csv")
+map = map %>% filter(eBird.English.Name.2018 %in% allspecies)
 
-species2018 = read.csv("eBird-Clements-v2018-integrated-checklist-August-2018.csv")
-species2018 = species2018 %>%
-  filter(category == "species") %>%
-  distinct(English.name) %>%
-  filter(English.name %in% allspecies)
-names(species2018) = "species"
-
-
-soib = trendscat %>% left_join(occuse) %>%
-  dplyr::left_join(map,by = c("species" = "eBird.English.Name.2018"))
-soib = left_join(species2018,soib)
+soib = trendscat %>% left_join(occuse)
+soib = left_join(map,soib,by = c("eBird.English.Name.2018" = "species"))
 
 soib = soib %>%
-  select(eBird.English.Name.2019,eBird.Scientific.Name.2019,migstatus,IUCN,Schedule,trendfull,
+  select(India.Checklist.Name,India.Scientific.Name,migstatus,IUCN,Schedule,trendfull,
          slopefull,rangefull,longcat,shortcat,occcat)
 
-soibfull = trendscat %>% left_join(occuse) %>%
-  left_join(map,by = c("species" = "eBird.English.Name.2018")) 
-soibfull = left_join(species2018,soibfull)
+soibfull = trendscat %>% left_join(occuse)
+soibfull = left_join(map,soibfull,by = c("eBird.English.Name.2018" = "species"))
 
 soibfull = soibfull %>%
-  select(eBird.English.Name.2019,eBird.Scientific.Name.2019,migstatus,IUCN,Schedule,CITES.Appendix,
+  select(India.Checklist.Name,India.Scientific.Name,migstatus,IUCN,Schedule,CITES.Appendix,
          CMS.Appendix,trend,mintrend,maxtrend,trendfull,slope,minslope,maxslope,
          slopefull,range,minrange,maxrange,rangefull,longcat,shortcat,occcat)
 
-names(soib) = c("eBird.English.Name","eBird.Scientific.Name","Migratory.Status","IUCN","WLPA.Schedule",
+names(soib) = c("Common.Name","Scientific.Name","Migratory.Status","IUCN","WLPA.Schedule",
                 "Long.Term.Trend","Current.Annual.Change","Range.Size","Long.Term.Status",
                 "Current.Status","Range.Status")
 
-names(soibfull) = c("eBird.English.Name","eBird.Scientific.Name","Migratory.Status","IUCN",
+names(soibfull) = c("Common.Name","Scientific.Name","Migratory.Status","IUCN",
                     "WLPA.Schedule","CITES.Appendix","CMS.Appendix",
                     "Long.Term.Trend.Mean","Long.Term.Trend.Lower","Long.Term.Trend.Upper",
                     "Long.Term.Trend","Current.Annual.Change.Mean","Current.Annual.Change.Lower",
