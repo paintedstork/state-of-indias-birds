@@ -1,0 +1,23 @@
+"composite","groups","Strong Decline","Moderate Decline","Stable","Moderate Increase","Strong Increase"
+"composite-diet (200)","Carnivorous (29)",12,7,2,0,0
+"composite-diet (200)","Fruit-Nectar (21)",0,0,2,0,2
+"composite-diet (200)","Invertebrate (98)",13,13,1,2,4
+"composite-diet (200)","Omnivorous (31)",4,3,2,0,1
+"composite-diet (200)","Plant-Seed (21)",2,2,2,1,2
+"composite-endemics (207)","Others-Subcontinent (38)",6,3,0,2,1
+"composite-endemics (207)","Resident-Non-Endemics (157)",37,24,9,1,7
+"composite-habitats (261)","Forests (32)",4,3,0,0,0
+"composite-habitats (261)","Generalists (130)",16,16,9,3,8
+"composite-habitats (261)","Grassland/Scrub (35)",11,6,0,0,1
+"composite-habitats (261)","Wetlands (64)",17,7,0,0,0
+"composite-migrants (261)","Migratory-Local (19)",2,2,0,0,0
+"composite-migrants (261)","Migratory-Long-Distance (36)",3,3,0,0,1
+"composite-migrants (261)","Resident (206)",43,27,9,3,8
+"composite-raptors (24)","Generalists (6)",2,0,1,0,0
+"composite-raptors (24)","Habitat-Open (9)",4,0,0,0,0
+"composite-raptors (24)","Habitat-Wooded (4)",2,2,0,0,0
+"composite-raptors (24)","Scavengers (7)",4,1,0,0,0
+"composite-waterbirds (61)","Gulls and Terns (7)",1,1,0,0,0
+"composite-waterbirds (61)","Others-Resident (31)",14,3,0,0,0
+"composite-waterbirds (61)","Shorebirds-Migratory (19)",2,2,0,0,0
+"composite-waterbirds (61)","Waterfowl (6)",1,2,0,0,0

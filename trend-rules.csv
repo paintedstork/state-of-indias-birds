@@ -1,0 +1,8 @@
+Category,Rule: Long-term,Rule: Current
+Data Deficient,insufficient data,insufficient data
+Strong Decline,decline > 50%,decline > 2.7%
+Moderate Decline,decline > 25%,decline > 1.1%
+Strong Increase,increase > 50%,increase > 1.6%
+Moderate Increase,increase > 25%,increase > 0.9%
+Uncertain,CI > 25%,CI > 2%
+Stable,others,others

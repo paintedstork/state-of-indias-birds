@@ -1,0 +1,23 @@
+"composite","groups","N"
+"composite-diet","Carnivorous",29
+"composite-diet","Fruit-Nectar",21
+"composite-diet","Invertebrate",98
+"composite-diet","Omnivorous",31
+"composite-diet","Plant-Seed",21
+"composite-endemics","Others-Subcontinent",38
+"composite-endemics","Western-Ghats",12
+"composite-habitats","Forests",32
+"composite-habitats","Generalists",130
+"composite-habitats","Grassland/Scrub",35
+"composite-habitats","Wetlands",64
+"composite-migrants","Migratory-Local",19
+"composite-migrants","Migratory-Long-Distance",36
+"composite-migrants","Resident",206
+"composite-raptors","Generalists",6
+"composite-raptors","Habitat-Open",8
+"composite-raptors","Habitat-Wooded",4
+"composite-raptors","Scavengers",7
+"composite-waterbirds","Gulls and Terns",7
+"composite-waterbirds","Others-Resident",29
+"composite-waterbirds","Shorebirds-Migratory",19
+"composite-waterbirds","Waterfowl",6

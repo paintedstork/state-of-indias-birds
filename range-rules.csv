@@ -1,0 +1,8 @@
+Range Size,
+Category,Rule
+Data Deficient,absent in data
+Very Restricted,"range < 7,500 sq. km."
+Restricted,"range < 42,500 sq. km."
+Very Large,"range > 1,000,000 sq. km."
+Large,"range > 250,000 sq. km."
+Moderate,others

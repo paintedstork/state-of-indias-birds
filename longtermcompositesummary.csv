@@ -1,0 +1,24 @@
+"composite","groups","Strong Decline","Moderate Decline","Stable","Moderate Increase","Strong Increase"
+"composite-diet (200)","Carnivorous (29)",9,6,13,1,0
+"composite-diet (200)","Fruit-Nectar (21)",3,7,9,2,0
+"composite-diet (200)","Invertebrate (98)",21,35,39,0,3
+"composite-diet (200)","Omnivorous (31)",6,4,20,0,1
+"composite-diet (200)","Plant-Seed (21)",2,8,9,0,2
+"composite-endemics (207)","Others-Subcontinent (38)",6,12,17,0,3
+"composite-endemics (207)","Resident-Non-Endemics (157)",28,40,81,5,3
+"composite-endemics (207)","Western-Ghats (12)",6,6,0,0,0
+"composite-habitats (261)","Forests (32)",11,12,9,0,0
+"composite-habitats (261)","Generalists (130)",17,35,69,3,6
+"composite-habitats (261)","Grassland/Scrub (35)",12,12,11,0,0
+"composite-habitats (261)","Wetlands (64)",18,18,25,2,1
+"composite-migrants (261)","Migratory-Local (19)",6,8,5,0,0
+"composite-migrants (261)","Migratory-Long-Distance (36)",12,12,11,0,1
+"composite-migrants (261)","Resident (206)",40,57,98,5,6
+"composite-raptors (24)","Generalists (6)",0,2,4,0,0
+"composite-raptors (24)","Habitat-Open (9)",5,2,2,0,0
+"composite-raptors (24)","Habitat-Wooded (4)",0,0,4,0,0
+"composite-raptors (24)","Scavengers (7)",4,2,1,0,0
+"composite-waterbirds (61)","Gulls and Terns (7)",3,4,0,0,0
+"composite-waterbirds (61)","Others-Resident (31)",5,6,17,2,1
+"composite-waterbirds (61)","Shorebirds-Migratory (19)",9,6,4,0,0
+"composite-waterbirds (61)","Waterfowl (6)",1,1,4,0,0
