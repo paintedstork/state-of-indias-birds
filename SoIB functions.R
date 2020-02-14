@@ -1351,11 +1351,14 @@ plottrends = function(trends,selectspecies,leg = T,rem = F,al = 0.3,deft = T)
         #position = pd,
         size = 1.5) +
       #geom_line(aes(group = species),size = 1.5) +
+      #geom_hline(yintercept = 300, linetype = "dotted", size = 0.5) +
+      #geom_hline(yintercept = 200, linetype = "dotted", size = 0.5) +
+      geom_hline(yintercept = 150, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 125, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 100, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 75, linetype = "dotted", size = 0.5) +
       geom_hline(yintercept = 50, linetype = "dotted", size = 0.5) +
-      geom_hline(yintercept = 0, linetype = "dotted", size = 0.5) +
+      #geom_hline(yintercept = 0, linetype = "dotted", size = 0.5) +
       geom_ribbon(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
                       ymax = (nmfreqbyspec + nmsebyspec*1.96), fill = species), colour = NA, alpha = al) +
       #geom_errorbar(aes(x = timegroups, ymin = (nmfreqbyspec - nmsebyspec*1.96),
@@ -1379,10 +1382,15 @@ plottrends = function(trends,selectspecies,leg = T,rem = F,al = 0.3,deft = T)
       scale_x_continuous(breaks = xbreaksl,
                          #limits = c(1993,2018),
                          labels = lbreaksl) +
-      scale_y_continuous(breaks = c(0,25,50,75,100,125), 
+      scale_y_continuous(breaks = c(50,75,100,125,150), 
                          #limits = c(liml,limu),
-                         labels = c("-100%","-75%","-50%",
-                                    "-25%","0%","+25%")
+                         labels = c(
+                           #"-100%","-75%",
+                           "-50%","-25%",
+                           "0%",
+                           "+25%","+50%"
+                           #,"+100%","+200%"
+                           )
       )
     #theme(legend.position = "none")
     

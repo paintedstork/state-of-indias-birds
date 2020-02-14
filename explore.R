@@ -38,7 +38,12 @@ source('~/GitHub/state-of-indias-birds/SoIB functions.R')
 load("specieslists.RData")
 library(tidyverse)
 
-plottrends(trends,c("Black-rumped Flameback"))
+plottrends(trends,c("Pacific Golden-Plover"))
+plottrends(trends, c("House Crow","Large-billed Crow"))
+plottrends(trends, c("Glossy Ibis"))
+plottrends(trends, c("Indian Peafowl"))
+plottrends(trends, c("Black Kite"))
+
 
 #################################
 
