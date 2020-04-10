@@ -1207,7 +1207,7 @@ stdtrends = function(trends)
   recenttrends$nmsebyspec = recenttrends$nmsebyspec*100
   
   recenttrends = recenttrends %>%
-    select(timegroupsf,timegroups,species,nmfreqbyspec,nmsebyspec)
+    dplyr::select(timegroupsf,timegroups,species,nmfreqbyspec,nmsebyspec)
   
   return(recenttrends)
 }

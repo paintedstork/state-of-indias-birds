@@ -1,3 +1,78 @@
+##################### Plot all trend graphs
+
+
+
+
+
+###############################################3
+
+
+
+
+
+selectspecies = c("Yellow-throated Bulbul","Brown-breasted Flycatcher","Rufous Sibia","Rusty-tailed Flycatcher",
+                  "Indian Pitta","Indian Paradise-Flycatcher","Black-headed Cuckooshrike","Malabar Whistling-Thrush",
+                  "Indian Blackbird","Common Cuckoo","Blue-cheeked Bee-eater","Steppe Eagle",
+                  "Large-billed Leaf Warbler")
+
+selectspecies = c("Yellow-throated Bulbul","Brown-breasted Flycatcher","Indian Paradise-Flycatcher","Common Cuckoo",
+                  "Indian Pitta","Rufous Sibia")
+
+plotspeciesmaps(type = "terrain", listofbirds = selectspecies, back = "transparent")
+plotspeciesmaps(type = "blank", listofbirds = selectspecies, back = "transparent")
+plotspeciestrends(listofbirds = selectspecies, scol = "#084269")
+
+
+require(tidyverse)
+require(raster)
+require(ggsci)
+
+
+
+indiatif = brick("IndiaDEM-Colour.tif")
+indiatif = as.data.frame(indiatif, xy = TRUE)
+indiatif$IndiaDEM.Colour.1 = indiatif$IndiaDEM.Colour.1/255
+indiatif$IndiaDEM.Colour.2 = indiatif$IndiaDEM.Colour.2/255
+indiatif$IndiaDEM.Colour.3 = indiatif$IndiaDEM.Colour.3/255
+names(indiatif)[3:5] = c("r","g","b")
+indiatif$codes = rgb(indiatif$r,indiatif$g,indiatif$b)
+indiatif = indiatif %>% mutate(codes = replace(codes, codes == "#000000", NA))
+
+back = "transparent"
+
+ggp = ggplot() +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  geom_raster(data = indiatif , aes(x = x, y = y, fill = codes),
+              alpha = 0.4) +
+  scale_fill_identity(na.value = "transparent") +
+  theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.margin=unit(c(0,0,0,0), "cm"),
+        panel.border = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        plot.background = element_rect(fill = "transparent",colour = NA),
+        panel.background = element_rect(fill = "transparent",colour = NA))+
+  theme(legend.position = "none")+
+  coord_quickmap()
+
+print(ggp)
+ggsave(file="test_0.4.png", units="in", width=10, height=7, bg = back)
+dev.off()
+
+
+table(indiatif$IndiaDEM.Colour)
+a = brick(indiatif1)
+a = as.data.frame(a, xy = TRUE)
+indiatif = indiatif %>% mutate(IndiaDEM.Colour = replace(IndiaDEM.Colour, IndiaDEM.Colour == 0, NA))
+
+
 library(tidyverse)
 library(ggthemes)
 
