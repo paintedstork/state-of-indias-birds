@@ -11,7 +11,6 @@
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
 createmaps()
 
-
 ### Sequence of steps to clean data starting from .txt file
 
 ## clean the eBird EBD, add some important columns, select only few
@@ -45,7 +44,6 @@ addmapvars()
 
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
 dataspeciesfilter(locationlimit = 15,gridlimit = 4)
-
 
 
 

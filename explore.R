@@ -6,9 +6,23 @@
 
 ###############################################3
 
+require(tidyverse)
 
+source('~/GitHub/state-of-indias-birds/plot all trends and maps.R')
+map = read.csv("Map to Other Lists - map.csv")
+map = map %>%
+  filter(!eBird.English.Name.2018 %in% c("Sykes's Short-toed Lark","Green Warbler","Sykes's Warbler",
+                                         "Taiga Flycatcher","Chestnut Munia","Desert Whitethroat",
+                                         "Hume's Whitethroat","Changeable Hawk-Eagle")) %>%
+  dplyr::select(eBird.English.Name.2018,India.Checklist.Name)
 
+lists = read.csv("stateofindiasbirds.csv")
+lists = left_join(lists,map,by = c("Common.Name" = "India.Checklist.Name"))
+lists = lists %>% mutate(India.Checklist.Name = Common.Name) %>% dplyr::select(-Common.Name) %>% mutate(Common.Name = eBird.English.Name.2018) %>% 
+  dplyr::select(-eBird.English.Name.2018) %>% filter(!is.na(Common.Name))
 
+selectspecies = as.character(lists$Common.Name[37:length(lists$Common.Name)])
+selectspecies = selectspecies[!selectspecies %in% c("Manipur Bush-Quail","Himalayan Quail","Jerdon's Courser")]
 
 selectspecies = c("Yellow-throated Bulbul","Brown-breasted Flycatcher","Rufous Sibia","Rusty-tailed Flycatcher",
                   "Indian Pitta","Indian Paradise-Flycatcher","Black-headed Cuckooshrike","Malabar Whistling-Thrush",
@@ -18,9 +32,14 @@ selectspecies = c("Yellow-throated Bulbul","Brown-breasted Flycatcher","Rufous S
 selectspecies = c("Yellow-throated Bulbul","Brown-breasted Flycatcher","Indian Paradise-Flycatcher","Common Cuckoo",
                   "Indian Pitta","Rufous Sibia")
 
+selectspecies = c("Yellow-breasted Bunting","Large Blue Flycatcher","White-throated Bushchat")
+
+selectspecies = c("House Sparrow","Indian Paradise-Flycatcher")
+selectspecies = c("White-tailed Iora")
+
 plotspeciesmaps(type = "terrain", listofbirds = selectspecies, back = "transparent")
-plotspeciesmaps(type = "blank", listofbirds = selectspecies, back = "transparent")
-plotspeciestrends(listofbirds = selectspecies, scol = "#084269")
+#plotspeciesmaps(type = "blank", listofbirds = selectspecies, back = "transparent")
+plotspeciestrends(listofbirds = selectspecies, scol = "#869B27")
 
 
 require(tidyverse)
