@@ -18,63 +18,82 @@ t_col = function(color, percent = 50, name = NULL) {
 
 ##################### Plot all maps
 
-plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
+plotspeciesmaps = function(type = "terrain", listofbirds, back = "transparent")
 {
   require(tidyverse)
   require(raster)
   require(ggsci)
+  require(rgdal)
+  #require(parallel)
+  #require(doSNOW)
+  
   load("data.RData")
+  cutoff = 100
+  thresh = data %>% filter(ALL.SPECIES.REPORTED == 1) %>%
+    group_by(g2clip) %>% summarize(ct = n_distinct(group.id)) %>%
+    filter(ct >= cutoff)
+  thresh = as.numeric(thresh$g2clip)
+  emp1 = dplyr::setdiff(unique(data$g2clip),thresh)
+  emp1 = as.character(emp1)
+  nonemp = union(thresh,emp1)
+  masa = data %>% filter(COMMON.NAME == "Malabar Starling") %>% distinct(gridg4)
+  masa = masa$gridg4
   data = data %>% filter(!LONGITUDE > 88.39 | !COMMON.NAME %in% c("Indian Paradise-Flycatcher",
                                                                   "Thick-billed Flowerpecker",
-                                                                  "Indian Golden-Oriole",
                                                                   "Booted Warbler",
                                                                   "Western Crowned Warbler",
                                                                   "Black-headed Cuckooshrike",
                                                                   "Jungle Owlet",
                                                                   "Indian Cormorant",
                                                                   "Fork-tailed Drongo-Cuckoo"))
+  #data = data %>% filter((!LONGITUDE > 88.39  | !COMMON.NAME %in% c("Indian Golden Oriole")) & 
+  #                         (!LATITUDE > 17 | !COMMON.NAME %in% c("Indian Golden Oriole")))
+  data = data %>% filter(!(LONGITUDE >= 88.39  & LATITUDE >= 17 & COMMON.NAME %in% c("Indian Golden Oriole")))
   data = data %>% filter(ST_NM != "Kerala" | !COMMON.NAME %in% c("White-tailed Iora"))
+  data = data %>% filter(!gridg4 %in% masa | !month %in% c(5,6,7,8,9) | !COMMON.NAME %in% ("Chestnut-tailed Starling"))
   latlong = data %>% distinct(group.id,LONGITUDE,LATITUDE)
   days = data %>% distinct(group.id,day)
   load("dataforanalyses.RData")
   data = left_join(data,latlong)
   data = data %>% filter(!LONGITUDE > 88.39 | !COMMON.NAME %in% c("Indian Paradise-Flycatcher",
                                                                   "Thick-billed Flowerpecker",
-                                                                  "Indian Golden-Oriole",
                                                                   "Booted Warbler",
                                                                   "Western Crowned Warbler",
                                                                   "Black-headed Cuckooshrike",
                                                                   "Jungle Owlet",
                                                                   "Indian Cormorant",
                                                                   "Fork-tailed Drongo-Cuckoo"))
+  data = data %>% filter(!(LONGITUDE >= 88.39  & LATITUDE >= 17 & COMMON.NAME %in% c("Indian Golden Oriole")))
   data = data %>% filter(ST_NM != "Kerala" | !COMMON.NAME %in% c("White-tailed Iora"))
+  data = data %>% filter(!gridg4 %in% masa | !month %in% c(5,6,7,8,9) | !COMMON.NAME %in% ("Chestnut-tailed Starling"))
   data = left_join(data,days)
   load("maps.RData")
   load("clips.RData")
+  load("latest_state_map.RData")
   load("neighbours.RData")
-  #load("emptycells.RData")
+  load("emptycells.RData")
   load("vagrantdata.RData")
   d = d %>% filter(!LONGITUDE > 88.39 | !COMMON.NAME %in% c("Indian Paradise-Flycatcher",
                                                             "Thick-billed Flowerpecker",
-                                                            "Indian Golden-Oriole",
                                                             "Booted Warbler",
                                                             "Western Crowned Warbler",
                                                             "Black-headed Cuckooshrike",
                                                             "Jungle Owlet",
                                                             "Indian Cormorant",
                                                             "Fork-tailed Drongo-Cuckoo"))
+  d = d %>% filter(!(LONGITUDE >= 88.39  & LATITUDE >= 17 & COMMON.NAME %in% c("Indian Golden Oriole")))
   d = d %>% filter(ST_NM != "Kerala" | !COMMON.NAME %in% c("White-tailed Iora"))
+  d = d %>% filter(!gridg4 %in% masa | !month %in% c(5,6,7,8,9) | !COMMON.NAME %in% ("Chestnut-tailed Starling"))
   vaglist = unique(d$COMMON.NAME)
   
   source('~/GitHub/state-of-indias-birds/SoIB functions.R')
   data$gridg = data$g2clip
   nb8g = nb8g2
-  #emp = emptyg2
+  emp = emptyg2
   d$gridg = d$g2clip
   
   pg = fortify(g2clip, region = c("id"))
-  #pge = pg %>%
-  #  filter(id %in% as.numeric(emp))
+  
   #lgrid = fortify(gridmapg3, region = c("id"))
   
   data = data %>% filter(year>2013)
@@ -82,6 +101,11 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
     distinct(group.id,LONGITUDE,LATITUDE)
   
   datac = datac[duplicated(datac[,2:3]),]
+  
+  ext = dplyr::setdiff(nonemp,data$g2clip)
+  emp = union(emp,ext)
+  pge = pg %>%
+    filter(id %in% as.numeric(emp))
   
   
   map = read.csv("Map to Other Lists - map.csv")
@@ -98,24 +122,12 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
   
   
   filtercountry = fortify(indiamap)
+  filterstate = fortify(smap)
   
-  
-  if (type == "terrain")
-  {
-    indiatif = brick("IndiaDEM-Colour.tif")
-    indiatif = as.data.frame(indiatif, xy = TRUE)
-    indiatif$IndiaDEM.Colour.1 = indiatif$IndiaDEM.Colour.1/255
-    indiatif$IndiaDEM.Colour.2 = indiatif$IndiaDEM.Colour.2/255
-    indiatif$IndiaDEM.Colour.3 = indiatif$IndiaDEM.Colour.3/255
-    names(indiatif)[3:5] = c("r","g","b")
-    indiatif$codes = rgb(indiatif$r,indiatif$g,indiatif$b)
-    indiatif = indiatif %>% mutate(codes = replace(codes, codes == "#000000", NA))
-  }
-  
-  #pgec = pge %>%
-  #  group_by(group) %>% nest() 
-  #lines = map_df(pgec$data, draw.crosshatch, width = .13, pattern= "vertical")
-  #lines = lines %>% filter(!is.na(x) & !is.na(y) & !is.na(x) & !is.na(y))
+  pgec = pge %>%
+    group_by(group) %>% nest() 
+  lines = map_df(pgec$data, draw.crosshatch, width = .15, pattern= "vertical")
+  lines = lines %>% filter(!is.na(x) & !is.na(y))
   
   datas = data %>% filter(day > 145 & day <= 215)
   dataw = data %>% filter(day <= 60 | day > 325)
@@ -133,11 +145,228 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
   #lists = lists %>% filter(Common.Name %in% spss)
   
   lists = lists %>% filter(Common.Name %in% listofbirds)
+  thresh = data %>% filter(ALL.SPECIES.REPORTED == 1) %>%
+    group_by(gridg) %>% summarize(ct = n_distinct(group.id)) %>%
+    filter(ct >= cutoff)
+  thresh = as.numeric(thresh$gridg)
+  emp1 = dplyr::setdiff(unique(data$g2clip),thresh)
+  emp1 = as.character(emp1)
+  pgemp = pg %>%
+    filter(id %in% emp1)
+  thresh1 = as.character(thresh)
+  pgthresh = pg %>%
+    filter(id %in% thresh1)
+  
+  require(extrafont)
+  
+  ggp = ggplot() +
+    scale_x_continuous(expand = c(0,0)) +
+    scale_y_continuous(expand = c(0,0)) +
+    geom_polygon(data = pgemp, aes(x = long, y = lat, group = group), 
+                 col = NA, fill = "#b8b8b8")+
+    geom_polygon(data = pgthresh, aes(x = long, y = lat, group = group), 
+                 col = NA, fill = "#8c8c8c")+
+    geom_polygon(data = pge, aes(x = long, y = lat, group = group), 
+                 col = NA, fill = "#e6e6e6")+
+    #geom_segment(data=lines, aes(x= x, y = y , xend = xend, yend = yend), inherit.aes = F, col = "black", size = 0.1)+
+    annotate("rect", xmin=c(82.2,82.2), xmax=c(83.7,83.7), ymin=c(13,11), 
+             ymax=c(14.5,12.5), alpha=1, fill = c("#8c8c8c","#b8b8b8"))+
+    annotate("rect", xmin=c(82.2), xmax=c(83.7), ymin=c(9), 
+             ymax=c(10.5), alpha=1, fill = c("#e6e6e6"), colour = NA, size = 0.1)+
+    annotate("text", x = c(88.25,88,87.7), y = c(13.75,11.75,9.75), 
+             label = c(">=100 Checklists","<100 Checklists","No Checklists") , color="#56697B", 
+             size=5, family="Gill Sans MT")+
+    #annotate("segment", x = 82.7, xend = 82.7, y = 9, yend = 10.5, colour="black", size = 0.1)+
+    #annotate("segment", x = 83.2, xend = 83.2, y = 9, yend = 10.5, colour="black", size = 0.1)+
+    geom_polygon(data = filterstate, aes(x=long, y=lat, group=group), 
+                 colour = "white", fill = NA, size = 0.2)+ 
+    #geom_polygon(data = pge, aes(x = long, y = lat, group = group), 
+    #             col = "black", fill = NA, size = 0.2)+
+    theme(text=element_text(family="Gill Sans MT")) +
+    theme(axis.line=element_blank(),
+          axis.text.x=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks=element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          plot.margin=unit(c(0.5,0,0.5,0), "cm"),
+          plot.title = element_text(hjust = 0.5),
+          plot.background = element_rect(fill = "transparent",colour = NA),
+          panel.background = element_rect(fill = "transparent",colour = NA))+
+    theme(legend.position = "none")+
+    coord_quickmap()
+  
+  
+  name = paste("emptycells.jpeg",sep="")
+  
+  print(ggp)
+  ggsave(file=name, units="in", width=6.3, height=7, bg = back)
+  dev.off()
+  
+  if (type == "terrain")
+  {
+    yearround = "#791842"
+    #yearround = "#5c557e"
+    resident = "#791842"
+    #resident = "#5c557e"
+    summer = "#d5c95f"
+    passage = "#c47755"
+    winter = "#006079"
+  }
+  
+  # Cornell
+  
+  if (type == "terrain")
+  {
+    yearround = "#79537a" 
+    resident = "#79537a"
+    summer = "#cc503e"
+    passage = "#edad08"
+    winter = "#1d6996"
+  }
+  
+  # Dull
+  
+  if (type == "terrain")
+  {
+    yearround = "#734c77" 
+    resident = "#734c77"
+    summer = "#c05853"
+    passage = "#f6c94b"
+    winter = "#4b90a0"
+  }
+  
+  # Bright
+  
+  if (type == "terrain")
+  {
+    yearround = "#562377" 
+    resident = "#562377"
+    summer = "#dc6f42"
+    passage = "#e4b73e"
+    winter = "#00858f"
+  }
+  
+  ## Cornell
+  
+  if (type == "blank")
+  {
+    yearround = "#79537a" 
+    resident = "#79537a"
+    summer = "#cc503e"
+    passage = "#edad08"
+    winter = "#1d6996"
+  }
+  
+  # Dull
+  
+  if (type == "blank")
+  {
+    yearround = "#734c77" 
+    resident = "#734c77"
+    summer = "#c05853"
+    passage = "#f6c94b"
+    winter = "#4b90a0"
+  }
+  
+  # Bright
+  
+  if (type == "blank")
+  {
+    yearround = "#562377" 
+    resident = "#562377"
+    summer = "#dc6f42"
+    passage = "#e4b73e"
+    winter = "#00858f"
+  }
+  
+  if (type == "terrain")
+  {
+    ggp = ggplot() +
+      scale_x_continuous(expand = c(0,0)) +
+      scale_y_continuous(expand = c(0,0)) +
+      geom_raster(data = indiatif , aes(x = x, y = y, fill = codes),
+                  alpha = 0.3) +
+      scale_fill_grey(na.value = back) +
+      annotate("rect", xmin=c(82.2), xmax=c(83.7), ymin=c(13), 
+               ymax=c(14.5), alpha=0.6, fill = c(resident))+
+      annotate("rect", xmin=c(82.4), xmax=c(83.5), ymin=c(13.2), 
+               ymax=c(14.3), alpha=1, fill=c(resident))+
+      annotate("text", x = c(87.9), y = c(13.75), 
+               label = c("Year-round") , color="#56697B", size=7, family="Gill Sans MT")+
+      geom_polygon(data = filterstate, aes(x=long, y=lat, group=group), 
+                   colour = "white", fill = NA, size = 0.2)+ 
+      theme(text=element_text(family="Gill Sans MT")) +
+      theme(axis.line=element_blank(),
+            axis.text.x=element_blank(),
+            axis.text.y=element_blank(),
+            axis.ticks=element_blank(),
+            axis.title.x=element_blank(),
+            axis.title.y=element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.border = element_blank(),
+            plot.margin=unit(c(0.5,0,0.5,0), "cm"),
+            plot.title = element_text(hjust = 0.5),
+            plot.background = element_rect(fill = "transparent",colour = NA),
+            panel.background = element_rect(fill = "transparent",colour = NA))+
+      theme(legend.position = "none")+
+      coord_quickmap()
+    
+    
+    name = paste("blank_resident","_",type,".jpeg",sep="")
+    
+    print(ggp)
+    ggsave(file=name, units="in", width=6.3, height=7, bg = back)
+    dev.off()
+    
+    ggp = ggplot() +
+      scale_x_continuous(expand = c(0,0)) +
+      scale_y_continuous(expand = c(0,0)) +
+      geom_raster(data = indiatif , aes(x = x, y = y, fill = codes),
+                  alpha = 0.3) +
+      scale_fill_grey(na.value = back) +
+      annotate("rect", xmin=c(82.2,82.2,82.2,82.2), xmax=c(83.7,83.7,83.7,83.7), ymin=c(13,11,9,7), 
+               ymax=c(14.5,12.5,10.5,8.5), alpha=0.6, fill = c(yearround,summer,passage,winter))+
+      annotate("rect", xmin=c(82.4,82.4,82.4,82.4), xmax=c(83.5,83.5,83.5,83.5), ymin=c(13.2,11.2,9.2,7.2), 
+               ymax=c(14.3,12.3,10.3,8.3), alpha=1, fill=c(yearround,summer,passage,winter))+
+      annotate("text", x = c(87.9,86.97,86.7,86.7), y = c(13.75,11.75,9.75,7.75), 
+               label = c("Year-round","Summer","Passage","Winter") , color="#56697B", size=7, family="Gill Sans MT")+
+      geom_polygon(data = filterstate, aes(x=long, y=lat, group=group), 
+                   colour = "white", fill = NA, size = 0.2)+ 
+      theme(text=element_text(family="Gill Sans MT")) +
+      theme(axis.line=element_blank(),
+            axis.text.x=element_blank(),
+            axis.text.y=element_blank(),
+            axis.ticks=element_blank(),
+            axis.title.x=element_blank(),
+            axis.title.y=element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.border = element_blank(),
+            plot.margin=unit(c(0.5,0,0.5,0), "cm"),
+            plot.title = element_text(hjust = 0.5),
+            plot.background = element_rect(fill = "transparent",colour = NA),
+            panel.background = element_rect(fill = "transparent",colour = NA))+
+      theme(legend.position = "none")+
+      coord_quickmap()
+    
+    
+    name = paste("blank_migrant","_",type,".jpeg",sep="")
+    
+    print(ggp)
+    ggsave(file=name, units="in", width=6.3, height=7, bg = back)
+    dev.off()
+  }
   
   for (i in 1:length(lists$Common.Name))
   {
     switchr = F
     switchm = F
+    switchy = F
     
     if (is.na(lists$Range.Status[i]))
     {next}
@@ -169,8 +398,8 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
           filter(!gridg %in% unique(t2)) %>% distinct(LONGITUDE,LATITUDE)
       }
       
-      n = setdiff(t2,t)
-      n = intersect(n,unique(data$gridg))
+      n = dplyr::setdiff(t2,t)
+      n = dplyr::setdiff(n,thresh)
       
       pg1 = pg %>%
         filter(id %in% t)
@@ -224,8 +453,8 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
           filter(!gridg %in% unique(t2)) %>% distinct(LONGITUDE,LATITUDE)
       }
       
-      ns = setdiff(t2s,t)
-      ns = intersect(ns,unique(data$gridg))
+      ns = dplyr::setdiff(t2s,t)
+      ns = dplyr::setdiff(ns,thresh)
       
       pg1s = pg %>%
         filter(id %in% ts)
@@ -259,8 +488,8 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
           filter(!gridg %in% unique(t2)) %>% distinct(LONGITUDE,LATITUDE)
       }
       
-      nw = setdiff(t2w,t)
-      nw = intersect(nw,unique(data$gridg))
+      nw = dplyr::setdiff(t2w,t)
+      nw = dplyr::setdiff(nw,thresh)
       
       pg1w = pg %>%
         filter(id %in% tw)
@@ -293,26 +522,43 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
           filter(!gridg %in% unique(t2)) %>% distinct(LONGITUDE,LATITUDE)
       }
       
-      np = setdiff(t2p,t)
-      np = intersect(np,unique(data$gridg))
+      np = dplyr::setdiff(t2p,t)
+      np = dplyr::setdiff(np,thresh)
       
       pg1p = pg %>%
         filter(id %in% tp)
       pg2p = pg %>%
         filter(id %in% np)
       
-      pg1p = setdiff(pg1p,pg1s)
-      pg1p = setdiff(pg1p,pg1w)
+      pg1y = dplyr::setdiff(pg1w,pg1s)
+      pg2y = dplyr::setdiff(pg2w,pg2s)
       
-      pg2p = setdiff(pg2p,pg2s)
-      pg2p = setdiff(pg2p,pg2w)
+      pg1y = dplyr::setdiff(pg1w,pg1y)
+      pg2y = dplyr::setdiff(pg2w,pg2y)
       
-      pg1w = setdiff(pg1w,pg1s)
-      pg2w = setdiff(pg2w,pg2s)
+      pg1p = dplyr::setdiff(pg1p,pg1y)
+      pg2p = dplyr::setdiff(pg2p,pg2y)
       
-      dvw = setdiff(dvw,dvs)
-      dvp = setdiff(dvp,dvs)
-      dvp = setdiff(dvp,dvw)
+      pg1p = dplyr::setdiff(pg1p,pg1w)
+      pg2p = dplyr::setdiff(pg2p,pg2w)
+      
+      pg1p = dplyr::setdiff(pg1p,pg1s)
+      pg2p = dplyr::setdiff(pg2p,pg2s)
+      
+      pg1w = dplyr::setdiff(pg1w,pg1y)
+      pg2w = dplyr::setdiff(pg2w,pg2y)
+      
+      pg1s = dplyr::setdiff(pg1s,pg1y)
+      pg2s = dplyr::setdiff(pg2s,pg2y)
+      
+      if (length(pg1y$id) > 0)
+      {
+        switchy = T
+      }
+      
+      dvw = dplyr::setdiff(dvw,dvs)
+      dvp = dplyr::setdiff(dvp,dvs)
+      dvp = dplyr::setdiff(dvp,dvw)
     }
     
     if (status == "S")
@@ -360,8 +606,8 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
           filter(!gridg %in% unique(t2)) %>% distinct(LONGITUDE,LATITUDE)
       }
       
-      ns = setdiff(t2s,t)
-      ns = intersect(ns,unique(data$gridg))
+      ns = dplyr::setdiff(t2s,t)
+      ns = dplyr::setdiff(ns,thresh)
       
       pg1s = pg %>%
         filter(id %in% ts)
@@ -395,8 +641,8 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
           filter(!gridg %in% unique(t2)) %>% distinct(LONGITUDE,LATITUDE)
       }
       
-      nw = setdiff(t2w,t)
-      nw = intersect(nw,unique(data$gridg))
+      nw = dplyr::setdiff(t2w,t)
+      nw = dplyr::setdiff(nw,thresh)
       
       pg1w = pg %>%
         filter(id %in% tw)
@@ -430,26 +676,27 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
           filter(!gridg %in% unique(t2)) %>% distinct(LONGITUDE,LATITUDE)
       }
       
-      np = setdiff(t2p,t)
-      np = intersect(np,unique(data$gridg))
+      
+      np = dplyr::setdiff(t2p,t)
+      np = dplyr::setdiff(np,thresh)
       
       pg1p = pg %>%
         filter(id %in% tp)
       pg2p = pg %>%
         filter(id %in% np)
       
-      pg1w = setdiff(pg1w,pg1s)
-      pg1w = setdiff(pg1w,pg1p)
+      pg1w = dplyr::setdiff(pg1w,pg1s)
+      pg1w = dplyr::setdiff(pg1w,pg1p)
       
-      pg2w = setdiff(pg2w,pg2s)
-      pg2w = setdiff(pg2w,pg2p)
+      pg2w = dplyr::setdiff(pg2w,pg2s)
+      pg2w = dplyr::setdiff(pg2w,pg2p)
       
-      pg1p = setdiff(pg1p,pg1s)
-      pg2p = setdiff(pg2p,pg2s)
+      pg1p = dplyr::setdiff(pg1p,pg1s)
+      pg2p = dplyr::setdiff(pg2p,pg2s)
       
-      dvp = setdiff(dvp,dvs)
-      dvw = setdiff(dvw,dvs)
-      dvw = setdiff(dvw,dvp)
+      dvp = dplyr::setdiff(dvp,dvs)
+      dvw = dplyr::setdiff(dvw,dvs)
+      dvw = dplyr::setdiff(dvw,dvp)
     }
     
     if (status == "W/P")
@@ -497,8 +744,8 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
           filter(!gridg %in% unique(t2)) %>% distinct(LONGITUDE,LATITUDE)
       }
       
-      ns = setdiff(t2s,t)
-      ns = intersect(ns,unique(data$gridg))
+      ns = dplyr::setdiff(t2s,t)
+      ns = dplyr::setdiff(ns,thresh)
       
       pg1s = pg %>%
         filter(id %in% ts)
@@ -534,8 +781,10 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
           filter(!gridg %in% unique(t2)) %>% distinct(LONGITUDE,LATITUDE)
       }
       
-      nw = setdiff(t2w,t)
+      nw = dplyr::setdiff(t2w,t)
       nw = intersect(nw,unique(data$gridg))
+      nw = dplyr::setdiff(t2w,t)
+      nw = dplyr::setdiff(nw,thresh)
       
       pg1w = pg %>%
         filter(id %in% tw)
@@ -569,50 +818,31 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
       }
       
       
-      
-      np = setdiff(t2p,t)
-      np = intersect(np,unique(data$gridg))
+      np = dplyr::setdiff(t2p,t)
+      np = dplyr::setdiff(np,thresh)
       
       pg1p = pg %>%
         filter(id %in% tp)
       pg2p = pg %>%
         filter(id %in% np)
       
-      pg1s = setdiff(pg1s,pg1w)
-      pg1s = setdiff(pg1s,pg1p)
+      pg1s = dplyr::setdiff(pg1s,pg1w)
+      pg1s = dplyr::setdiff(pg1s,pg1p)
       
-      pg2s = setdiff(pg2s,pg2w)
-      pg2s = setdiff(pg2s,pg2p)
+      pg2s = dplyr::setdiff(pg2s,pg2w)
+      pg2s = dplyr::setdiff(pg2s,pg2p)
       
-      pg1p = setdiff(pg1p,pg1w)
-      pg2p = setdiff(pg2p,pg2w)
+      pg1p = dplyr::setdiff(pg1p,pg1w)
+      pg2p = dplyr::setdiff(pg2p,pg2w)
       
-      dvp = setdiff(dvp,dvw)
-      dvs = setdiff(dvs,dvw)
-      dvs = setdiff(dvs,dvp)
+      dvp = dplyr::setdiff(dvp,dvw)
+      dvs = dplyr::setdiff(dvs,dvw)
+      dvs = dplyr::setdiff(dvs,dvp)
     }
     
     
     #lgrid1 = lgrid %>%
     #  filter(id %in% unique(data$gridg3))
-    
-    if (type == "terrain")
-    {
-      resident = "#5c557e"
-      summer = "#791842"
-      passage = "#c47755"
-      winter = "#006079"
-    }
-    
-    if (type == "blank")
-    {
-      resident = "#807093"
-      summer = "#a8596b"
-      passage = "#ca8357"
-      winter = "#3e8e97"
-    }
-    
-    require(extrafont)
     
     #sm1 = t_col(summer,perc=60,name="lt.sm")
     #ps1 = t_col(passage,perc=60,name="lt.ps")
@@ -620,22 +850,17 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
     
     ggp = ggplot() +
       {if(type == "blank")geom_polygon(data = filtercountry, aes(x=long, y=lat, group=group), 
-                                       colour = "black", fill = "white")}+  
+                                       colour = NA, fill = "#e6e6e6", alpha = 0.8)}+  
+      #{if(type == "blank")geom_polygon(data = pgemp, aes(x = long, y = lat, group = group), 
+      #                               col = NA, fill = "#cfcfcf", alpha = 1)}+
       scale_x_continuous(expand = c(0,0)) +
       scale_y_continuous(expand = c(0,0)) +
       {if(type == "terrain")geom_raster(data = indiatif , aes(x = x, y = y, fill = codes),
-                                        alpha = 0.4)} +
-      {if(type == "terrain")scale_fill_identity(na.value = back)} +
+                                        alpha = 0.3)} +
+      #{if(type == "terrain")scale_fill_identity(na.value = back)} +
+      {if(type == "terrain")scale_fill_grey(na.value = back)} +
       #{if(type == "terrain")geom_polygon(data = filtercountry, aes(x=long, y=lat, group=group), 
       #colour = "black", fill = NA)}+
-      {if(switchr)geom_point(data = dv, aes(x = LONGITUDE, y = LATITUDE), col = resident, shape = 4, 
-                             size = 1, alpha = 1)}+
-      {if(switchm)geom_point(data = dvp, aes(x = LONGITUDE, y = LATITUDE), col = passage, shape = 4, 
-                             size = 1, alpha = 1)}+
-      {if(switchm)geom_point(data = dvw, aes(x = LONGITUDE, y = LATITUDE), col = winter, shape = 4, 
-                             size = 1, alpha = 1)}+
-      {if(switchm)geom_point(data = dvs, aes(x = LONGITUDE, y = LATITUDE), col = summer, shape = 4, 
-                             size = 1, alpha = 1)}+
       #geom_polygon(data = pge, aes(x = long, y = lat, group = group), 
       #             col = NA, fill = "transparent", alpha = 0.6)+
       {if(status == "R")geom_polygon(data = pg1, aes(x = long, y = lat, group = group), 
@@ -654,18 +879,32 @@ plotspeciesmaps = function(type = "terrain", listofbirds, back = "black")
                                                       col = NA, fill = summer, alpha = 1)}+
       {if(status != "R" & length(ts) > 1)geom_polygon(data = pg2s, aes(x = long, y = lat, group = group), 
                                                       col = NA, fill = summer, alpha = 0.6)}+
-      {if(switchm)annotate("rect", xmin=c(82.2,82.2,82.2), xmax=c(83.7,83.7,83.7), ymin=c(12,10,8), 
-                           ymax=c(13.5,11.5,9.5), alpha=0.6, fill = c(summer,passage,winter))}+
-      {if(switchm)annotate("rect", xmin=c(82.4,82.4,82.4), xmax=c(83.5,83.5,83.5), ymin=c(12.2,10.2,8.2), 
-                           ymax=c(13.3,11.3,9.3), alpha=1, fill=c(summer,passage,winter))}+
-      {if(switchm)annotate("text", x = c(87.47,87.2,87.2), y = c(12.75,10.75,8.75), 
-                           label = c("Summer","Passage","Winter") , color="#56697B", size=8, family="Gill Sans MT")}+
-      {if(!switchm)annotate("rect", xmin=c(82.2), xmax=c(83.7), ymin=c(10), 
-                            ymax=c(11.5), alpha=0.6, fill = c(resident))}+
-      {if(!switchm)annotate("rect", xmin=c(82.4), xmax=c(83.5), ymin=c(10.2), 
-                            ymax=c(11.3), alpha=1, fill=c(resident))}+
-      {if(!switchm)annotate("text", x = c(87.56), y = c(10.75), 
-                            label = c("Resident") , color="#56697B", size=8, family="Gill Sans MT")}+
+      {if(status != "R" & switchy)geom_polygon(data = pg1y, aes(x = long, y = lat, group = group), 
+                                               col = NA, fill = yearround, alpha = 1)}+
+      {if(status != "R" & switchy)geom_polygon(data = pg2y, aes(x = long, y = lat, group = group), 
+                                               col = NA, fill = yearround, alpha = 0.6)}+
+      {if(switchr)geom_point(data = dv, aes(x = LONGITUDE, y = LATITUDE), col = resident, shape = 4, 
+                             size = 1, alpha = 1)}+
+      {if(switchm)geom_point(data = dvp, aes(x = LONGITUDE, y = LATITUDE), col = passage, shape = 4, 
+                             size = 1, alpha = 1)}+
+      {if(switchm)geom_point(data = dvw, aes(x = LONGITUDE, y = LATITUDE), col = winter, shape = 4, 
+                             size = 1, alpha = 1)}+
+      {if(switchm)geom_point(data = dvs, aes(x = LONGITUDE, y = LATITUDE), col = summer, shape = 4, 
+                             size = 1, alpha = 1)}+
+      {if(switchm)annotate("rect", xmin=c(82.2,82.2,82.2,82.2), xmax=c(83.7,83.7,83.7,83.7), ymin=c(13,11,9,7), 
+                           ymax=c(14.5,12.5,10.5,8.5), alpha=0.6, fill = c(yearround,summer,passage,winter))}+
+      {if(switchm)annotate("rect", xmin=c(82.4,82.4,82.4,82.4), xmax=c(83.5,83.5,83.5,83.5), ymin=c(13.2,11.2,9.2,7.2), 
+                           ymax=c(14.3,12.3,10.3,8.3), alpha=1, fill=c(yearround,summer,passage,winter))}+
+      {if(switchm)annotate("text", x = c(87.9,86.97,86.7,86.7), y = c(13.75,11.75,9.75,7.75), 
+                           label = c("Year-round","Summer","Passage","Winter") , color="#56697B", size=7, family="Gill Sans MT")}+
+      {if(!switchm)annotate("rect", xmin=c(82.2), xmax=c(83.7), ymin=c(13), 
+                            ymax=c(14.5), alpha=0.6, fill = c(resident))}+
+      {if(!switchm)annotate("rect", xmin=c(82.4), xmax=c(83.5), ymin=c(13.2), 
+                            ymax=c(14.3), alpha=1, fill=c(resident))}+
+      {if(!switchm)annotate("text", x = c(87.9), y = c(13.75), 
+                            label = c("Year-round") , color="#56697B", size=7, family="Gill Sans MT")}+
+      geom_polygon(data = filterstate, aes(x=long, y=lat, group=group), 
+                                       colour = "white", fill = NA, size = 0.2)+ 
       #geom_segment(data=lines, aes(x= x, y = y , xend = xend, yend = yend), inherit.aes = F, col = "black")+
       theme(text=element_text(family="Gill Sans MT")) +
       theme(axis.line=element_blank(),

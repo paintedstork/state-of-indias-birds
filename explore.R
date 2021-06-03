@@ -1,4 +1,41 @@
-##################### Plot all trend graphs
+##################### Add g2clip - to be run once after creating the main data frames
+
+require(tidyverse)
+require(data.table)
+require(sp)
+require(rgeos)
+
+load("clips.RData")
+
+load("data.RData")
+
+temp = data %>% group_by(group.id) %>% slice(1)
+
+rownames(temp) = temp$group.id
+coordinates(temp) = ~LONGITUDE + LATITUDE
+temp = over(temp,g2clip)
+temp = data.frame(temp)
+temp$group.id = rownames(temp)
+data = left_join(temp,data)
+names(data)[1] = "g2clip"
+
+rm(g2clip,temp)
+save.image("data.RData")
+
+clipjoin = data %>% distinct(g2clip,group.id)
+save(clipjoin,file = "clipjoin.RData")
+rm(list = ls())
+
+
+load("clipjoin.RData")
+
+load("dataforanalyses.RData")
+
+data = left_join(data,clipjoin)
+
+rm(clipjoin)
+save.image("dataforanalyses.RData")
+rm(list = ls())
 
 
 
@@ -21,7 +58,7 @@ lists = left_join(lists,map,by = c("Common.Name" = "India.Checklist.Name"))
 lists = lists %>% mutate(India.Checklist.Name = Common.Name) %>% dplyr::select(-Common.Name) %>% mutate(Common.Name = eBird.English.Name.2018) %>% 
   dplyr::select(-eBird.English.Name.2018) %>% filter(!is.na(Common.Name))
 
-selectspecies = as.character(lists$Common.Name[37:length(lists$Common.Name)])
+selectspecies = as.character(lists$Common.Name[1:length(lists$Common.Name)])
 selectspecies = selectspecies[!selectspecies %in% c("Manipur Bush-Quail","Himalayan Quail","Jerdon's Courser")]
 
 selectspecies = c("Yellow-throated Bulbul","Brown-breasted Flycatcher","Rufous Sibia","Rusty-tailed Flycatcher",
@@ -34,142 +71,19 @@ selectspecies = c("Yellow-throated Bulbul","Brown-breasted Flycatcher","Indian P
 
 selectspecies = c("Yellow-breasted Bunting","Large Blue Flycatcher","White-throated Bushchat")
 
-selectspecies = c("House Sparrow","Indian Paradise-Flycatcher")
-selectspecies = c("White-tailed Iora")
+selectspecies = c("House Crow","Indian Golden Oriole","Black-headed Cuckooshrike","White-bellied Sholakili",
+                  "Nilgiri Sholakili","Nilgiri Pipit","Ashambu Laughingthrush","Banasura Laughingthrush")
+selectspecies = c("Indian Golden Oriole","Nilgiri Sholakili")
+
+selectspecies = c("Black-capped Kingfisher")
 
 plotspeciesmaps(type = "terrain", listofbirds = selectspecies, back = "transparent")
 #plotspeciesmaps(type = "blank", listofbirds = selectspecies, back = "transparent")
 plotspeciestrends(listofbirds = selectspecies, scol = "#869B27")
 
 
-require(tidyverse)
-require(raster)
-require(ggsci)
 
-
-
-indiatif = brick("IndiaDEM-Colour.tif")
-indiatif = as.data.frame(indiatif, xy = TRUE)
-indiatif$IndiaDEM.Colour.1 = indiatif$IndiaDEM.Colour.1/255
-indiatif$IndiaDEM.Colour.2 = indiatif$IndiaDEM.Colour.2/255
-indiatif$IndiaDEM.Colour.3 = indiatif$IndiaDEM.Colour.3/255
-names(indiatif)[3:5] = c("r","g","b")
-indiatif$codes = rgb(indiatif$r,indiatif$g,indiatif$b)
-indiatif = indiatif %>% mutate(codes = replace(codes, codes == "#000000", NA))
-
-back = "transparent"
-
-ggp = ggplot() +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  geom_raster(data = indiatif , aes(x = x, y = y, fill = codes),
-              alpha = 0.4) +
-  scale_fill_identity(na.value = "transparent") +
-  theme(axis.line=element_blank(),
-        axis.text.x=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks=element_blank(),
-        axis.title.x=element_blank(),
-        axis.title.y=element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.margin=unit(c(0,0,0,0), "cm"),
-        panel.border = element_blank(),
-        plot.title = element_text(hjust = 0.5),
-        plot.background = element_rect(fill = "transparent",colour = NA),
-        panel.background = element_rect(fill = "transparent",colour = NA))+
-  theme(legend.position = "none")+
-  coord_quickmap()
-
-print(ggp)
-ggsave(file="test_0.4.png", units="in", width=10, height=7, bg = back)
-dev.off()
-
-
-table(indiatif$IndiaDEM.Colour)
-a = brick(indiatif1)
-a = as.data.frame(a, xy = TRUE)
-indiatif = indiatif %>% mutate(IndiaDEM.Colour = replace(IndiaDEM.Colour, IndiaDEM.Colour == 0, NA))
-
-
-library(tidyverse)
-library(ggthemes)
-
-source('~/GitHub/state-of-indias-birds/functions.R')
-readcleanrawdata("ebd_IN_relMay-2019.txt")
-source('~/GitHub/state-of-indias-birds/functions.R')
-createmaps()
-source('~/GitHub/state-of-indias-birds/functions.R')
-addmapvars()
-
-source('~/GitHub/state-of-indias-birds/functions.R')
-readcleanrawdata(KL=T)
-source('~/GitHub/state-of-indias-birds/functions.R')
-addmapvars("KL.RData", KL=T)
-
-
-
-
-theme_set(theme_tufte())
-
-source('~/GitHub/state-of-indias-birds/functions.R')
-
-load("dataforspatialanalyses.RData")
-dlist = dataspeciesfilter(data,15,4,"ebd_IN_relMay-2019.txt")
-
-data = dlist$data
-selectedspecies = dlist$specieslist
-appendix1 = dlist$fulllist
-databins = dlist$binneddata
-meadianlla = dlist$medianlla  
-
-write.csv(appendix1, "appendix1.csv")
-
-#################################
-
-load("AllTrends.RData")
-source('~/GitHub/state-of-indias-birds/SoIB functions.R')
-load("specieslists.RData")
-library(tidyverse)
-
-plottrends(trends,c("Pacific Golden-Plover"))
-plottrends(trends, c("House Crow","Large-billed Crow"))
-plottrends(trends, c("Glossy Ibis"))
-plottrends(trends, c("Indian Peafowl"))
-plottrends(trends, c("Black Kite"))
-
-
-#################################
-
-
-
-data1 = data %>% filter(month %in% c(10,11,12,1,2,3))
-plotfreqmap(data1, "Lesser Sand-Plover", "g4")
-plotfreqmap(data1, "Lesser Flamingo", "g4")
-plotfreqmap(data1, "Greater Flamingo", "g4")
-plotfreqmap(data1, "Indian Skimmer", "g4")
-plotfreqmap(data1, "Black-bellied Tern", "g4")
-plotfreqmap(data1, "Common Pochard", "g4")
-plotfreqmap(data1, "Ferruginous Duck", "g4")
-plotfreqmap(data1, "Black-tailed Godwit", "g4")
-plotfreqmap(data1, "Bar-tailed Godwit", "g4")
-plotfreqmap(data1, "Crab-Plover", "g4")
-plotfreqmap(data1, "Little Stint", "g4")
-plotfreqmap(data1, "Eurasian Curlew", "g4")
-
-data1 = data %>% filter(month %in% c(4,5,6))
-plotfreqmap(data, "Indian Skimmer", "g4")
-data1 = data %>% filter(month %in% c(4,5))
-
-family = c("Great Hornbill","Rufous-necked Hornbill","Malabar Gray Hornbill","Indian Gray Hornbill",
-           "Malabar Pied-Hornbill","Narcondam Hornbill","Oriental Pied-Hornbill","Wreathed Hornbill",
-           "Brown Hornbill")
-datat = data[data$COMMON.NAME %in% family,]
-
-species = c("Jungle Myna","House Crow","Large-billed Crow","Brahminy Kite","Black Kite",
-            "Asian Fairy-bluebird","Indian Paradise-Flycatcher","Indian Pitta","Hooded Pitta",
-            "Blue-naped Pitta","Indian Scimitar-Babbler","Puff-throated Babbler",
-            "Common Myna","Velvet-fronted Nuthatch","Chestnut-bellied Nuthatch","Brown-cheeked Fulvetta")
+############################################################
 
 
 for(i in c("trivial","null","nosp","nosptime","nb","nosptimenb"))

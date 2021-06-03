@@ -58,7 +58,7 @@ readcleanrawdata = function(rawpath = "ebd_IN_relMay-2019.txt",
              COUNTY %in% c("Hardwar")),
            (!COMMON.NAME %in% c("Orange Minivet") | !STATE %in% c("Gujarat") | 
               COUNTY %in% c("Narmada","Navsari","The Dangs")),
-           (!COMMON.NAME %in% c("Red-breasted Flycatcher") | !STATE %in% c("West Bengal")),
+           #(!COMMON.NAME %in% c("Red-breasted Flycatcher") | !STATE %in% c("West Bengal")),
            (!COMMON.NAME %in% c("Brown-cheeked Fulvetta") | !STATE %in% c("Sikkim")),
            (!COMMON.NAME %in% c("Chestnut-shouldered Petronia") | !COUNTY %in% 
               c("Darjiling","Jalpaiguri")),
@@ -136,11 +136,11 @@ readcleanrawdata = function(rawpath = "ebd_IN_relMay-2019.txt",
     mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Greater/Sykes's Short-toed Lark", 
                                  "Greater Short-toed Lark")) %>%
     mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Taiga Flycatcher", 
-                                 "Red-breasted Fycatcher")) %>%
+                                 "Red-breasted Flycatcher")) %>%
     mutate(CATEGORY = replace(CATEGORY, COMMON.NAME == "Taiga/Red-breasted Flycatcher",
                               "species")) %>%
     mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Taiga/Red-breasted Flycatcher", 
-                                 "Red-breasted Fycatcher")) %>%
+                                 "Red-breasted Flycatcher")) %>%
     mutate(COMMON.NAME = replace(COMMON.NAME, COMMON.NAME == "Changeable Hawk-Eagle", 
                                "Crested Hawk-Eagle")) %>%
     mutate(CATEGORY = replace(CATEGORY, COMMON.NAME == "Changeable/Crested Hawk-Eagle",
@@ -518,7 +518,6 @@ addmapvars = function(datapath = "rawdata.RData", mappath = "maps.RData")
   save.image("data.RData")
   rm(data, totalcells, gridlevels, area,
      areag1, areag2, areag3, areag4, pos = ".GlobalEnv")
-  
 }
 
 

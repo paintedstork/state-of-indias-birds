@@ -9,7 +9,7 @@ load("AllTrends.RData")
 load("specieslists.RData")
 source('~/GitHub/state-of-indias-birds/SoIB functions.R')
 library(tidyverse)
-
+  
 check1 = restrictedspecieslist$COMMON.NAME[!is.na(restrictedspecieslist$ht)]
 check2 = restrictedspecieslist$COMMON.NAME[!is.na(restrictedspecieslist$rt)]
 

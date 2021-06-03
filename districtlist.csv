@@ -1,625 +1,624 @@
-"ST_NM","DISTRICT","region"
-"Punjab","Tarn Taran","Plains"
-"Kerala","Thrissur","Coast"
-"Kerala","Idukki","WGhats"
-"Kerala","Thiruvananthapuram","Coast"
-"Goa","North Goa","Coast"
-"Uttar Pradesh","Lucknow","Plains"
-"Kerala","Alappuzha","Plains"
-"Tamil Nadu","Coimbatore","WGhats"
-"Kerala","Kollam","Coast"
-"Kerala","Ernakulam","Coast"
-NA,NA,"Plains"
-"Meghalaya","South Garo Hills","Plains"
-"Karnataka","Bangalore","Plains"
-"Andaman & Nicobar Island","South Andaman","Island"
-"Karnataka","Mysore","Plains"
-"Tamil Nadu","Tirunelveli","Plains"
-"Kerala","Palakkad","WGhats"
-"Kerala","Pathanamthitta","WGhats"
-"Tamil Nadu","Kancheepuram","Coast"
-"Tamil Nadu","Chennai","Coast"
-"Tamil Nadu","Thoothukkudi","Coast"
-"Karnataka","Udupi","Coast"
-"Uttar Pradesh","Gautam Buddha Nagar","Plains"
-"Uttarakhand","Nainital","Plains"
-"Uttarakhand","Almora","Plains"
-"Tamil Nadu","Salem","WGhats"
-"NCT of Delhi","South West","Plains"
-"Haryana","Gurgaon","Plains"
-"Mizoram","Mamit","Plains"
-"Karnataka","Bijapur","Plains"
-"Himachal Pradesh","Shimla","Plains"
-"Karnataka","Bangalore Rural","Plains"
-"Karnataka","Chikkaballapura","Plains"
-"Karnataka","Chamrajnagar","WGhats"
-"Uttarakhand","Chamoli","Plains"
-"Karnataka","Mandya","Plains"
-"Assam","Golaghat","Plains"
-"Nagaland","Wokha","Plains"
-"Andaman & Nicobar Island","North & Middle Andaman","Island"
-"Tamil Nadu","Virudunagar","Plains"
-"Meghalaya","East Khasi Hills","Plains"
-"Meghalaya","Ri Bhoi","Plains"
-"Assam","Kamrup","Plains"
-"Assam","Kamrup Metropolitan","Plains"
-"Tamil Nadu","Viluppuram","Coast"
-"Puducherry","Puducherry","Coast"
-"Assam","Marigaon","Plains"
-"Assam","Baksa","Plains"
-"Karnataka","Kodagu","WGhats"
-"Karnataka","Chikmagalur","WGhats"
-"Karnataka","Hassan","WGhats"
-"Uttarakhand","Dehradun","Plains"
-"Maharashtra","Kolhapur","WGhats"
-"Kerala","Malappuram","Plains"
-"Goa","South Goa","Coast"
-"Maharashtra","Sindhudurg","WGhats"
-"Maharashtra","Satara","WGhats"
-"Maharashtra","Raigarh","Coast"
-"Maharashtra","Pune","WGhats"
-"Maharashtra","Mumbai","Coast"
-"Maharashtra","Thane","Coast"
-"Maharashtra","Mumbai Suburban","Coast"
-"Maharashtra","Ahmadnagar","Plains"
-"Karnataka","Shimoga","WGhats"
-"Karnataka","Dakshina Kannada","WGhats"
-"Karnataka","Uttara Kannada","WGhats"
-"Maharashtra","Buldana","Plains"
-"Maharashtra","Aurangabad","Plains"
-"Kerala","Kannur","Coast"
-"Kerala","Wayanad","WGhats"
-"Kerala","Kozhikode","Coast"
-"Tamil Nadu","Dindigul","WGhats"
-"Arunanchal Pradesh","Changlang","Plains"
-"Assam","Sonitpur","Plains"
-"Kerala","Kasaragod","Coast"
-"Karnataka","Belgaum","Plains"
-"Gujarat","Mahesana","Plains"
-"Jammu & Kashmir","Leh (ladakh)","Trans-Himalaya"
-"Uttarakhand","Uttarkashi","Plains"
-"Jammu & Kashmir","Kargil","Trans-Himalaya"
-"Uttarakhand","Hardwar","Plains"
-"Uttarakhand","Garhwal","Plains"
-"Gujarat","Ahmadabad","Coast"
-"Gujarat","Surendranagar","Coast"
-"Rajasthan","Udaipur","Plains"
-"Tamil Nadu","Tiruppur","Plains"
-"Rajasthan","Bharatpur","Plains"
-"Rajasthan","Jaipur","Plains"
-"Arunanchal Pradesh","East Kameng","Plains"
-"Arunanchal Pradesh","West Kameng","Plains"
-"Madhya Pradesh","Umaria","Plains"
-"Tamil Nadu","Ramanathapuram","Coast"
-"Mizoram","Aizawl","Plains"
-"Himachal Pradesh","Kangra","Plains"
-"Punjab","Fatehgarh Sahib","Plains"
-"Karnataka","Kolar","Plains"
-"Kerala","Kottayam","Coast"
-"Telangana","Medak","Plains"
-"Telangana","Hyderabad","Plains"
-"Telangana","Rangareddy","Plains"
-"Rajasthan","Alwar","Plains"
-"Rajasthan","Pratapgarh","Plains"
-"Rajasthan","Bikaner","Desert"
-"Jammu & Kashmir","Srinagar","Himalaya"
-"Tamil Nadu","Theni","WGhats"
-"Andhra Pradesh","Kurnool","Plains"
-"Karnataka","Ramanagara","Plains"
-"Himachal Pradesh","Kullu","Plains"
-"Uttar Pradesh","Unnao","Plains"
-"Jammu & Kashmir","Samba","Plains"
-"Rajasthan","Churu","Desert"
-"Tamil Nadu","The Nilgiris","WGhats"
-"Tamil Nadu","Krishnagiri","Plains"
-"Karnataka","Tumkur","Plains"
-"Nagaland","Kohima","Plains"
-"Manipur","Ukhrul","Plains"
-"Nagaland","Kiphire","Plains"
-"Nagaland","Phek","Plains"
-"Maharashtra","Nagpur","Plains"
-"Maharashtra","Amravati","Plains"
-"Himachal Pradesh","Mandi","Plains"
-"Gujarat","Amreli","Coast"
-"Assam","Tinsukia","Plains"
-"Arunanchal Pradesh","Lohit","Plains"
-"Tamil Nadu","Erode","Plains"
-"Maharashtra","Bid","Plains"
-"Andhra Pradesh","Anantapur","Plains"
-"Madhya Pradesh","Mandla","Plains"
-"Karnataka","Chitradurga","Plains"
-"Assam","Darrang","Plains"
-"NCT of Delhi","North","Plains"
-"Gujarat","Bhavnagar","Coast"
-"Maharashtra","Jalgaon","Plains"
-"Gujarat","Jamnagar","Coast"
-"Rajasthan","Dhaulpur","Plains"
-"NCT of Delhi","South","Plains"
-"Rajasthan","Jaisalmer","Desert"
-"Gujarat","Gandhinagar","Plains"
-"Jharkhand","Sahibganj","Plains"
-"Rajasthan","Sawai Madhopur","Plains"
-"West Bengal","Jalpaiguri","North-east"
-"Assam","Jorhat","Plains"
-"West Bengal","Darjiling","North-east"
-"Maharashtra","Akola","Plains"
-"West Bengal","South 24 Parganas","Coast"
-"NCT of Delhi","New Delhi","Plains"
-"Tamil Nadu","Thiruvallur","Coast"
-"Uttarakhand","Udham Singh Nagar","Plains"
-"Uttar Pradesh","Bijnor","Plains"
-"Uttar Pradesh","Jyotiba Phule Nagar","Plains"
-"Uttar Pradesh","Ghaziabad","Plains"
-"Haryana","Panchkula","Plains"
-"Punjab","Amritsar","Plains"
-"Gujarat","Kachchh","Desert"
-"Uttar Pradesh","Agra","Plains"
-"Uttar Pradesh","Varanasi","Plains"
-"West Bengal","Bankura","Plains"
-"West Bengal","Puruliya","Plains"
-"Tamil Nadu","Tiruchirappalli","Plains"
-"Andhra Pradesh","Krishna","Coast"
-"Tamil Nadu","Sivaganga","Plains"
-"Himachal Pradesh","Kinnaur","Plains"
-"Andhra Pradesh","Chittoor","Plains"
-"Maharashtra","Gondiya","Plains"
-"Chandigarh","Chandigarh","Plains"
-"Haryana","Jhajjar","Plains"
-"Gujarat","Surat","Coast"
-"Gujarat","Kheda","Plains"
-"Maharashtra","Washim","Plains"
-"Jammu & Kashmir","Kishtwar","Himalaya"
-"Maharashtra","Chandrapur","Plains"
-"Gujarat","Junagadh","Plains"
-"West Bengal","Nadia","Plains"
-"Himachal Pradesh","Solan","Plains"
-"Tamil Nadu","Madurai","Plains"
-"West Bengal","Birbhum","Plains"
-"West Bengal","North 24 Parganas","Plains"
-"West Bengal","Barddhaman","Plains"
-"Madhya Pradesh","Shajapur","Plains"
-"West Bengal","Haora","Plains"
-"Andhra Pradesh","Sri Potti Sriramulu Nellore","Coast"
-"Rajasthan","Jodhpur","Desert"
-"Uttarakhand","Tehri Garhwal","Plains"
-"Maharashtra","Garhchiroli","Plains"
-"Arunanchal Pradesh","Tawang","Plains"
-"Uttar Pradesh","Bulandshahr","Plains"
-"Odisha","Ganjam","Coast"
-"Rajasthan","Dausa","Plains"
-"Odisha","Puri","Coast"
-"Gujarat","Anand","Coast"
-"Himachal Pradesh","Sirmaur","Plains"
-"Maharashtra","Wardha","Plains"
-"Gujarat","Narmada","Plains"
-"Himachal Pradesh","Lahul & Spiti","Trans-Himalaya"
-"Gujarat","Rajkot","Coast"
-"West Bengal","Kolkata","Plains"
-"Gujarat","Vadodara","Plains"
-"Arunanchal Pradesh","Lower Dibang Valley","Plains"
-"Rajasthan","Ajmer","Plains"
-"Gujarat","Panch Mahals","Plains"
-"Assam","Nagaon","Plains"
-"Rajasthan","Pali","Plains"
-"Maharashtra","Solapur","Plains"
-"Rajasthan","Sirohi","Plains"
-"Gujarat","Dohad","Plains"
-"Sikkim","West","Plains"
-"Sikkim","East","Plains"
-"Haryana","Faridabad","Plains"
-"Odisha","Gajapati","Plains"
-"West Bengal","Hugli","Plains"
-"Odisha","Khordha","Plains"
-"Odisha","Kendrapara","Coast"
-"West Bengal","Purba Medinipur","Coast"
-"Sikkim","South","Plains"
-"Bihar","Darbhanga","Plains"
-"Bihar","Madhubani","Plains"
-"Odisha","Anugul","Plains"
-"Arunanchal Pradesh","Anjaw","Plains"
-"Assam","Dibrugarh","Plains"
-"Uttarakhand","Rudraprayag","Plains"
-"Madhya Pradesh","Balaghat","Plains"
-"Tamil Nadu","Thanjavur","Coast"
-"Gujarat","Porbandar","Coast"
-"Tamil Nadu","Nagappattinam","Plains"
-"Tamil Nadu","Thiruvarur","Plains"
-"Tamil Nadu","Karur","Plains"
-"Gujarat","The Dangs","WGhats"
-"Tamil Nadu","Cuddalore","Coast"
-"NCT of Delhi","East","Plains"
-"Andhra Pradesh","Visakhapatnam","Coast"
-"Telangana","Mahbubnagar","Plains"
-"Telangana","Warangal","Plains"
-"Madhya Pradesh","Indore","Plains"
-"Tamil Nadu","Pudukkottai","Coast"
-"Haryana","Palwal","Plains"
-"Maharashtra","Ratnagiri","WGhats"
-"Madhya Pradesh","Sehore","Plains"
-"Andhra Pradesh","East Godavari","Coast"
-"Gujarat","Tapi","Plains"
-"Arunanchal Pradesh","Upper Siang","Plains"
-"Haryana","Hisar","Plains"
-"Maharashtra","Jalna","Plains"
-"Tamil Nadu","Vellore","Plains"
-"Karnataka","Dharwad","Plains"
-"Madhya Pradesh","Bhopal","Plains"
-"Jammu & Kashmir","Doda","Himalaya"
-"Jammu & Kashmir","Anantnag","Himalaya"
-"Maharashtra","Yavatmal","Plains"
-"Jammu & Kashmir","Udhampur","Himalaya"
-"Gujarat","Sabar Kantha","Plains"
-"Uttar Pradesh","Kanpur Nagar","Plains"
-"Assam","Barpeta","Plains"
-"Assam","Bongaigaon","Plains"
-"Assam","Chirang","Plains"
-"Puducherry","Mahe","Coast"
-"Jammu & Kashmir","Ramban","Himalaya"
-"Uttar Pradesh","Kheri","Plains"
-"Tamil Nadu","Kanniyakumari","Coast"
-"Assam","Goalpara","Plains"
-"Chhattisgarh","Surguja","Plains"
-"Chhattisgarh","Kabeerdham","Plains"
-"Tamil Nadu","Tiruvannamalai","Plains"
-"Andaman & Nicobar Island","Nicobar","Island"
-"Madhya Pradesh","Chhindwara","Plains"
-"Uttar Pradesh","Lalitpur","Plains"
-"Uttar Pradesh","Rampur","Plains"
-"Uttar Pradesh","Mahamaya Nagar","Plains"
-"Rajasthan","Bundi","Plains"
-"Uttar Pradesh","Mathura","Plains"
-"Manipur","Imphal East","Plains"
-"Madhya Pradesh","Hoshangabad","Plains"
-"Assam","Karimganj","Plains"
-"Karnataka","Bellary","Plains"
-"Karnataka","Davanagere","Plains"
-"Andhra Pradesh","West Godavari","Coast"
-"Chhattisgarh","Bastar","Plains"
-"Maharashtra","Nashik","Plains"
-"Telangana","Karimnagar","Plains"
-"West Bengal","Pashchim Medinipur","Plains"
-"West Bengal","Murshidabad","Plains"
-"Andhra Pradesh","Srikakulam","Coast"
-"Andhra Pradesh","Vizianagaram","Coast"
-"Tamil Nadu","Dharmapuri","Plains"
-"Telangana","Adilabad","Plains"
-"Arunanchal Pradesh","East Siang","Plains"
-"Bihar","Araria","Plains"
-"Bihar","Supaul","Plains"
-"Assam","Udalguri","Plains"
-"Karnataka","Gadag","Plains"
-"Meghalaya","East Garo Hills","Plains"
-"Haryana","Bhiwani","Plains"
-"Haryana","Rohtak","Plains"
-"Rajasthan","Jhunjhunun","Plains"
-"Rajasthan","Sikar","Plains"
-"Gujarat","Navsari","Plains"
-"Karnataka","Bagalkot","Plains"
-"Uttar Pradesh","Allahabad","Plains"
-"Uttar Pradesh","Mainpuri","Plains"
-"NCT of Delhi","Central","Plains"
-"Assam","Sivasagar","Plains"
-"Haryana","Karnal","Plains"
-"Andhra Pradesh","Prakasam","Coast"
-"Andhra Pradesh","Guntur","Coast"
-"Tamil Nadu","Namakkal","Plains"
-"Karnataka","Bidar","Plains"
-"Karnataka","Gulbarga","Plains"
-"Telangana","Nalgonda","Plains"
-"Karnataka","Raichur","Plains"
-"Chhattisgarh","Raigarh","Coast"
-"Maharashtra","Osmanabad","Plains"
-"Karnataka","Yadgir","Plains"
-"Karnataka","Koppal","Plains"
-"Karnataka","Haveri","Plains"
-"Madhya Pradesh","Panna","Plains"
-"Uttar Pradesh","Bahraich","Plains"
-"Chhattisgarh","Raipur","Plains"
-"Chhattisgarh","Durg","Plains"
-"Madhya Pradesh","East Nimar","Plains"
-"Madhya Pradesh","Morena","Plains"
-"Punjab","Sahibzada Ajit Singh Nagar","Plains"
-"Tamil Nadu","Ariyalur","Plains"
-"Madhya Pradesh","Raisen","Plains"
-"Madhya Pradesh","Rajgarh","Plains"
-"Madhya Pradesh","Ratlam","Plains"
-"NCT of Delhi","West","Plains"
-"Madhya Pradesh","Tikamgarh","Plains"
-"Madhya Pradesh","Shivpuri","Plains"
-"Nagaland","Mokokchung","Plains"
-"Rajasthan","Bhilwara","Plains"
-"West Bengal","Maldah","Plains"
-"NCT of Delhi","North West","Plains"
-"Madhya Pradesh","Jabalpur","Plains"
-"Maharashtra","Sangli","Plains"
-"Uttar Pradesh","Etawah","Plains"
-"Sikkim","North","Plains"
-"Madhya Pradesh","Katni","Plains"
-"Gujarat","Patan","Plains"
-"Uttarakhand","Bageshwar","Plains"
-"Chhattisgarh","Mahasamund","Plains"
-"Jammu & Kashmir","Rajouri","Plains"
-"Uttar Pradesh","Muzaffarnagar","Plains"
-"Assam","Dhubri","Plains"
-"Assam","Kokrajhar","Plains"
-"Uttarakhand","Pithoragarh","Plains"
-"Gujarat","Banas Kantha","Plains"
-"Himachal Pradesh","Chamba","Plains"
-"Assam","Karbi Anglong","Plains"
-"Rajasthan","Karauli","Plains"
-"Andhra Pradesh","Nizamabad","Plains"
-"Odisha","Cuttack","Plains"
-"Tripura","South Tripura","Plains"
-"Tripura","West Tripura","Plains"
-"Tripura","North Tripura","Plains"
-"Uttar Pradesh","Meerut","Plains"
-"Haryana","Panipat","Plains"
-"Himachal Pradesh","Una","Plains"
-"Punjab","Rupnagar","Plains"
-"Uttar Pradesh","Pilibhit","Plains"
-"Meghalaya","West Garo Hills","Plains"
-"Andhra Pradesh","Y.s.r.","Plains"
-"Uttarakhand","Champawat","Plains"
-"Daman & Diu","Diu","Coast"
-"Rajasthan","Barmer","Desert"
-"Jammu & Kashmir","Data Not Available","Trans-Himalaya"
-"NCT of Delhi","North East","Plains"
-"Haryana","Sonipat","Plains"
-"Haryana","Rewari","Plains"
-"Madhya Pradesh","Gwalior","Plains"
-"Punjab","Gurdaspur","Plains"
-"West Bengal","Koch Bihar","North-east"
-"Rajasthan","Nagaur","Plains"
-"Maharashtra","Hingoli","Plains"
-"Maharashtra","Bhandara","Plains"
-"Chhattisgarh","Rajnandgaon","Plains"
-"Chhattisgarh","Bilaspur","Plains"
-"Chhattisgarh","Dhamtari","Plains"
-"Madhya Pradesh","Seoni","Plains"
-"Odisha","Sundargarh","Plains"
-"Madhya Pradesh","Burhanpur","Plains"
-"Telangana","Khammam","Plains"
-"Punjab","Ludhiana","Plains"
-"Uttar Pradesh","Moradabad","Plains"
-"Meghalaya","Jaintia Hills","Plains"
-"Uttar Pradesh","Saharanpur","Plains"
-"Haryana","Kaithal","Plains"
-"Assam","Cachar","Plains"
-"Odisha","Baleshwar","Coast"
-"Uttar Pradesh","Shrawasti","Plains"
-"Punjab","Patiala","Plains"
-"Punjab","Jalandhar","Plains"
-"Uttar Pradesh","Firozabad","Plains"
-"Uttar Pradesh","Etah","Plains"
-"Nagaland","Peren","Plains"
-"Madhya Pradesh","Dewas","Plains"
-"Madhya Pradesh","Chhatarpur","Plains"
-"Madhya Pradesh","Satna","Plains"
-"Nagaland","Dimapur","Plains"
-"Odisha","Bhadrak","Coast"
-"Himachal Pradesh","Hamirpur","Plains"
-"Nagaland","Zunheboto","Plains"
-"Maharashtra","Dhule","Plains"
-"Jammu & Kashmir","Badgam","Himalaya"
-"Jammu & Kashmir","Ganderbal","Himalaya"
-"Jammu & Kashmir","Baramula","Himalaya"
-"Rajasthan","Jalor","Plains"
-"Uttar Pradesh","Balrampur","Plains"
-"Himachal Pradesh","Bilaspur","Plains"
-"Haryana","Kurukshetra","Plains"
-"Uttar Pradesh","Bara Banki","Plains"
-"Bihar","Patna","Plains"
-"Rajasthan","Hanumangarh","Plains"
-"Bihar","Bhagalpur","Plains"
-"Bihar","Munger","Plains"
-"Odisha","Nayagarh","Plains"
-"Madhya Pradesh","Neemuch","Plains"
-"Madhya Pradesh","Damoh","Plains"
-"Uttar Pradesh","Gorakhpur","Plains"
-"Jharkhand","Pashchimi Singhbhum","Plains"
-"Gujarat","Bharuch","Coast"
-"Uttar Pradesh","Bareilly","Plains"
-"Jammu & Kashmir","Jammu","Plains"
-"Jammu & Kashmir","Kathua","Plains"
-"Odisha","Sambalpur","Plains"
-"Haryana","Yamunanagar","Plains"
-"Uttar Pradesh","Rae Bareli","Plains"
-"Odisha","Subarnapur","Plains"
-"Odisha","Bargarh","Plains"
-"Madhya Pradesh","West Nimar","Plains"
-"Punjab","Bathinda","Plains"
-"Bihar","Nalanda","Plains"
-"Odisha","Kalahandi","Plains"
-"Uttar Pradesh","Hardoi","Plains"
-"Rajasthan","Rajsamand","Plains"
-"Chhattisgarh","Dakshin Bastar Dantewada","Plains"
-"Chhattisgarh","Uttar Bastar Kanker","Plains"
-"Chhattisgarh","Narayanpur","Plains"
-"Manipur","Tamenglong","Plains"
-"Manipur","Bishnupur","Plains"
-"Odisha","Dhenkanal","Plains"
-"Chhattisgarh","Bijapur","Plains"
-"Tamil Nadu","Perambalur","Plains"
-"Rajasthan","Chittaurgarh","Plains"
-"Rajasthan","Baran","Plains"
-"Rajasthan","Kota","Plains"
-"Rajasthan","Tonk","Plains"
-"Madhya Pradesh","Betul","Plains"
-"Arunanchal Pradesh","Dibang Valley","Plains"
-"Chhattisgarh","Jashpur","Plains"
-"Chhattisgarh","Koriya","Plains"
-"Odisha","Jharsuguda","Plains"
-"Punjab","Hoshiarpur","Plains"
-"Rajasthan","Jhalawar","Plains"
-"Madhya Pradesh","Mandsaur","Plains"
-"Madhya Pradesh","Dhar","Plains"
-"Madhya Pradesh","Barwani","Plains"
-"Uttar Pradesh","Aligarh","Plains"
-"Madhya Pradesh","Ujjain","Plains"
-"Odisha","Jagatsinghapur","Coast"
-"Daman & Diu","Daman","Coast"
-"Dadara & Nagar Havelli","Dadra & Nagar Haveli","Coast"
-"Mizoram","Champhai","Plains"
-"Puducherry","Karaikal","Coast"
-"Odisha","Koraput","Plains"
-"Uttar Pradesh","Chandauli","Plains"
-"Nagaland","Longleng","Plains"
-"Assam","Lakhimpur","Plains"
-"Madhya Pradesh","Sagar","Plains"
-"Bihar","Gaya","Plains"
-"Bihar","Vaishali","Plains"
-"Bihar","Pashchim Champaran","Plains"
-"Haryana","Fatehabad","Plains"
-"Haryana","Jind","Plains"
-"Maharashtra","Nandurbar","Plains"
-"Bihar","Madhepura","Plains"
-"Arunanchal Pradesh","West Siang","Plains"
-"Jammu & Kashmir","Reasi","Himalaya"
-"Arunanchal Pradesh","Papum Pare","Plains"
-"Uttar Pradesh","Sultanpur","Plains"
-"Assam","Nalbari","Plains"
-"Gujarat","Valsad","Coast"
-"Assam","Dhemaji","Plains"
-"Punjab","Kapurthala","Plains"
-"Jharkhand","Purbi Singhbhum","Plains"
-"Odisha","Malkangiri","Plains"
-"West Bengal","Uttar Dinajpur","Plains"
-"Rajasthan","Banswara","Plains"
-"Madhya Pradesh","Jhabua","Plains"
-"Madhya Pradesh","Narsimhapur","Plains"
-"Arunanchal Pradesh","Lower Subansiri","Plains"
-"Manipur","Thoubal","Plains"
-"Manipur","Senapati","Plains"
-"Mizoram","Saiha","Plains"
-"Manipur","Chandel","Plains"
-"Maharashtra","Nanded","Plains"
-"Maharashtra","Parbhani","Plains"
-"Maharashtra","Latur","Plains"
-"Lakshadweep","Lakshadweep","Coast"
-"Madhya Pradesh","Dindori","Plains"
-"Uttar Pradesh","Pratapgarh","Plains"
-"Punjab","Moga","Plains"
-"Punjab","Faridkot","Plains"
-"Haryana","Mahendragarh","Plains"
-"Punjab","Firozpur","Plains"
-"Odisha","Mayurbhanj","Plains"
-"Madhya Pradesh","Rewa","Plains"
-"Jharkhand","Khunti","Plains"
-"Jharkhand","Ranchi","Plains"
-"Assam","Dima Hasao","Plains"
-"Uttar Pradesh","Jalaun","Plains"
-"Uttar Pradesh","Jhansi","Plains"
-"Odisha","Jajapur","Plains"
-"Bihar","Begusarai","Plains"
-"Bihar","Samastipur","Plains"
-"Bihar","Lakhisarai","Plains"
-"Rajasthan","Dungarpur","Plains"
-"Uttar Pradesh","Kaushambi","Plains"
-"Uttar Pradesh","Maharajganj","Plains"
-"Odisha","Nabarangapur","Plains"
-"Madhya Pradesh","Singrauli","Plains"
-"Madhya Pradesh","Sheopur","Plains"
-"Jammu & Kashmir","Punch","Himalaya"
-"Jammu & Kashmir","Shupiyan","Himalaya"
-"Jammu & Kashmir","Pulwama","Himalaya"
-"Uttar Pradesh","Farrukhabad","Plains"
-"Madhya Pradesh","Bhind","Plains"
-"Manipur","Churachandpur","Plains"
-"Assam","Hailakandi","Plains"
-"Odisha","Rayagada","Plains"
-"Uttar Pradesh","Budaun","Plains"
-"Uttar Pradesh","Mirzapur","Plains"
-"Uttar Pradesh","Faizabad","Plains"
-"Bihar","Purnia","Plains"
-"Bihar","Katihar","Plains"
-"Uttar Pradesh","Shahjahanpur","Plains"
-"Jharkhand","Hazaribagh","Plains"
-"Jharkhand","Dhanbad","Plains"
-"Uttar Pradesh","Gonda","Plains"
-"Jharkhand","Saraikela-kharsawan","Plains"
-"Chhattisgarh","Korba","Plains"
-"Jharkhand","Bokaro","Plains"
-"Jammu & Kashmir","Bandipore","Himalaya"
-"Madhya Pradesh","Vidisha","Plains"
-"Arunanchal Pradesh","Tirap","Plains"
-"Odisha","Kendujhar","Plains"
-"Mizoram","Kolasib","Plains"
-"Haryana","Sirsa","Plains"
-"Uttar Pradesh","Hamirpur","Plains"
-"Mizoram","Lunglei","Plains"
-"Jharkhand","Dumka","Plains"
-"Jharkhand","Palamu","Plains"
-"Madhya Pradesh","Sidhi","Plains"
-"Jharkhand","Latehar","Plains"
-"West Bengal","Dakshin Dinajpur","Plains"
-"Meghalaya","West Khasi Hills","Plains"
-"Mizoram","Lawangtlai","Plains"
-"Uttar Pradesh","Sitapur","Plains"
-"Uttar Pradesh","Kanpur Dehat","Plains"
-"Haryana","Mewat","Plains"
-"Bihar","Kishanganj","Plains"
-"Rajasthan","Ganganagar","Plains"
-"Punjab","Mansa","Plains"
-"Punjab","Shahid Bhagat Singh Nagar","Plains"
-"Uttar Pradesh","Kannauj","Plains"
-"Jammu & Kashmir","Kulgam","Himalaya"
-"Uttar Pradesh","Sonbhadra","Plains"
-"Odisha","Kandhamal","Plains"
-"Bihar","Purba Champaran","Plains"
-"Bihar","Jamui","Plains"
-"Jharkhand","Giridih","Plains"
-"Jharkhand","Ramgarh","Plains"
-"Haryana","Ambala","Plains"
-"Jammu & Kashmir","Kupwara","Himalaya"
-"Uttar Pradesh","Ambedkar Nagar","Plains"
-"Bihar","Muzaffarpur","Plains"
-"Uttar Pradesh","Chitrakoot","Plains"
-"Uttar Pradesh","Azamgarh","Plains"
-"Uttar Pradesh","Ghazipur","Plains"
-"Bihar","Khagaria","Plains"
-"Puducherry","Yanam","Coast"
-"Madhya Pradesh","Guna","Plains"
-"Jharkhand","Garhwa","Plains"
-"Madhya Pradesh","Anuppur","Plains"
-"Chhattisgarh","Janjgir-champa","Plains"
-"Jharkhand","Chatra","Plains"
-"Bihar","Saran (chhapra)","Plains"
-"Manipur","Imphal West","Plains"
-"Tripura","Dhalai","Plains"
-"Jharkhand","Deoghar","Plains"
-"Uttar Pradesh","Fatehpur","Plains"
-"Bihar","Sheikhpura","Plains"
-"Bihar","Aurangabad","Plains"
-"Madhya Pradesh","Harda","Plains"
-"Odisha","Balangir","Plains"
-"Bihar","Bhojpur","Plains"
-"Bihar","Kaimur (bhabua)","Plains"
-"Bihar","Buxar","Plains"
-"Uttar Pradesh","Sant Kabir Nagar","Plains"
-"Bihar","Sitamarhi","Plains"
-"Uttar Pradesh","Baghpat","Plains"
-"Uttar Pradesh","Auraiya","Plains"
-"Uttar Pradesh","Banda","Plains"
-"Uttar Pradesh","Jaunpur","Plains"
-"Madhya Pradesh","Alirajpur","Plains"
-"Bihar","Rohtas","Plains"
-"Uttar Pradesh","Kushinagar","Plains"
-"Jharkhand","Gumla","Plains"
-"Madhya Pradesh","Datia","Plains"
-"Madhya Pradesh","Ashoknagar","Plains"
-"Uttar Pradesh","Mau","Plains"
-"Madhya Pradesh","Shahdol","Plains"
-"Jharkhand","Simdega","Plains"
-"Odisha","Debagarh","Plains"
-"Punjab","Sangrur","Plains"
-"Odisha","Nuapada","Plains"
-"Arunanchal Pradesh","Upper Subansiri","Plains"
-"Uttar Pradesh","Basti","Plains"
-"Jharkhand","Pakur","Plains"
-"Jharkhand","Lohardaga","Plains"
-"Uttar Pradesh","Ballia","Plains"
-"Bihar","Arwal","Plains"
-"Mizoram","Serchhip","Plains"
-"Jharkhand","Godda","Plains"
-"Uttar Pradesh","Siddharth Nagar","Plains"
-"Uttar Pradesh","Mahoba","Plains"
+ST_NM,DISTRICT,region
+Andaman & Nicobar Island,South Andaman,Island
+Andaman & Nicobar Island,North & Middle Andaman,Island
+Andaman & Nicobar Island,Nicobar,Island
+Andhra Pradesh,Kurnool,Plains
+Andhra Pradesh,Anantapur,Plains
+Andhra Pradesh,Krishna,Coast
+Andhra Pradesh,Chittoor,Plains
+Andhra Pradesh,Sri Potti Sriramulu Nellore,Coast
+Andhra Pradesh,Visakhapatnam,Coast
+Andhra Pradesh,East Godavari,Coast
+Andhra Pradesh,West Godavari,Coast
+Andhra Pradesh,Srikakulam,Coast
+Andhra Pradesh,Vizianagaram,Coast
+Andhra Pradesh,Prakasam,Coast
+Andhra Pradesh,Guntur,Coast
+Andhra Pradesh,Nizamabad,Plains
+Andhra Pradesh,Y.s.r.,Plains
+Arunanchal Pradesh,Changlang,North-east
+Arunanchal Pradesh,East Kameng,North-east
+Arunanchal Pradesh,West Kameng,North-east
+Arunanchal Pradesh,Lohit,North-east
+Arunanchal Pradesh,Tawang,North-east
+Arunanchal Pradesh,Lower Dibang Valley,North-east
+Arunanchal Pradesh,Anjaw,North-east
+Arunanchal Pradesh,Upper Siang,North-east
+Arunanchal Pradesh,East Siang,North-east
+Arunanchal Pradesh,Dibang Valley,North-east
+Arunanchal Pradesh,West Siang,North-east
+Arunanchal Pradesh,Papum Pare,North-east
+Arunanchal Pradesh,Lower Subansiri,North-east
+Arunanchal Pradesh,Tirap,North-east
+Arunanchal Pradesh,Upper Subansiri,North-east
+Assam,Golaghat,North-east
+Assam,Kamrup,North-east
+Assam,Kamrup Metropolitan,North-east
+Assam,Marigaon,North-east
+Assam,Baksa,North-east
+Assam,Sonitpur,North-east
+Assam,Tinsukia,North-east
+Assam,Darrang,North-east
+Assam,Jorhat,North-east
+Assam,Nagaon,North-east
+Assam,Dibrugarh,North-east
+Assam,Barpeta,North-east
+Assam,Bongaigaon,North-east
+Assam,Chirang,North-east
+Assam,Goalpara,North-east
+Assam,Karimganj,North-east
+Assam,Udalguri,North-east
+Assam,Sivasagar,North-east
+Assam,Dhubri,North-east
+Assam,Kokrajhar,North-east
+Assam,Karbi Anglong,North-east
+Assam,Cachar,North-east
+Assam,Lakhimpur,North-east
+Assam,Nalbari,North-east
+Assam,Dhemaji,North-east
+Assam,Dima Hasao,North-east
+Assam,Hailakandi,North-east
+Bihar,Darbhanga,Plains
+Bihar,Madhubani,Plains
+Bihar,Araria,Plains
+Bihar,Supaul,Plains
+Bihar,Patna,Plains
+Bihar,Bhagalpur,Plains
+Bihar,Munger,Plains
+Bihar,Nalanda,Plains
+Bihar,Gaya,Plains
+Bihar,Vaishali,Plains
+Bihar,Pashchim Champaran,Plains
+Bihar,Madhepura,Plains
+Bihar,Begusarai,Plains
+Bihar,Samastipur,Plains
+Bihar,Lakhisarai,Plains
+Bihar,Purnia,Plains
+Bihar,Katihar,Plains
+Bihar,Kishanganj,Plains
+Bihar,Purba Champaran,Plains
+Bihar,Jamui,Plains
+Bihar,Muzaffarpur,Plains
+Bihar,Khagaria,Plains
+Bihar,Saran (chhapra),Plains
+Bihar,Sheikhpura,Plains
+Bihar,Aurangabad,Plains
+Bihar,Bhojpur,Plains
+Bihar,Kaimur (bhabua),Plains
+Bihar,Buxar,Plains
+Bihar,Sitamarhi,Plains
+Bihar,Rohtas,Plains
+Bihar,Arwal,Plains
+Chandigarh,Chandigarh,Plains
+Chhattisgarh,Surguja,Plains
+Chhattisgarh,Kabeerdham,Plains
+Chhattisgarh,Bastar,Plains
+Chhattisgarh,Raigarh,Coast
+Chhattisgarh,Raipur,Plains
+Chhattisgarh,Durg,Plains
+Chhattisgarh,Mahasamund,Plains
+Chhattisgarh,Rajnandgaon,Plains
+Chhattisgarh,Bilaspur,Plains
+Chhattisgarh,Dhamtari,Plains
+Chhattisgarh,Dakshin Bastar Dantewada,Plains
+Chhattisgarh,Uttar Bastar Kanker,Plains
+Chhattisgarh,Narayanpur,Plains
+Chhattisgarh,Bijapur,Plains
+Chhattisgarh,Jashpur,Plains
+Chhattisgarh,Koriya,Plains
+Chhattisgarh,Korba,Plains
+Chhattisgarh,Janjgir-champa,Plains
+Dadara & Nagar Havelli,Dadra & Nagar Haveli,Coast
+Daman & Diu,Diu,Coast
+Daman & Diu,Daman,Coast
+Goa,North Goa,Coast
+Goa,South Goa,Coast
+Gujarat,Mahesana,Plains
+Gujarat,Ahmadabad,Coast
+Gujarat,Surendranagar,Coast
+Gujarat,Amreli,Coast
+Gujarat,Bhavnagar,Coast
+Gujarat,Jamnagar,Coast
+Gujarat,Gandhinagar,Plains
+Gujarat,Kachchh,Desert
+Gujarat,Surat,Coast
+Gujarat,Kheda,Plains
+Gujarat,Junagadh,Plains
+Gujarat,Anand,Coast
+Gujarat,Narmada,WGhats
+Gujarat,Rajkot,Coast
+Gujarat,Vadodara,Plains
+Gujarat,Panch Mahals,Plains
+Gujarat,Dohad,Plains
+Gujarat,Porbandar,Coast
+Gujarat,The Dangs,WGhats
+Gujarat,Tapi,WGhats
+Gujarat,Sabar Kantha,Plains
+Gujarat,Navsari,Plains
+Gujarat,Patan,Plains
+Gujarat,Banas Kantha,Plains
+Gujarat,Bharuch,Coast
+Gujarat,Valsad,Coast
+Haryana,Gurgaon,Plains
+Haryana,Panchkula,Plains
+Haryana,Jhajjar,Plains
+Haryana,Faridabad,Plains
+Haryana,Palwal,Plains
+Haryana,Hisar,Plains
+Haryana,Bhiwani,Plains
+Haryana,Rohtak,Plains
+Haryana,Karnal,Plains
+Haryana,Panipat,Plains
+Haryana,Sonipat,Plains
+Haryana,Rewari,Plains
+Haryana,Kaithal,Plains
+Haryana,Kurukshetra,Plains
+Haryana,Yamunanagar,Plains
+Haryana,Fatehabad,Plains
+Haryana,Jind,Plains
+Haryana,Mahendragarh,Plains
+Haryana,Sirsa,Plains
+Haryana,Mewat,Plains
+Haryana,Ambala,Plains
+Himachal Pradesh,Shimla,Himalaya
+Himachal Pradesh,Kangra,Himalaya
+Himachal Pradesh,Kullu,Himalaya
+Himachal Pradesh,Mandi,Himalaya
+Himachal Pradesh,Kinnaur,Himalaya
+Himachal Pradesh,Solan,Himalaya
+Himachal Pradesh,Sirmaur,Himalaya
+Himachal Pradesh,Lahul & Spiti,Trans-Himalaya
+Himachal Pradesh,Chamba,Himalaya
+Himachal Pradesh,Una,Himalaya
+Himachal Pradesh,Hamirpur,Himalaya
+Himachal Pradesh,Bilaspur,Himalaya
+Jammu & Kashmir,Leh (ladakh),Trans-Himalaya
+Jammu & Kashmir,Kargil,Trans-Himalaya
+Jammu & Kashmir,Srinagar,Himalaya
+Jammu & Kashmir,Samba,Plains
+Jammu & Kashmir,Kishtwar,Himalaya
+Jammu & Kashmir,Doda,Himalaya
+Jammu & Kashmir,Anantnag,Himalaya
+Jammu & Kashmir,Udhampur,Himalaya
+Jammu & Kashmir,Ramban,Himalaya
+Jammu & Kashmir,Rajouri,Plains
+Jammu & Kashmir,Data Not Available,Trans-Himalaya
+Jammu & Kashmir,Badgam,Himalaya
+Jammu & Kashmir,Ganderbal,Himalaya
+Jammu & Kashmir,Baramula,Himalaya
+Jammu & Kashmir,Jammu,Plains
+Jammu & Kashmir,Kathua,Plains
+Jammu & Kashmir,Reasi,Himalaya
+Jammu & Kashmir,Punch,Himalaya
+Jammu & Kashmir,Shupiyan,Himalaya
+Jammu & Kashmir,Pulwama,Himalaya
+Jammu & Kashmir,Bandipore,Himalaya
+Jammu & Kashmir,Kulgam,Himalaya
+Jammu & Kashmir,Kupwara,Himalaya
+Jharkhand,Sahibganj,Plains
+Jharkhand,Pashchimi Singhbhum,Plains
+Jharkhand,Purbi Singhbhum,Plains
+Jharkhand,Khunti,Plains
+Jharkhand,Ranchi,Plains
+Jharkhand,Hazaribagh,Plains
+Jharkhand,Dhanbad,Plains
+Jharkhand,Saraikela-kharsawan,Plains
+Jharkhand,Bokaro,Plains
+Jharkhand,Dumka,Plains
+Jharkhand,Palamu,Plains
+Jharkhand,Latehar,Plains
+Jharkhand,Giridih,Plains
+Jharkhand,Ramgarh,Plains
+Jharkhand,Garhwa,Plains
+Jharkhand,Chatra,Plains
+Jharkhand,Deoghar,Plains
+Jharkhand,Gumla,Plains
+Jharkhand,Simdega,Plains
+Jharkhand,Pakur,Plains
+Jharkhand,Lohardaga,Plains
+Jharkhand,Godda,Plains
+Karnataka,Bangalore,Plains
+Karnataka,Mysore,Plains
+Karnataka,Udupi,Coast
+Karnataka,Bijapur,Plains
+Karnataka,Bangalore Rural,Plains
+Karnataka,Chikkaballapura,Plains
+Karnataka,Chamrajnagar,WGhats
+Karnataka,Mandya,Plains
+Karnataka,Kodagu,WGhats
+Karnataka,Chikmagalur,WGhats
+Karnataka,Hassan,WGhats
+Karnataka,Shimoga,WGhats
+Karnataka,Dakshina Kannada,WGhats
+Karnataka,Uttara Kannada,WGhats
+Karnataka,Belgaum,Plains
+Karnataka,Kolar,Plains
+Karnataka,Ramanagara,Plains
+Karnataka,Tumkur,Plains
+Karnataka,Chitradurga,Plains
+Karnataka,Dharwad,Plains
+Karnataka,Bellary,Plains
+Karnataka,Davanagere,Plains
+Karnataka,Gadag,Plains
+Karnataka,Bagalkot,Plains
+Karnataka,Bidar,Plains
+Karnataka,Gulbarga,Plains
+Karnataka,Raichur,Plains
+Karnataka,Yadgir,Plains
+Karnataka,Koppal,Plains
+Karnataka,Haveri,Plains
+Kerala,Thrissur,Coast
+Kerala,Idukki,WGhats
+Kerala,Thiruvananthapuram,Coast
+Kerala,Alappuzha,Plains
+Kerala,Kollam,Coast
+Kerala,Ernakulam,Coast
+Kerala,Palakkad,WGhats
+Kerala,Pathanamthitta,WGhats
+Kerala,Malappuram,Plains
+Kerala,Kannur,Coast
+Kerala,Wayanad,WGhats
+Kerala,Kozhikode,Coast
+Kerala,Kasaragod,Coast
+Kerala,Kottayam,Coast
+Lakshadweep,Lakshadweep,Island
+Madhya Pradesh,Umaria,Plains
+Madhya Pradesh,Mandla,Plains
+Madhya Pradesh,Shajapur,Plains
+Madhya Pradesh,Balaghat,Plains
+Madhya Pradesh,Indore,Plains
+Madhya Pradesh,Sehore,Plains
+Madhya Pradesh,Bhopal,Plains
+Madhya Pradesh,Chhindwara,Plains
+Madhya Pradesh,Hoshangabad,Plains
+Madhya Pradesh,Panna,Plains
+Madhya Pradesh,East Nimar,Plains
+Madhya Pradesh,Morena,Plains
+Madhya Pradesh,Raisen,Plains
+Madhya Pradesh,Rajgarh,Plains
+Madhya Pradesh,Ratlam,Plains
+Madhya Pradesh,Tikamgarh,Plains
+Madhya Pradesh,Shivpuri,Plains
+Madhya Pradesh,Jabalpur,Plains
+Madhya Pradesh,Katni,Plains
+Madhya Pradesh,Gwalior,Plains
+Madhya Pradesh,Seoni,Plains
+Madhya Pradesh,Burhanpur,Plains
+Madhya Pradesh,Dewas,Plains
+Madhya Pradesh,Chhatarpur,Plains
+Madhya Pradesh,Satna,Plains
+Madhya Pradesh,Neemuch,Plains
+Madhya Pradesh,Damoh,Plains
+Madhya Pradesh,West Nimar,Plains
+Madhya Pradesh,Betul,Plains
+Madhya Pradesh,Mandsaur,Plains
+Madhya Pradesh,Dhar,Plains
+Madhya Pradesh,Barwani,Plains
+Madhya Pradesh,Ujjain,Plains
+Madhya Pradesh,Sagar,Plains
+Madhya Pradesh,Jhabua,Plains
+Madhya Pradesh,Narsimhapur,Plains
+Madhya Pradesh,Dindori,Plains
+Madhya Pradesh,Rewa,Plains
+Madhya Pradesh,Singrauli,Plains
+Madhya Pradesh,Sheopur,Plains
+Madhya Pradesh,Bhind,Plains
+Madhya Pradesh,Vidisha,Plains
+Madhya Pradesh,Sidhi,Plains
+Madhya Pradesh,Guna,Plains
+Madhya Pradesh,Anuppur,Plains
+Madhya Pradesh,Harda,Plains
+Madhya Pradesh,Alirajpur,Plains
+Madhya Pradesh,Datia,Plains
+Madhya Pradesh,Ashoknagar,Plains
+Madhya Pradesh,Shahdol,Plains
+Maharashtra,Kolhapur,WGhats
+Maharashtra,Sindhudurg,WGhats
+Maharashtra,Satara,WGhats
+Maharashtra,Raigarh,Coast
+Maharashtra,Pune,WGhats
+Maharashtra,Mumbai,Coast
+Maharashtra,Thane,Coast
+Maharashtra,Mumbai Suburban,Coast
+Maharashtra,Ahmadnagar,Plains
+Maharashtra,Buldana,Plains
+Maharashtra,Aurangabad,Plains
+Maharashtra,Nagpur,Plains
+Maharashtra,Amravati,Plains
+Maharashtra,Bid,Plains
+Maharashtra,Jalgaon,Plains
+Maharashtra,Akola,Plains
+Maharashtra,Gondiya,Plains
+Maharashtra,Washim,Plains
+Maharashtra,Chandrapur,Plains
+Maharashtra,Garhchiroli,Plains
+Maharashtra,Wardha,Plains
+Maharashtra,Solapur,Plains
+Maharashtra,Ratnagiri,WGhats
+Maharashtra,Jalna,Plains
+Maharashtra,Yavatmal,Plains
+Maharashtra,Nashik,Plains
+Maharashtra,Osmanabad,Plains
+Maharashtra,Sangli,Plains
+Maharashtra,Hingoli,Plains
+Maharashtra,Bhandara,Plains
+Maharashtra,Dhule,Plains
+Maharashtra,Nandurbar,Plains
+Maharashtra,Nanded,Plains
+Maharashtra,Parbhani,Plains
+Maharashtra,Latur,Plains
+Manipur,Ukhrul,North-east
+Manipur,Imphal East,North-east
+Manipur,Tamenglong,North-east
+Manipur,Bishnupur,North-east
+Manipur,Thoubal,North-east
+Manipur,Senapati,North-east
+Manipur,Chandel,North-east
+Manipur,Churachandpur,North-east
+Manipur,Imphal West,North-east
+Meghalaya,South Garo Hills,North-east
+Meghalaya,East Khasi Hills,North-east
+Meghalaya,Ri Bhoi,North-east
+Meghalaya,East Garo Hills,North-east
+Meghalaya,West Garo Hills,North-east
+Meghalaya,Jaintia Hills,North-east
+Meghalaya,West Khasi Hills,North-east
+Mizoram,Mamit,North-east
+Mizoram,Aizawl,North-east
+Mizoram,Champhai,North-east
+Mizoram,Saiha,North-east
+Mizoram,Kolasib,North-east
+Mizoram,Lunglei,North-east
+Mizoram,Lawangtlai,North-east
+Mizoram,Serchhip,North-east
+Nagaland,Wokha,North-east
+Nagaland,Kohima,North-east
+Nagaland,Kiphire,North-east
+Nagaland,Phek,North-east
+Nagaland,Mokokchung,North-east
+Nagaland,Peren,North-east
+Nagaland,Dimapur,North-east
+Nagaland,Zunheboto,North-east
+Nagaland,Longleng,North-east
+NCT of Delhi,South West,Plains
+NCT of Delhi,North,Plains
+NCT of Delhi,South,Plains
+NCT of Delhi,New Delhi,Plains
+NCT of Delhi,East,Plains
+NCT of Delhi,Central,Plains
+NCT of Delhi,West,Plains
+NCT of Delhi,North West,Plains
+NCT of Delhi,North East,Plains
+Odisha,Ganjam,Coast
+Odisha,Puri,Coast
+Odisha,Gajapati,Plains
+Odisha,Khordha,Plains
+Odisha,Kendrapara,Coast
+Odisha,Anugul,Plains
+Odisha,Cuttack,Plains
+Odisha,Sundargarh,Plains
+Odisha,Baleshwar,Coast
+Odisha,Bhadrak,Coast
+Odisha,Nayagarh,Plains
+Odisha,Sambalpur,Plains
+Odisha,Subarnapur,Plains
+Odisha,Bargarh,Plains
+Odisha,Kalahandi,Plains
+Odisha,Dhenkanal,Plains
+Odisha,Jharsuguda,Plains
+Odisha,Jagatsinghapur,Coast
+Odisha,Koraput,Plains
+Odisha,Malkangiri,Plains
+Odisha,Mayurbhanj,Plains
+Odisha,Jajapur,Plains
+Odisha,Nabarangapur,Plains
+Odisha,Rayagada,Plains
+Odisha,Kendujhar,Plains
+Odisha,Kandhamal,Plains
+Odisha,Balangir,Plains
+Odisha,Debagarh,Plains
+Odisha,Nuapada,Plains
+Puducherry,Puducherry,Coast
+Puducherry,Mahe,Coast
+Puducherry,Karaikal,Coast
+Puducherry,Yanam,Coast
+Punjab,Tarn Taran,Plains
+Punjab,Fatehgarh Sahib,Plains
+Punjab,Amritsar,Plains
+Punjab,Sahibzada Ajit Singh Nagar,Plains
+Punjab,Rupnagar,Plains
+Punjab,Gurdaspur,Plains
+Punjab,Ludhiana,Plains
+Punjab,Patiala,Plains
+Punjab,Jalandhar,Plains
+Punjab,Bathinda,Plains
+Punjab,Hoshiarpur,Plains
+Punjab,Kapurthala,Plains
+Punjab,Moga,Plains
+Punjab,Faridkot,Plains
+Punjab,Firozpur,Plains
+Punjab,Mansa,Plains
+Punjab,Shahid Bhagat Singh Nagar,Plains
+Punjab,Sangrur,Plains
+Rajasthan,Udaipur,Plains
+Rajasthan,Bharatpur,Plains
+Rajasthan,Jaipur,Plains
+Rajasthan,Alwar,Plains
+Rajasthan,Pratapgarh,Plains
+Rajasthan,Bikaner,Desert
+Rajasthan,Churu,Desert
+Rajasthan,Dhaulpur,Plains
+Rajasthan,Jaisalmer,Desert
+Rajasthan,Sawai Madhopur,Plains
+Rajasthan,Jodhpur,Desert
+Rajasthan,Dausa,Plains
+Rajasthan,Ajmer,Plains
+Rajasthan,Pali,Plains
+Rajasthan,Sirohi,Plains
+Rajasthan,Bundi,Plains
+Rajasthan,Jhunjhunun,Plains
+Rajasthan,Sikar,Plains
+Rajasthan,Bhilwara,Plains
+Rajasthan,Karauli,Plains
+Rajasthan,Barmer,Desert
+Rajasthan,Nagaur,Plains
+Rajasthan,Jalor,Plains
+Rajasthan,Hanumangarh,Plains
+Rajasthan,Rajsamand,Plains
+Rajasthan,Chittaurgarh,Plains
+Rajasthan,Baran,Plains
+Rajasthan,Kota,Plains
+Rajasthan,Tonk,Plains
+Rajasthan,Jhalawar,Plains
+Rajasthan,Banswara,Plains
+Rajasthan,Dungarpur,Plains
+Rajasthan,Ganganagar,Plains
+Sikkim,West,North-east
+Sikkim,East,North-east
+Sikkim,South,North-east
+Sikkim,North,North-east
+Tamil Nadu,Coimbatore,WGhats
+Tamil Nadu,Tirunelveli,Plains
+Tamil Nadu,Kancheepuram,Coast
+Tamil Nadu,Chennai,Coast
+Tamil Nadu,Thoothukkudi,Coast
+Tamil Nadu,Salem,WGhats
+Tamil Nadu,Virudunagar,Plains
+Tamil Nadu,Viluppuram,Coast
+Tamil Nadu,Dindigul,WGhats
+Tamil Nadu,Tiruppur,Plains
+Tamil Nadu,Ramanathapuram,Coast
+Tamil Nadu,Theni,WGhats
+Tamil Nadu,The Nilgiris,WGhats
+Tamil Nadu,Krishnagiri,Plains
+Tamil Nadu,Erode,Plains
+Tamil Nadu,Thiruvallur,Coast
+Tamil Nadu,Tiruchirappalli,Plains
+Tamil Nadu,Sivaganga,Plains
+Tamil Nadu,Madurai,Plains
+Tamil Nadu,Thanjavur,Coast
+Tamil Nadu,Nagappattinam,Plains
+Tamil Nadu,Thiruvarur,Plains
+Tamil Nadu,Karur,Plains
+Tamil Nadu,Cuddalore,Coast
+Tamil Nadu,Pudukkottai,Coast
+Tamil Nadu,Vellore,Plains
+Tamil Nadu,Kanniyakumari,Coast
+Tamil Nadu,Tiruvannamalai,Plains
+Tamil Nadu,Dharmapuri,Plains
+Tamil Nadu,Namakkal,Plains
+Tamil Nadu,Ariyalur,Plains
+Tamil Nadu,Perambalur,Plains
+Telangana,Medak,Plains
+Telangana,Hyderabad,Plains
+Telangana,Rangareddy,Plains
+Telangana,Mahbubnagar,Plains
+Telangana,Warangal,Plains
+Telangana,Karimnagar,Plains
+Telangana,Adilabad,Plains
+Telangana,Nalgonda,Plains
+Telangana,Khammam,Plains
+Tripura,South Tripura,North-east
+Tripura,West Tripura,North-east
+Tripura,North Tripura,North-east
+Tripura,Dhalai,North-east
+Uttar Pradesh,Lucknow,Plains
+Uttar Pradesh,Gautam Buddha Nagar,Plains
+Uttar Pradesh,Unnao,Plains
+Uttar Pradesh,Bijnor,Plains
+Uttar Pradesh,Jyotiba Phule Nagar,Plains
+Uttar Pradesh,Ghaziabad,Plains
+Uttar Pradesh,Agra,Plains
+Uttar Pradesh,Varanasi,Plains
+Uttar Pradesh,Bulandshahr,Plains
+Uttar Pradesh,Kanpur Nagar,Plains
+Uttar Pradesh,Kheri,Plains
+Uttar Pradesh,Lalitpur,Plains
+Uttar Pradesh,Rampur,Plains
+Uttar Pradesh,Mahamaya Nagar,Plains
+Uttar Pradesh,Mathura,Plains
+Uttar Pradesh,Allahabad,Plains
+Uttar Pradesh,Mainpuri,Plains
+Uttar Pradesh,Bahraich,Plains
+Uttar Pradesh,Etawah,Plains
+Uttar Pradesh,Muzaffarnagar,Plains
+Uttar Pradesh,Meerut,Plains
+Uttar Pradesh,Pilibhit,Plains
+Uttar Pradesh,Moradabad,Plains
+Uttar Pradesh,Saharanpur,Plains
+Uttar Pradesh,Shrawasti,Plains
+Uttar Pradesh,Firozabad,Plains
+Uttar Pradesh,Etah,Plains
+Uttar Pradesh,Balrampur,Plains
+Uttar Pradesh,Bara Banki,Plains
+Uttar Pradesh,Gorakhpur,Plains
+Uttar Pradesh,Bareilly,Plains
+Uttar Pradesh,Rae Bareli,Plains
+Uttar Pradesh,Hardoi,Plains
+Uttar Pradesh,Aligarh,Plains
+Uttar Pradesh,Chandauli,Plains
+Uttar Pradesh,Sultanpur,Plains
+Uttar Pradesh,Pratapgarh,Plains
+Uttar Pradesh,Jalaun,Plains
+Uttar Pradesh,Jhansi,Plains
+Uttar Pradesh,Kaushambi,Plains
+Uttar Pradesh,Maharajganj,Plains
+Uttar Pradesh,Farrukhabad,Plains
+Uttar Pradesh,Budaun,Plains
+Uttar Pradesh,Mirzapur,Plains
+Uttar Pradesh,Faizabad,Plains
+Uttar Pradesh,Shahjahanpur,Plains
+Uttar Pradesh,Gonda,Plains
+Uttar Pradesh,Hamirpur,Plains
+Uttar Pradesh,Sitapur,Plains
+Uttar Pradesh,Kanpur Dehat,Plains
+Uttar Pradesh,Kannauj,Plains
+Uttar Pradesh,Sonbhadra,Plains
+Uttar Pradesh,Ambedkar Nagar,Plains
+Uttar Pradesh,Chitrakoot,Plains
+Uttar Pradesh,Azamgarh,Plains
+Uttar Pradesh,Ghazipur,Plains
+Uttar Pradesh,Fatehpur,Plains
+Uttar Pradesh,Sant Kabir Nagar,Plains
+Uttar Pradesh,Baghpat,Plains
+Uttar Pradesh,Auraiya,Plains
+Uttar Pradesh,Banda,Plains
+Uttar Pradesh,Jaunpur,Plains
+Uttar Pradesh,Kushinagar,Plains
+Uttar Pradesh,Mau,Plains
+Uttar Pradesh,Basti,Plains
+Uttar Pradesh,Ballia,Plains
+Uttar Pradesh,Siddharth Nagar,Plains
+Uttar Pradesh,Mahoba,Plains
+Uttarakhand,Nainital,North-east
+Uttarakhand,Almora,North-east
+Uttarakhand,Chamoli,North-east
+Uttarakhand,Dehradun,North-east
+Uttarakhand,Uttarkashi,North-east
+Uttarakhand,Hardwar,North-east
+Uttarakhand,Garhwal,North-east
+Uttarakhand,Udham Singh Nagar,North-east
+Uttarakhand,Tehri Garhwal,North-east
+Uttarakhand,Rudraprayag,North-east
+Uttarakhand,Bageshwar,North-east
+Uttarakhand,Pithoragarh,North-east
+Uttarakhand,Champawat,North-east
+West Bengal,Jalpaiguri,North-east
+West Bengal,Darjiling,North-east
+West Bengal,South 24 Parganas,Coast
+West Bengal,Bankura,Plains
+West Bengal,Puruliya,Plains
+West Bengal,Nadia,Plains
+West Bengal,Birbhum,Plains
+West Bengal,North 24 Parganas,Plains
+West Bengal,Barddhaman,Plains
+West Bengal,Haora,Plains
+West Bengal,Kolkata,Plains
+West Bengal,Hugli,Plains
+West Bengal,Purba Medinipur,Coast
+West Bengal,Pashchim Medinipur,Plains
+West Bengal,Murshidabad,Plains
+West Bengal,Maldah,Plains
+West Bengal,Koch Bihar,North-east
+West Bengal,Uttar Dinajpur,Plains
+West Bengal,Dakshin Dinajpur,Plains
