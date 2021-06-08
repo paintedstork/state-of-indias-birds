@@ -106,6 +106,10 @@ tiff('Fig. 1.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggpp1)
 dev.off()
 
+jpeg('Fig. 1.jpg', units="in", width=10, height=7, res=1000)
+grid::grid.draw(ggpp1)
+dev.off()
+
 
 ########### tightness of relationship between detectability and effort
 
@@ -282,7 +286,9 @@ tiff('Fig. 2.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggpp1)
 dev.off()
 
-
+jpeg('Fig. 2.jpg', units="in", width=10, height=7, res=1000)
+grid::grid.draw(ggpp1)
+dev.off()
 
 
 ########### relationship between detectability and list length - Jungle Babbler and Black-winged Kite
@@ -389,7 +395,9 @@ tiff('Fig. 3.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggpp1)
 dev.off()
 
-
+jpeg('Fig. 3.jpg', units="in", width=10, height=7, res=1000)
+grid::grid.draw(ggpp1)
+dev.off()
 
 
 
@@ -480,6 +488,9 @@ tiff('Fig. S1.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp1)
 dev.off()
 
+jpeg('Fig. S1.jpg', units="in", width=10, height=7, res=1000)
+grid::grid.draw(ggp1)
+dev.off()
 
 ggp = ggplot(dataf[dataf$species %in% select_specs[26:50],], aes(x=effort, y = perc)) + 
   facet_wrap(. ~ species, scale="free_y", nrow = 5, ncol = 5, strip.position="top") +
@@ -501,6 +512,10 @@ ggp2 = ggp +
   )
 
 tiff('Fig. S2.tif', units="in", width=10, height=7, res=300)
+grid::grid.draw(ggp2)
+dev.off()
+
+jpeg('Fig. S2.jpg', units="in", width=10, height=7, res=1000)
 grid::grid.draw(ggp2)
 dev.off()
 
@@ -585,6 +600,10 @@ tiff('Fig. S3.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp1)
 dev.off()
 
+jpeg('Fig. S3.jpg', units="in", width=10, height=7, res=1000)
+grid::grid.draw(ggp1)
+dev.off()
+
 
 ggp = ggplot(datag[datag$species %in% select_specs[26:50],], aes(x=effort, y = perc)) + 
   facet_wrap(. ~ species, scale="free_y", nrow = 5, ncol = 5, strip.position="top") +
@@ -609,7 +628,9 @@ tiff('Fig. S4.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp2)
 dev.off()
 
-
+jpeg('Fig. S4.jpg', units="in", width=10, height=7, res=1000)
+grid::grid.draw(ggp2)
+dev.off()
 
 ###############################################################
 ## dis
@@ -687,6 +708,10 @@ tiff('Fig. S5.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp1)
 dev.off()
 
+jpeg('Fig. S5.jpg', units="in", width=10, height=7, res=1000)
+grid::grid.draw(ggp1)
+dev.off()
+
 
 ggp = ggplot(datah[datah$species %in% select_specs[26:50],], aes(x=effort, y = perc)) + 
   facet_wrap(. ~ species, scale="free_y", nrow = 5, ncol = 5, strip.position="top") +
@@ -708,5 +733,9 @@ ggp2 = ggp +
   )
 
 tiff('Fig. S6.tif', units="in", width=10, height=7, res=300)
+grid::grid.draw(ggp2)
+dev.off()
+
+jpeg('Fig. S6.jpg', units="in", width=10, height=7, res=1000)
 grid::grid.draw(ggp2)
 dev.off()
