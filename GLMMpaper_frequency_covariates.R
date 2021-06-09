@@ -106,7 +106,7 @@ tiff('Fig. 1.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggpp1)
 dev.off()
 
-jpeg('Fig. 1.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. 1.jpg', units="in", width=10, height=7, res=600)
 grid::grid.draw(ggpp1)
 dev.off()
 
@@ -286,7 +286,7 @@ tiff('Fig. 2.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggpp1)
 dev.off()
 
-jpeg('Fig. 2.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. 2.jpg', units="in", width=10, height=7, res=600)
 grid::grid.draw(ggpp1)
 dev.off()
 
@@ -395,7 +395,7 @@ tiff('Fig. 3.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggpp1)
 dev.off()
 
-jpeg('Fig. 3.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. 3.jpg', units="in", width=10, height=7, res=600)
 grid::grid.draw(ggpp1)
 dev.off()
 
@@ -488,7 +488,7 @@ tiff('Fig. S1.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp1)
 dev.off()
 
-jpeg('Fig. S1.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. S1.jpg', units="in", width=10, height=7, res=600)
 grid::grid.draw(ggp1)
 dev.off()
 
@@ -515,7 +515,7 @@ tiff('Fig. S2.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp2)
 dev.off()
 
-jpeg('Fig. S2.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. S2.jpg', units="in", width=10, height=7, res=600)
 grid::grid.draw(ggp2)
 dev.off()
 
@@ -600,7 +600,7 @@ tiff('Fig. S3.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp1)
 dev.off()
 
-jpeg('Fig. S3.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. S3.jpg', units="in", width=10, height=7, res=600)
 grid::grid.draw(ggp1)
 dev.off()
 
@@ -628,7 +628,7 @@ tiff('Fig. S4.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp2)
 dev.off()
 
-jpeg('Fig. S4.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. S4.jpg', units="in", width=10, height=7, res=600)
 grid::grid.draw(ggp2)
 dev.off()
 
@@ -708,7 +708,7 @@ tiff('Fig. S5.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp1)
 dev.off()
 
-jpeg('Fig. S5.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. S5.jpg', units="in", width=10, height=7, res=600)
 grid::grid.draw(ggp1)
 dev.off()
 
@@ -736,6 +736,6 @@ tiff('Fig. S6.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp2)
 dev.off()
 
-jpeg('Fig. S6.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. S6.jpg', units="in", width=10, height=7, res=600)
 grid::grid.draw(ggp2)
 dev.off()

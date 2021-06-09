@@ -92,7 +92,7 @@ tiff('Fig. 4.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp1)
 dev.off()
 
-jpeg('Fig. 4.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. 4.jpg', units="in", width=10, height=7, res=600)
 grid::grid.draw(ggp1)
 dev.off()
 
@@ -179,7 +179,7 @@ tiff('Fig. 5.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp1)
 dev.off()
 
-jpeg('Fig. 5.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. 5.jpg', units="in", width=10, height=7, res=600)
 grid::grid.draw(ggp1)
 dev.off()
 
@@ -212,7 +212,7 @@ tiff('Fig. 2a.tif', units="in", width=10, height=7, res=300)
 grid::grid.draw(ggp1)
 dev.off()
 
-jpeg('Fig. 2a.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. 2a.jpg', units="in", width=10, height=7, res=600)
 grid::grid.draw(ggp1)
 dev.off()
 

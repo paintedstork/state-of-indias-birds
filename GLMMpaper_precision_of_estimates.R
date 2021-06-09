@@ -88,7 +88,7 @@ tiff('Fig. 6.tif', units="in", width=10, height=7, res=300)
 full()
 dev.off()
 
-jpeg('Fig. 6.jpg', units="in", width=10, height=7, res=1000)
+jpeg('Fig. 6.jpg', units="in", width=10, height=7, res=600)
 full()
 dev.off()
 
