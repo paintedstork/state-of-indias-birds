@@ -50,7 +50,8 @@ ebd_lists  <-  ebd_lists %>%
     #                HOUR  = strptime(TIME.OBSERVATIONS.STARTED, format = "%H:%M:%S") %>% format("%H") %>% as.integer(),
     SPEED = 60 * EFFORT.DISTANCE.KM / DURATION.MINUTES,
     # SEASON = Seasons [month]
-    ) 
+    ) %>% 
+  mutate(gridg2 = as.integer(gridg2))
 
 # All SoIB filters come here. Some has been already done by Ashwin V
 
@@ -86,7 +87,7 @@ source("TargetSpecies.R")
 species <- getTargetSpecies (freq, threegen, MinYear, MaxYear)
 
 source("ComparableYears.R")
-CompareYears <- getComparableYears (ebd_lists, species, range, MinYear, MaxYear)
+CompareYears <- getComparableYears (ebd_lists, species, range = ranges, MinYear, MaxYear)
   
 CompareYears$High <- CompareYears$High %>% inner_join (freq, by = c("Species" = "Species", "YEAR" = "Time.Bands"))
 CompareYears$Moderate <- CompareYears$Moderate %>% inner_join (freq, by = c("Species" = "Species", "YEAR" = "Time.Bands"))
