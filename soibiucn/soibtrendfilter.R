@@ -22,7 +22,7 @@ freq <- freq %>%
 ranges <- read.csv("ranges.csv")
 threegen <- read.csv("3genbli.csv")
 
-load("..\\data\\dataforanalyses_extra.RData")
+load("..\\soib_v2\\dataforanalyses_extra.RData")
 
 ######################################################################
 #  Find out comparable years from various parameters
