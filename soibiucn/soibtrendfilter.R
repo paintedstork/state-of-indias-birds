@@ -10,7 +10,7 @@ Years <- c(MinYear:MaxYear)
 TrendYears <- MaxYear - MinYear + 1
 plotting <- 0
 
-freq <- read.csv2("rawtrends.csv", sep=",")
+freq <- read.csv("rawtrends.csv")
 
 # Remove freq data outside comparable data range
 freq <- freq %>% 
@@ -19,8 +19,8 @@ freq <- freq %>%
           Frequency  = as.numeric(Frequency),
           SE         = as.numeric(SE))
 
-ranges <- read.csv2("ranges.csv", sep=",")
-threegen <- read.csv2("3genbli.csv", sep = ",")
+ranges <- read.csv("ranges.csv")
+threegen <- read.csv("3genbli.csv")
 
 load("..\\data\\dataforanalyses_extra.RData")
 
