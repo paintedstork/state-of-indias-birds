@@ -49,7 +49,8 @@ ebd_lists  <-  ebd_lists %>%
     # Uncomment the next line when Ashwin V provides START.TIME                   
     #                HOUR  = strptime(TIME.OBSERVATIONS.STARTED, format = "%H:%M:%S") %>% format("%H") %>% as.integer(),
     SPEED = 60 * EFFORT.DISTANCE.KM / DURATION.MINUTES,
-    SEASON = Seasons [month]) 
+    # SEASON = Seasons [month]
+    ) 
 
 # All SoIB filters come here. Some has been already done by Ashwin V
 
