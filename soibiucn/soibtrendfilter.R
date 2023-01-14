@@ -89,9 +89,9 @@ species <- getTargetSpecies (freq, threegen, MinYear, MaxYear)
 source("ComparableYears.R")
 CompareYears <- getComparableYears (ebd_lists, species, range = ranges, MinYear, MaxYear)
   
-CompareYears$High <- CompareYears$High %>% inner_join (freq, by = c("Species" = "Species", "YEAR" = "Time.Bands"))
-CompareYears$Moderate <- CompareYears$Moderate %>% inner_join (freq, by = c("Species" = "Species", "YEAR" = "Time.Bands"))
-CompareYears$Low <- CompareYears$Low %>% inner_join (freq, by = c("Species" = "Species", "YEAR" = "Time.Bands"))
+CompareYears$High <- CompareYears$High %>% inner_join (freq, by = c("Species", "YEAR" = "Time.Bands"))
+CompareYears$Moderate <- CompareYears$Moderate %>% inner_join (freq, by = c("Species", "YEAR" = "Time.Bands"))
+CompareYears$Low <- CompareYears$Low %>% inner_join (freq, by = c("Species", "YEAR" = "Time.Bands"))
 
 source("predict.R")
 
