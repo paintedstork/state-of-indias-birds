@@ -86,14 +86,15 @@ getComparableYears <- function(ebd_lists, species, range, MinYear, MaxYear)
         group_by(year) %>% 
         summarize (mean = mean(no.sp),
                    ci = 1.96 * sd(no.sp)/sqrt(n()),
-                   no_effort = 100 * sum(((PROTOCOL.TYPE != 'Stationary') & is.na(EFFORT.DISTANCE.KM) | is.na(DURATION.MINUTES)))/n(),
+                   no_effort = 100 * sum((PROTOCOL.TYPE != 'Stationary' & is.na(EFFORT.DISTANCE.KM)) | 
+                                            is.na(DURATION.MINUTES))/n(),
                    totallists = n(),
                    hotspot = 100 * sum(LOCALITY.TYPE == "H") / (sum (LOCALITY.TYPE == "P") + sum (LOCALITY.TYPE == "H")) 
         ) %>%
         ungroup()
       
       
-      ll_mean <- inner_join (ll_mean, d_mean, by = "year")
+      ll_mean <- left_join (ll_mean, d_mean, by = "year")
       
       ebd_lists_km <- ebd_lists_f %>% 
         filter (!is.na(EFFORT.DISTANCE.KM))
@@ -101,10 +102,10 @@ getComparableYears <- function(ebd_lists, species, range, MinYear, MaxYear)
       d_mean  <- ebd_lists_km %>% 
         group_by(year) %>% 
         summarize (MeanDistance = mean(EFFORT.DISTANCE.KM),
-                   CI_Duration = 1.96 * sd(EFFORT.DISTANCE.KM)/sqrt(n())) %>%
+                   CI_Distance = 1.96 * sd(EFFORT.DISTANCE.KM)/sqrt(n())) %>%
         ungroup()
       
-      ll_mean <- inner_join (ll_mean, d_mean, by = "year")
+      ll_mean <- left_join (ll_mean, d_mean, by = "year")
       
       
       ll_mean$Species <- species [sp]
@@ -134,38 +135,41 @@ getComparableYears <- function(ebd_lists, species, range, MinYear, MaxYear)
       {
         for (YEAR1 in MinYear:(YEAR2-1))
         {
-          M1 <-  ll_mean %>% filter (YEAR == YEAR1) %>% select (MeanListLength)
-          M2 <-  ll_mean %>% filter (YEAR == YEAR2) %>% select (MeanListLength)
-          CI1 <- ll_mean %>% filter (YEAR == YEAR1) %>% select (CI_ListLength)
-          CI2 <- ll_mean %>% filter (YEAR == YEAR2) %>% select (CI_ListLength)
+          ll_mean1 <- ll_mean %>% filter (YEAR == YEAR1)
+          ll_mean2 <- ll_mean %>% filter (YEAR == YEAR2)
+          
+          M1 <-  ll_mean1$MeanListLength
+          M2 <-  ll_mean2$MeanListLength
+          CI1 <- ll_mean1$CI_ListLength
+          CI2 <- ll_mean2$CI_ListLength
           CompareLL_Years$High[YEAR1-MinYear+1,YEAR2-MinYear+1] <-  abs(as.numeric(100 *(abs(M2-M1) + CI1 + CI2) / (M2 + M1))) < cT["High", "ListLength"]
           CompareLL_Years$Moderate[YEAR1-MinYear+1,YEAR2-MinYear+1] <-  abs(as.numeric(100 *(abs(M2-M1) + CI1 + CI2) / (M2 + M1))) < cT["Moderate", "ListLength"]
           CompareLL_Years$Low[YEAR1-MinYear+1,YEAR2-MinYear+1] <-  abs(as.numeric(100 *(abs(M2-M1) + CI1 + CI2) / (M2 + M1))) < cT["Low", "ListLength"]
           
-          M1 <-  ll_mean %>% filter (YEAR == YEAR1) %>% select (MeanDuration)
-          M2 <-  ll_mean %>% filter (YEAR == YEAR2) %>% select (MeanDuration)
-          CI1 <- ll_mean %>% filter (YEAR == YEAR1) %>% select (CI_Duration)
-          CI2 <- ll_mean %>% filter (YEAR == YEAR2) %>% select (CI_Duration)
+          M1 <-  ll_mean1$MeanDuration
+          M2 <-  ll_mean2$MeanDuration
+          CI1 <- ll_mean1$CI_Duration
+          CI2 <- ll_mean2$CI_Duration
           CompareDur_Years$High[YEAR1-MinYear+1,YEAR2-MinYear+1] <-  abs(as.numeric(100 *(abs(M2-M1) + CI1 + CI2) / (M2 + M1))) < cT["High", "Duration"]
           CompareDur_Years$Moderate[YEAR1-MinYear+1,YEAR2-MinYear+1] <-  abs(as.numeric(100 *(abs(M2-M1) + CI1 + CI2) / (M2 + M1))) < cT["Moderate", "Duration"]
           CompareDur_Years$Low[YEAR1-MinYear+1,YEAR2-MinYear+1] <-  abs(as.numeric(100 *(abs(M2-M1) + CI1 + CI2) / (M2 + M1))) < cT["Low", "Duration"]
           
-          M1 <-  ll_mean %>% filter (YEAR == YEAR1) %>% select (MeanDistance)
-          M2 <-  ll_mean %>% filter (YEAR == YEAR2) %>% select (MeanDistance)
-          CI1 <- ll_mean %>% filter (YEAR == YEAR1) %>% select (CI_Distance)
-          CI2 <- ll_mean %>% filter (YEAR == YEAR2) %>% select (CI_Distance)
+          M1 <-  ll_mean1$MeanDistance
+          M2 <-  ll_mean2$MeanDistance
+          CI1 <- ll_mean1$CI_Distance
+          CI2 <- ll_mean2$CI_Distance
           CompareDist_Years$High[YEAR1-MinYear+1,YEAR2-MinYear+1] <-  abs(as.numeric(100 *(abs(M2-M1) + CI1 + CI2) / (M2 + M1))) < cT["High", "Distance"]
           CompareDist_Years$Moderate[YEAR1-MinYear+1,YEAR2-MinYear+1] <-  abs(as.numeric(100 *(abs(M2-M1) + CI1 + CI2) / (M2 + M1))) < cT["Moderate", "Distance"]
           CompareDist_Years$Low[YEAR1-MinYear+1,YEAR2-MinYear+1] <-  abs(as.numeric(100 *(abs(M2-M1) + CI1 + CI2) / (M2 + M1))) < cT["Low", "Distance"]
           
-          M1 <-  ll_mean %>% filter (YEAR == YEAR1) %>% select (HotspotPerCent)
-          M2 <-  ll_mean %>% filter (YEAR == YEAR2) %>% select (HotspotPerCent)
+          M1 <-  ll_mean1$HotspotPerCent
+          M2 <-  ll_mean2$HotspotPerCent
           CompareHS_Years$High[YEAR1-MinYear+1,YEAR2-MinYear+1] <- abs (M1-M2) < cT["High", "Hotspots"]
           CompareHS_Years$Moderate[YEAR1-MinYear+1,YEAR2-MinYear+1] <- abs (M1-M2) < cT["Moderate", "Hotspots"]
           CompareHS_Years$Low[YEAR1-MinYear+1,YEAR2-MinYear+1] <- abs (M1-M2) < cT["Low", "Hotspots"]
           
-          M1 <-  ll_mean %>% filter (YEAR == YEAR1) %>% select (NoEffortPerCent)
-          M2 <-  ll_mean %>% filter (YEAR == YEAR2) %>% select (NoEffortPerCent)
+          M1 <-  ll_mean1$NoEffortPerCent
+          M2 <-  ll_mean2$NoEffortPerCent
           CompareNE_Years$High[YEAR1-MinYear+1,YEAR2-MinYear+1] <- abs (M1-M2) < cT["High", "NoEffort"]
           CompareNE_Years$Moderate[YEAR1-MinYear+1,YEAR2-MinYear+1] <- abs (M1-M2) < cT["Moderate", "NoEffort"]
           CompareNE_Years$Low[YEAR1-MinYear+1,YEAR2-MinYear+1] <- abs (M1-M2) < cT["Low", "NoEffort"]

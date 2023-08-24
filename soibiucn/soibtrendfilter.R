@@ -10,7 +10,7 @@ Years <- c(MinYear:MaxYear)
 TrendYears <- MaxYear - MinYear + 1
 plotting <- 0
 
-freq <- read.csv2("rawtrends.csv", sep=",")
+freq <- read.csv("rawtrends.csv")
 
 # Remove freq data outside comparable data range
 freq <- freq %>% 
@@ -19,10 +19,10 @@ freq <- freq %>%
           Frequency  = as.numeric(Frequency),
           SE         = as.numeric(SE))
 
-ranges <- read.csv2("ranges.csv", sep=",")
-threegen <- read.csv2("3genbli.csv", sep = ",")
+ranges <- read.csv("ranges.csv")
+threegen <- read.csv("3genbli.csv")
 
-load("..\\data\\dataforanalyses_extra.RData")
+load("..\\soib_v2\\dataforanalyses_extra.RData")
 
 ######################################################################
 #  Find out comparable years from various parameters
@@ -49,7 +49,9 @@ ebd_lists  <-  ebd_lists %>%
     # Uncomment the next line when Ashwin V provides START.TIME                   
     #                HOUR  = strptime(TIME.OBSERVATIONS.STARTED, format = "%H:%M:%S") %>% format("%H") %>% as.integer(),
     SPEED = 60 * EFFORT.DISTANCE.KM / DURATION.MINUTES,
-    SEASON = Seasons [month]) 
+    # SEASON = Seasons [month]
+    ) %>% 
+  mutate(gridg2 = as.integer(gridg2))
 
 # All SoIB filters come here. Some has been already done by Ashwin V
 
@@ -85,11 +87,11 @@ source("TargetSpecies.R")
 species <- getTargetSpecies (freq, threegen, MinYear, MaxYear)
 
 source("ComparableYears.R")
-CompareYears <- getComparableYears (ebd_lists, species, range, MinYear, MaxYear)
+CompareYears <- getComparableYears (ebd_lists, species, range = ranges, MinYear, MaxYear)
   
-CompareYears$High <- CompareYears$High %>% inner_join (freq, by = c("Species" = "Species", "YEAR" = "Time.Bands"))
-CompareYears$Moderate <- CompareYears$Moderate %>% inner_join (freq, by = c("Species" = "Species", "YEAR" = "Time.Bands"))
-CompareYears$Low <- CompareYears$Low %>% inner_join (freq, by = c("Species" = "Species", "YEAR" = "Time.Bands"))
+CompareYears$High <- CompareYears$High %>% inner_join (freq, by = c("Species", "YEAR" = "Time.Bands"))
+CompareYears$Moderate <- CompareYears$Moderate %>% inner_join (freq, by = c("Species", "YEAR" = "Time.Bands"))
+CompareYears$Low <- CompareYears$Low %>% inner_join (freq, by = c("Species", "YEAR" = "Time.Bands"))
 
 source("predict.R")
 
